@@ -1,6 +1,6 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "gunicorn app:app"
 restartPolicyType = "ON_FAILURE"
