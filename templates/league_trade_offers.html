@@ -1,0 +1,171 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Trade Offers: {{ league.name }}</h2>
+    <p>Review your active trade proposals and those waiting for your response.</p>
+</div>
+
+<div class="trade-offers-container" style="display: flex; flex-direction: column; gap: 40px;">
+    
+    <!-- Incoming Trades -->
+    <div class="incoming-section">
+        <h3 style="border-bottom: 2px solid #f39c12; padding-bottom: 10px; color: #f39c12; margin-bottom: 20px;">
+            Incoming: Needs Your Response
+        </h3>
+        
+        {% if responding_trades %}
+            <div style="display: grid; gap: 20px;">
+                {% for trade in responding_trades %}
+                    <div class="card" style="padding: 20px; border-left: 6px solid #f39c12;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div>
+                                <h4 style="margin: 0;">Trade from: {{ trade.offering_team_name }}</h4>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                    <span style="background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">{{ trade.status }}</span>
+                                    <small class="localize-time" data-utc="{{ trade.status_modified.isoformat() + 'Z' if trade.status_modified else '' }}" style="color: #7f8c8d; font-size: 0.75em;">
+                                        {{ trade.status_modified }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                {% if trade.status == 'Pending' %}
+                                    <form action="{{ url_for('accept_trade', league_id=league.id, trade_id=trade.id) }}" method="POST" onsubmit="return confirm('Are you certain you want to finalize this trade? Players and picks will be swapped immediately.')">
+                                        <button type="submit" class="btn btn-sm" style="background-color: #27ae60;">Accept</button>
+                                    </form>
+                                    <form action="{{ url_for('reject_trade', league_id=league.id, trade_id=trade.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to reject this trade offer?')">
+                                        <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                            <div>
+                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU RECEIVE:</p>
+                                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
+                                    {% for p in trade.offering_players %}
+                                        <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
+                                    {% endfor %}
+                                    {% for pick in trade.offering_picks %}
+                                        <li style="color: #2980b9;">
+                                            <strong>PICK</strong> {{ pick.year }} Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})
+                                        </li>
+                                    {% endfor %}
+                                    {% if not trade.offering_players and not trade.offering_picks %}<li><em>No assets offered</em></li>{% endif %}
+                                </ul>
+                            </div>
+                            <div style="border-left: 1px solid #eee; padding-left: 20px;">
+                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU GIVE:</p>
+                                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
+                                    {% for p in trade.responding_players %}
+                                        <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
+                                    {% endfor %}
+                                    {% for pick in trade.responding_picks %}
+                                        <li style="color: #2980b9;">
+                                            <strong>PICK</strong> {{ pick.year }} Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})
+                                        </li>
+                                    {% endfor %}
+                                    {% if not trade.responding_players and not trade.responding_picks %}<li><em>No assets requested</em></li>{% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #7f8c8d; background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
+                No trade offers currently pending your response.
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Outgoing Trades -->
+    <div class="outgoing-section">
+        <h3 style="border-bottom: 2px solid #27ae60; padding-bottom: 10px; color: #27ae60; margin-bottom: 20px;">
+            Outgoing: Your Proposals
+        </h3>
+        
+        {% if offered_trades %}
+            <div style="display: grid; gap: 20px;">
+                {% for trade in offered_trades %}
+                    <div class="card" style="padding: 20px; border-left: 6px solid #27ae60;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div>
+                                <h4 style="margin: 0;">Proposal to: {{ trade.responding_team_name }}</h4>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                    <span style="background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">{{ trade.status }}</span>
+                                    <small class="localize-time" data-utc="{{ trade.status_modified.isoformat() + 'Z' if trade.status_modified else '' }}" style="color: #7f8c8d; font-size: 0.75em;">
+                                        {{ trade.status_modified }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% if trade.status == 'Pending' %}
+                                <form action="{{ url_for('cancel_trade', league_id=league.id, trade_id=trade.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this trade proposal?')">
+                                    <button type="submit" class="btn btn-sm btn-secondary">Cancel</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                            <div>
+                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU GIVE:</p>
+                                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
+                                    {% for p in trade.offering_players %}
+                                        <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
+                                    {% endfor %}
+                                    {% for pick in trade.offering_picks %}
+                                        <li style="color: #2980b9;">
+                                            <strong>PICK</strong> {{ pick.year }} Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})
+                                        </li>
+                                    {% endfor %}
+                                    {% if not trade.offering_players and not trade.offering_picks %}<li><em>No assets offered</em></li>{% endif %}
+                                </ul>
+                            </div>
+                            <div style="border-left: 1px solid #eee; padding-left: 20px;">
+                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU RECEIVE:</p>
+                                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
+                                    {% for p in trade.responding_players %}
+                                        <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
+                                    {% endfor %}
+                                    {% for pick in trade.responding_picks %}
+                                        <li style="color: #2980b9;">
+                                            <strong>PICK</strong> {{ pick.year }} Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})
+                                        </li>
+                                    {% endfor %}
+                                    {% if not trade.responding_players and not trade.responding_picks %}<li><em>No assets requested</em></li>{% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #7f8c8d; background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
+                You haven't sent any trade proposals yet. 
+                <br><a href="{{ url_for('league_trade', league_id=league.id) }}" style="color: var(--primary-color);">Go to Trade Center</a>
+            </p>
+        {% endif %}
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('league_team', league_id=league.id, user_id=session.get('user_id')) }}" class="btn btn-secondary">Back to My Team</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeElements = document.querySelectorAll('.localize-time');
+    timeElements.forEach(el => {
+        const utcStr = el.getAttribute('data-utc');
+        if (utcStr) {
+            const date = new Date(utcStr);
+            const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            el.innerText = 'Last Updated: ' + date.toLocaleString(undefined, options);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Fantasy Football</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="brand">NFL Fantasy</a>
+            <div class="nav-links">
+                <a href="{{ url_for('nfl_home') }}" class="{{ 'active' if request.path.startswith('/nfl') or request.endpoint in ['nfl', 'nfl_home', 'nfl_teams', 'nfl_players', 'nfl_player', 'nfl_team', 'nfl_standings', 'nfl_schedule', 'nfl_rumors'] }}">NFL</a>
+                <a href="{{ url_for('leagues') }}" class="{{ 'active' if request.endpoint in ['leagues', 'leagues_my', 'leagues_public', 'leagues_find', 'league_home', 'league_teams', 'league_rules', 'league_team'] }}">Leagues</a>
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('profile') }}" class="{{ 'active' if request.endpoint in ['profile', 'profile_details', 'profile_achievements', 'profile_actions'] }}">Profile</a>
+                    <a href="{{ url_for('logout') }}">Logout ({{ session.get('username') }})</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="{{ 'active' if request.endpoint == 'login' }}">Login</a>
+                    <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">Register</a>
+                {% endif %}
+                {% if session.get('is_site_admin') %}
+                    <a href="{{ url_for('admin_panel') }}" style="color: #e67e22; font-weight: bold;" class="{{ 'active' if request.endpoint in ['admin_panel', 'manage_users'] }}">Site Admin</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {% block full_width %}{% endblock %}
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2026 NFL Fantasy Football</p>
+    </footer>
+
+    <!-- Global Overlay Layer (Hidden by default) -->
+    <div id="globalOverlay" class="overlay-layer" {% if g.unread_announcement %}style="display: flex;"{% endif %}>
+        <div class="overlay-content">
+            {% if g.unread_announcement %}
+                <h3 style="margin-top: 0; color: var(--primary-color);">{{ g.unread_announcement.type }}</h3>
+                <p style="text-align: center; margin: 15px 0;">{{ g.unread_announcement.message }}</p>
+                <button id="acknowledgeBtn" class="btn btn-sm" data-id="{{ g.unread_announcement.id }}">Acknowledge</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ackBtn = document.getElementById('acknowledgeBtn');
+        if (ackBtn) {
+            ackBtn.addEventListener('click', function() {
+                const announcementId = this.getAttribute('data-id');
+                
+                fetch(`/announcement/read/${announcementId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('globalOverlay').style.display = 'none';
+                        // Optionally reload to check for next announcement if multiple exist
+                        window.location.reload();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        }
+    });
+    </script>
+</body>
+</html>

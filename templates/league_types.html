@@ -1,0 +1,61 @@
+{% extends "leagues_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block leagues_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>League Types & Formats</h2>
+    <p>Explore the different ways to play and the customizable options available for every league.</p>
+</div>
+
+<div class="types-container" style="display: grid; gap: 30px; margin-bottom: 50px;">
+    <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; color: var(--primary-color);">Core League Types</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        {% for type in league_types %}
+            <div class="card" id="{{ type.name|replace(' ', '-') }}" style="padding: 25px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; display: flex; flex-direction: column;">
+                <h4 style="margin-top: 0; color: var(--secondary-color); font-size: 1.3em;">{{ type.name }}</h4>
+                <p style="line-height: 1.6; margin-bottom: 20px; flex-grow: 1;">{{ type.description }}</p>
+                <div style="display: flex; gap: 10px; margin-top: auto;">
+                    <a href="{{ url_for('create_league', type=type.name) }}" class="btn btn-sm" style="flex: 1; text-align: center;">Create {{ type.name }}</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="custom-options card" style="padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f0f4f8; color: #2c3e50;">
+    <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid #ccc; padding-bottom: 15px;">Configurable Formats</h3>
+    <p style="margin-bottom: 25px;">When creating any of the league types above, you can further customize the experience with these settings:</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
+        <div>
+            <h4 style="color: var(--secondary-color);">📊 Scoring Formats</h4>
+            <ul style="list-style: none; padding: 0; line-height: 1.6;">
+                <li style="margin-bottom: 10px;"><strong>Standard:</strong> Traditional scoring where receptions do not grant extra points. Favors high-yardage and touchdown-dependent players.</li>
+                <li style="margin-bottom: 10px;"><strong>PPR (Point Per Reception):</strong> Grants a full 1.0 point for every catch. significantly increases the value of wide receivers and pass-catching running backs.</li>
+                <li><strong>Half-PPR:</strong> A balanced approach granting 0.5 points per reception. Currently the most popular format in modern fantasy football.</li>
+            </ul>
+        </div>
+        
+        <div>
+            <h4 style="color: var(--secondary-color);">🏈 Roster Formats</h4>
+            <ul style="list-style: none; padding: 0; line-height: 1.6;">
+                <li style="margin-bottom: 10px;"><strong>Standard:</strong> The classic lineup: 1 QB, 2 RB, 2 WR, 1 TE, 1 Flex (RB/WR/TE), 1 K, and 1 DST.</li>
+                <li><strong>SuperFlex:</strong> Adds a second Flex spot where a Quarterback can be started. This dramatically increases the value and scarcity of the QB position.</li>
+            </ul>
+        </div>
+        
+        <div>
+            <h4 style="color: var(--secondary-color);">⚔️ Play Formats</h4>
+            <ul style="list-style: none; padding: 0; line-height: 1.6;">
+                <li style="margin-bottom: 10px;"><strong>Head-2-Head:</strong> Face off against a different league member every week. Your goal is simply to outscore your opponent for that week.</li>
+                <li><strong>Season-long:</strong> No weekly matchups. Total points are tracked across the entire season, and the highest aggregate score wins it all.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 40px; padding: 20px; border-radius: 8px; background: #e3f2fd; text-align: center;">
+    <p style="margin: 0; color: #01579b; font-weight: bold;">New formats and customization options are added regularly! Check back soon for more ways to compete.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "profile_layout.html" %}
+
+{% block profile_content %}
+<div class="profile-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Account Actions</h2>
+    <p>Critical management tools for your user account and league participation.</p>
+</div>
+
+<div class="action-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+    <div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+        <h3>Security</h3>
+        <p style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 20px;">Update your password or manage multi-factor authentication.</p>
+        <button class="btn btn-sm btn-secondary" disabled>Change Password (Soon)</button>
+    </div>
+
+    <div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+        <h3>Privacy</h3>
+        <p style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 20px;">Control who can see your profile and history across leagues.</p>
+        <button class="btn btn-sm btn-secondary" disabled>Privacy Settings (Soon)</button>
+    </div>
+
+    <div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50; border-left: 5px solid var(--danger);">
+        <h3 style="color: var(--danger);">Danger Zone</h3>
+        <p style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 20px;">Permanently delete your account and all associated data.</p>
+        <button class="btn btn-sm btn-danger" disabled>Delete Account (Soon)</button>
+    </div>
+</div>
+{% endblock %}

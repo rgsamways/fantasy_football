@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block full_width %}
+<div class="sub-nav admin-style">
+    <ul>
+        <li>
+            <a href="{{ url_for('admin_panel') }}" class="{{ 'active' if active_tab == 'dashboard' }}">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('manage_users') }}" class="{{ 'active' if active_tab == 'users' }}">
+                <span class="nav-icon">👥</span>
+                <span class="nav-label">Users</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="{{ 'active' if active_tab == 'leagues' }}">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Leagues</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" class="{{ 'active' if active_tab == 'data' }}">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Data</span>
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="league-layout {% block layout_class %}{% endblock %}">
+    <aside class="sidebar-left">
+        {% block admin_sidebar_left %}{% endblock %}
+    </aside>
+
+    <main class="league-main-content">
+        {% block admin_content %}{% endblock %}
+    </main>
+
+    <aside class="sidebar-right">
+        {% block admin_sidebar_right %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "nfl_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block nfl_header %}
+<div class="nfl-header" style="text-align: center; margin-bottom: 30px;">
+    <h2>NFL Standings</h2>
+    <p>2025 Regular Season Conference Standings.</p>
+</div>
+{% endblock %}
+
+{% block nfl_content %}
+<div class="standings-container" style="display: grid; gap: 30px;">
+    <!-- NFC -->
+    <div class="card" style="padding: 25px; border-top: 4px solid var(--primary-color);">
+        <h3 style="margin-top: 0; color: var(--primary-color);">NFC Standings</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #ddd; text-align: left; background: #f8f9fa;">
+                    <th style="padding: 10px;">Team</th>
+                    <th style="padding: 10px;">W</th>
+                    <th style="padding: 10px;">L</th>
+                    <th style="padding: 10px;">T</th>
+                    <th style="padding: 10px;">PCT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid #eee; background: #e8f5e9;">
+                    <td style="padding: 10px;"><strong>Seattle Seahawks</strong> (z)</td>
+                    <td style="padding: 10px;">14</td>
+                    <td style="padding: 10px;">3</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.824</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Detroit Lions (y)</td>
+                    <td style="padding: 10px;">12</td>
+                    <td style="padding: 10px;">5</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.706</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Philadelphia Eagles (y)</td>
+                    <td style="padding: 10px;">11</td>
+                    <td style="padding: 10px;">6</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.647</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Atlanta Falcons (y)</td>
+                    <td style="padding: 10px;">10</td>
+                    <td style="padding: 10px;">7</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.588</td>
+                </tr>
+            </tbody>
+        </table>
+        <small style="display: block; margin-top: 10px; color: #7f8c8d;">(z) - Clinched home field, (y) - Clinched division</small>
+    </div>
+
+    <!-- AFC -->
+    <div class="card" style="padding: 25px; border-top: 4px solid var(--secondary-color);">
+        <h3 style="margin-top: 0; color: var(--secondary-color);">AFC Standings</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #ddd; text-align: left; background: #f8f9fa;">
+                    <th style="padding: 10px;">Team</th>
+                    <th style="padding: 10px;">W</th>
+                    <th style="padding: 10px;">L</th>
+                    <th style="padding: 10px;">T</th>
+                    <th style="padding: 10px;">PCT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid #eee; background: #e8f5e9;">
+                    <td style="padding: 10px;"><strong>New England Patriots</strong> (z)</td>
+                    <td style="padding: 10px;">13</td>
+                    <td style="padding: 10px;">4</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.765</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Buffalo Bills (y)</td>
+                    <td style="padding: 10px;">12</td>
+                    <td style="padding: 10px;">5</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.706</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Cincinnati Bengals (y)</td>
+                    <td style="padding: 10px;">11</td>
+                    <td style="padding: 10px;">6</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.647</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Houston Texans (y)</td>
+                    <td style="padding: 10px;">10</td>
+                    <td style="padding: 10px;">7</td>
+                    <td style="padding: 10px;">0</td>
+                    <td style="padding: 10px;">.588</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

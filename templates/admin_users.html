@@ -1,0 +1,65 @@
+{% extends "admin_layout.html" %}
+
+{% block admin_content %}
+<div class="admin-header" style="margin-bottom: 30px;">
+    <h2>User Management</h2>
+    <p>View and manage all registered users on the platform.</p>
+</div>
+
+<div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+                <th style="padding: 12px;">Username</th>
+                <th style="padding: 12px;">Email</th>
+                <th style="padding: 12px;">Last Visited</th>
+                <th style="padding: 12px;">Site Admin</th>
+                <th style="padding: 12px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px; font-weight: bold;">{{ user.username }}</td>
+                    <td style="padding: 12px;">{{ user.email }}</td>
+                    <td style="padding: 12px;">
+                        <span class="localize-time" data-utc="{{ user.last_visited.isoformat() + 'Z' if user.last_visited else '' }}">
+                            {{ 'Never' if not user.last_visited else 'Loading...' }}
+                        </span>
+                    </td>
+                    <td style="padding: 12px;">
+                        {% if user.is_site_admin %}
+                            <span style="background: #e67e22; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">YES</span>
+                        {% else %}
+                            <span style="background: #bdc3c7; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">NO</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">
+                        {% if session.get('is_god') %}
+                            <form action="{{ url_for('toggle_admin', user_id=user._id|string) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-sm {{ 'btn-secondary' if user.is_site_admin else '' }}" style="font-size: 0.8em;">
+                                    {{ 'Remove Admin' if user.is_site_admin else 'Make Admin' }}
+                                </button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeElements = document.querySelectorAll('.localize-time');
+    timeElements.forEach(el => {
+        const utcStr = el.getAttribute('data-utc');
+        if (utcStr) {
+            const date = new Date(utcStr);
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            el.innerText = date.toLocaleString(undefined, options);
+        }
+    });
+});
+</script>
+{% endblock %}

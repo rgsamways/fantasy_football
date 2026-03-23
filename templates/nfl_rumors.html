@@ -1,0 +1,32 @@
+{% extends "nfl_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block nfl_header %}
+<div class="nfl-header" style="text-align: center; margin-bottom: 30px;">
+    <h2>NFL Rumors & Buzz</h2>
+    <p>The latest whispers and trade talk from around the league.</p>
+</div>
+{% endblock %}
+
+{% block nfl_content %}
+<div class="rumors-container" style="display: grid; gap: 25px;">
+    <div class="card" style="padding: 20px; border-left: 5px solid #f1c40f;">
+        <h4 style="margin-top: 0; color: #d4ac0d;">🚨 Trade Speculation: Star WR on the move?</h4>
+        <p>Rumors are swirling that several teams have reached out regarding the availability of a top-tier wideout. Sources say a deal could be reached before the deadline.</p>
+        <small style="color: #7f8c8d;">Updated: 2 hours ago</small>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 5px solid #f1c40f;">
+        <h4 style="margin-top: 0; color: #d4ac0d;">📋 Coaching Hot Seat</h4>
+        <p>After a disappointing stretch of games, the pressure is mounting on a veteran head coach. The front office is reportedly "evaluating all options" heading into the bye week.</p>
+        <small style="color: #7f8c8d;">Updated: 5 hours ago</small>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 5px solid #f1c40f;">
+        <h4 style="margin-top: 0; color: #d4ac0d;">🏥 Injury Update: QB Recovery ahead of schedule</h4>
+        <p>The franchise quarterback who went down in Week 4 was seen throwing at practice today. While still on IR, the timeline for his return has reportedly shifted up.</p>
+        <small style="color: #7f8c8d;">Updated: 8 hours ago</small>
+    </div>
+</div>
+{% endblock %}

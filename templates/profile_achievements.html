@@ -1,0 +1,17 @@
+{% extends "profile_layout.html" %}
+
+{% block profile_content %}
+<div class="profile-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Achievements</h2>
+    <p>Your history of dominance and milestones.</p>
+</div>
+
+<div class="card" style="padding: 40px; text-align: center; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #7f8c8d;">
+    <div style="font-size: 4rem; margin-bottom: 20px;">🏆</div>
+    <h3>No Achievements Yet</h3>
+    <p>Join leagues and lead your team to victory to earn specialized trophies and badges.</p>
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('leagues') }}" class="btn btn-sm">Find a League</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "league_layout.html" %}
+
+{% block league_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Edit Team: {{ team_info.name if team_info and team_info.name else 'Unnamed Team' }}</h2>
+    <p>Update your team's identity for the {{ league.name }} league.</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; border-top: 4px solid var(--primary-color);">
+    <form action="{{ url_for('update_team_info', league_id=league.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="form-group">
+            <label for="team_name" style="font-weight: bold; display: block; margin-bottom: 8px;">Team Name:</label>
+            <input type="text" id="team_name" name="team_name" value="{{ team_info.name if team_info and team_info.name else '' }}" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        
+        <div class="form-group">
+            <label for="acronym" style="font-weight: bold; display: block; margin-bottom: 8px;">Team Acronym:</label>
+            <input type="text" id="acronym" name="acronym" value="{{ team_info.acronym if team_info and team_info.acronym else '' }}" maxlength="4" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <small style="color: #7f8c8d;">Max 4 characters (e.g. "NYG", "KC")</small>
+        </div>
+
+        <div class="form-group">
+            <label for="fight_song" style="font-weight: bold; display: block; margin-bottom: 8px;">Fight Song:</label>
+            <input type="text" id="fight_song" name="fight_song" value="{{ team_info.fight_song if team_info and team_info.fight_song else '' }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <small style="color: #7f8c8d;">The song that plays when your team dominates.</small>
+        </div>
+        
+        <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button type="submit" class="btn" style="width: 100%;">Save Team Info</button>
+            <a href="{{ url_for('league_team', league_id=league.id, user_id=session.get('user_id')) }}" class="btn btn-secondary" style="width: 100%; margin-top: 10px; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

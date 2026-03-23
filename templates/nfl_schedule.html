@@ -1,0 +1,93 @@
+{% extends "nfl_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block nfl_header %}
+<div class="nfl-header" style="text-align: center; margin-bottom: 30px;">
+    <h2>NFL Schedule</h2>
+    <p>Comprehensive 2025 Regular Season and Postseason schedule.</p>
+</div>
+{% endblock %}
+
+{% block nfl_content %}
+<div class="card" style="padding: 25px; border-top: 4px solid var(--primary-color);">
+    <div class="schedule-container" style="max-height: 800px; overflow-y: auto; padding: 5px;">
+        <!-- Week 1 -->
+        <div class="week-section">
+            <h4 style="color: #013369; border-bottom: 2px solid #013369; padding-bottom: 5px;">Week 1</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">
+                <tr style="border-bottom: 1px solid #eee; background: #f8f9fa;"><td>Thu, Sep 4</td><td>Dallas Cowboys @ <strong>Philadelphia Eagles</strong></td><td style="text-align: right;">Eagles Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Fri, Sep 5</td><td>Kansas City Chiefs vs <strong>LA Chargers</strong> (Brazil)</td><td style="text-align: right;">Chargers Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Las Vegas Raiders @ <strong>New England Patriots</strong></td><td style="text-align: right;">Patriots Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Pittsburgh Steelers @ <strong>New York Jets</strong></td><td style="text-align: right;">Jets Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Miami Dolphins @ <strong>Indianapolis Colts</strong></td><td style="text-align: right;">Colts Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Arizona Cardinals @ <strong>New Orleans Saints</strong></td><td style="text-align: right;">Saints Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>New York Giants @ <strong>Washington Commanders</strong></td><td style="text-align: right;">Commanders Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Carolina Panthers @ <strong>Jacksonville Jaguars</strong></td><td style="text-align: right;">Jaguars Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Cincinnati Bengals @ <strong>Cleveland Browns</strong></td><td style="text-align: right;">Browns Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Tampa Bay Buccaneers @ <strong>Atlanta Falcons</strong></td><td style="text-align: right;">Falcons Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Tennessee Titans @ <strong>Denver Broncos</strong></td><td style="text-align: right;">Broncos Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>San Francisco 49ers @ <strong>Seattle Seahawks</strong></td><td style="text-align: right;">Seahawks Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Detroit Lions @ <strong>Green Bay Packers</strong></td><td style="text-align: right;">Packers Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Houston Texans @ <strong>LA Rams</strong></td><td style="text-align: right;">Rams Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 7</td><td>Baltimore Ravens @ <strong>Buffalo Bills</strong></td><td style="text-align: right;">Bills Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Mon, Sep 8</td><td>Minnesota Vikings @ <strong>Chicago Bears</strong></td><td style="text-align: right;">Bears Won</td></tr>
+            </table>
+        </div>
+
+        <!-- Week 2 -->
+        <div class="week-section">
+            <h4 style="color: #013369; border-bottom: 2px solid #013369; padding-bottom: 5px;">Week 2</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">
+                <tr style="border-bottom: 1px solid #eee;"><td>Thu, Sep 11</td><td>Washington Commanders @ <strong>Green Bay Packers</strong></td><td style="text-align: right;">Packers Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Cleveland Browns @ <strong>Baltimore Ravens</strong></td><td style="text-align: right;">Ravens Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Jacksonville Jaguars @ <strong>Cincinnati Bengals</strong></td><td style="text-align: right;">Bengals Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>New York Giants @ <strong>Dallas Cowboys</strong></td><td style="text-align: right;">Cowboys Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Chicago Bears @ <strong>Detroit Lions</strong></td><td style="text-align: right;">Lions Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>New England Patriots @ <strong>Miami Dolphins</strong></td><td style="text-align: right;">Dolphins Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>San Francisco 49ers @ <strong>New Orleans Saints</strong></td><td style="text-align: right;">Saints Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Buffalo Bills @ <strong>New York Jets</strong></td><td style="text-align: right;">Jets Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Seattle Seahawks @ <strong>Pittsburgh Steelers</strong></td><td style="text-align: right;">Steelers Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>LA Rams @ <strong>Tennessee Titans</strong></td><td style="text-align: right;">Titans Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Carolina Panthers @ <strong>Arizona Cardinals</strong></td><td style="text-align: right;">Cardinals Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Atlanta Falcons @ <strong>Las Vegas Raiders</strong></td><td style="text-align: right;">Raiders Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Philadelphia Eagles @ <strong>Kansas City Chiefs</strong></td><td style="text-align: right;">Eagles Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Denver Broncos @ <strong>LA Chargers</strong></td><td style="text-align: right;">Chargers Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Sun, Sep 14</td><td>Indianapolis Colts @ <strong>Houston Texans</strong></td><td style="text-align: right;">Texans Won</td></tr>
+                <tr style="border-bottom: 1px solid #eee;"><td>Mon, Sep 15</td><td>Tampa Bay Buccaneers @ <strong>Minnesota Vikings</strong></td><td style="text-align: right;">Vikings Won</td></tr>
+            </table>
+        </div>
+
+        <div class="week-section">
+            <h4 style="color: #013369; border-bottom: 2px solid #013369; padding-bottom: 5px;">2025 NFL Postseason</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background-color: #f0f4f8; font-weight: bold;">
+                    <td style="padding: 10px;">Round</td>
+                    <td style="padding: 10px;">Date</td>
+                    <td style="padding: 10px; text-align: right;">Winner</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Wild Card</td>
+                    <td style="padding: 10px;">Jan 10-12, 2026</td>
+                    <td style="padding: 10px; text-align: right;">6 Teams</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Divisional</td>
+                    <td style="padding: 10px;">Jan 17-18, 2026</td>
+                    <td style="padding: 10px; text-align: right;">4 Teams</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">Championship</td>
+                    <td style="padding: 10px;">Jan 25, 2026</td>
+                    <td style="padding: 10px; text-align: right;">Seahawks (NFC), Patriots (AFC)</td>
+                </tr>
+                <tr style="background-color: #e8f5e9; font-weight: bold;">
+                    <td style="padding: 10px;">Super Bowl LX</td>
+                    <td style="padding: 10px;">Feb 8, 2026</td>
+                    <td style="padding: 10px; text-align: right;"><strong>Seattle Seahawks</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

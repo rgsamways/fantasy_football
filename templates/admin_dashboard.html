@@ -1,0 +1,41 @@
+{% extends "admin_layout.html" %}
+
+{% block admin_content %}
+<div class="admin-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+    <div class="card" style="padding: 20px; text-align: center; border-left: 5px solid var(--primary-color);">
+        <h3 style="margin: 0; font-size: 2.5rem; color: var(--primary-color);">{{ user_count }}</h3>
+        <p style="margin: 5px 0; font-weight: bold; color: #7f8c8d;">Total Users</p>
+    </div>
+    <div class="card" style="padding: 20px; text-align: center; border-left: 5px solid var(--secondary-color);">
+        <h3 style="margin: 0; font-size: 2.5rem; color: var(--secondary-color);">{{ league_count }}</h3>
+        <p style="margin: 5px 0; font-weight: bold; color: #7f8c8d;">Total Leagues</p>
+    </div>
+    <div class="card" style="padding: 20px; text-align: center; border-left: 5px solid #27ae60;">
+        <h3 style="margin: 0; font-size: 2.5rem; color: #27ae60;">{{ player_count }}</h3>
+        <p style="margin: 5px 0; font-weight: bold; color: #7f8c8d;">Total Players</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_sidebar_right %}
+<div class="admin-actions card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <h3 style="margin-top: 0; font-size: 1.1em;">Management Tools</h3>
+    <div class="action-list" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
+            <h4 style="margin-top: 0; font-size: 1em;">User Management</h4>
+            <p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px;">Search, edit, or remove user accounts.</p>
+            <a href="{{ url_for('manage_users') }}" class="btn btn-sm" style="width: 100%; text-align: center;">Manage Users</a>
+        </div>
+        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
+            <h4 style="margin-top: 0; font-size: 1em;">League Control</h4>
+            <p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px;">Override settings or moderate activity.</p>
+            <button class="btn btn-sm btn-secondary" disabled style="width: 100%;">Manage Leagues</button>
+        </div>
+        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
+            <h4 style="margin-top: 0; font-size: 1em;">Data Sync</h4>
+            <p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px;">Trigger manual updates from SportRadar.</p>
+            <button class="btn btn-sm btn-secondary" disabled style="width: 100%;">Sync Data</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

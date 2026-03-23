@@ -1,0 +1,38 @@
+{% extends "leagues_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block leagues_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Assign Divisions: {{ league.name }}</h2>
+    <p>Place each team into their respective division.</p>
+</div>
+
+<div class="card" style="padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; border-top: 4px solid #2980b9;">
+    <form action="{{ url_for('league_assign_divisions', league_id=league.id) }}" method="POST">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            {% for member in members %}
+                <div class="form-group" style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">{{ member.username }}</label>
+                    <select name="assignment_{{ member.id }}" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                        <option value="">-- Unassigned --</option>
+                        {% for i in range(league.num_divisions) %}
+                            {% set div_name = league.division_names[i] if league.division_names and league.division_names|length > i else 'Division ' ~ (i + 1) %}
+                            {% set is_assigned = false %}
+                            {% if league.division_assignments and league.division_assignments[i|string] and member.id in league.division_assignments[i|string] %}
+                                {% set is_assigned = true %}
+                            {% endif %}
+                            <option value="{{ i }}" {{ 'selected' if is_assigned }}>{{ div_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button type="submit" class="btn" style="width: 100%;">Save Assignments</button>
+            <a href="{{ url_for('league_home', league_id=league.id) }}" class="btn btn-secondary" style="width: 100%; margin-top: 10px; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "profile_layout.html" %}
+
+{% block profile_sidebar_left %}
+<div class="profile-info card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-size: 0.9em; color: #2c3e50;">
+    <h3 style="margin-top: 0; font-size: 1.1em;">Divine Presence</h3>
+    <div style="font-size: 0.85em; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
+        <p>Your words will be broadcast to every user on the platform.</p>
+        <p style="margin-top: 10px; color: #7f8c8d; font-style: italic;">Choose your words wisely.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block profile_content %}
+<div class="form-container card" style="padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50;">
+    <h3 style="margin-top: 0; margin-bottom: 25px;">Speak to the Masses</h3>
+    <form action="{{ url_for('speak') }}" method="POST">
+        <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" required class="form-control" rows="6" 
+                      style="width: 100%; padding: 12px; border-radius: 4px; border: 1px solid #ccc; font-family: inherit; resize: vertical;"
+                      placeholder="Enter your divine message here..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button type="submit" class="btn" style="flex: 1; background-color: #9b59b6;">Broadcast Word</button>
+            <a href="{{ url_for('profile_details') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">Abandon</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block profile_sidebar_right %}
+<div class="actions card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <h3 style="font-size: 1.1em; margin-top: 0;">Actions</h3>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('profile_details') }}" class="btn btn-secondary btn-sm" style="text-align: center; width: 100%;">Back to Profile</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm" style="text-align: center; width: 100%;">Logout</a>
+    </div>
+</div>
+{% endblock %}

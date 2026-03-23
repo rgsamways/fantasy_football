@@ -1,0 +1,271 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div class="player-list card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <div class="controls-container" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
+        <div class="name-filter" style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-weight: bold; color: #2c3e50;">Search Players:</span>
+            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        
+        <div class="ownership-filter" style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-weight: bold; color: #2c3e50;">League Filter:</span>
+            <select id="ownershipFilter" class="form-control" style="padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; min-width: 200px;">
+                <option value="all">All Players</option>
+                <option value="in_league">On Teams in League</option>
+                <option value="available">Not on Teams (Available)</option>
+                <option value="mine">My Players</option>
+            </select>
+        </div>
+
+        <div class="position-filter" style="display: flex; flex-direction: column; gap: 5px; width: 100%;">
+            <span style="font-weight: bold; color: #2c3e50;">Position Filter:</span>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; background: white; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                {% for pos in ['QB', 'RB', 'FB', 'WR', 'TE', 'K'] %}
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" class="pos-checkbox" value="{{ pos }}" checked> {{ pos }}
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Pagination -->
+    <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9em;">
+        <div class="result-count">Showing 0 players</div>
+        <div class="pagination-controls" style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-secondary btn-sm prev-page">Previous</button>
+            <span class="page-info">Page 1 of 1</span>
+            <button class="btn btn-secondary btn-sm next-page">Next</button>
+        </div>
+    </div>
+
+    <table class="players-table" id="playersTable" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+                <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('name')">Name <span class="sort-icon" id="sort-name"></span></th>
+                <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('team')">NFL Team <span class="sort-icon" id="sort-team"></span></th>
+                <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('position')">Pos <span class="sort-icon" id="sort-position"></span></th>
+                <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('owner')">Status / Owner <span class="sort-icon" id="sort-owner"></span></th>
+                <th style="padding: 10px;">Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            {% for player in players %}
+                <tr class="player-row" 
+                    data-in-league="{{ 'true' if player.in_league else 'false' }}"
+                    data-is-mine="{{ 'true' if player.is_mine else 'false' }}"
+                    data-name="{{ player.name }}"
+                    data-team="{{ player.team }}"
+                    data-position="{{ player.position }}"
+                    data-owner="{{ player.owned_by if player.owned_by else 'Available' }}">
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                        <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                            {{ player.name }}
+                        </a>
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.team }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.position }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                        {% if player.in_league %}
+                            <span class="badge" style="background-color: #eee; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
+                                {{ player.owned_by }}
+                            </span>
+                        {% else %}
+                            <span style="color: #2ecc71; font-size: 0.85em; font-weight: bold;">Available</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                        {% if player.is_mine %}
+                            <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 0.8em;">Drop</a>
+                        {% elif not player.in_league %}
+                            <a href="{{ url_for('add_player', player_id=player.id, league_id=league.id) }}" class="btn btn-sm" style="padding: 4px 8px; font-size: 0.8em; background-color: #2ecc71;">Add</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Bottom Pagination -->
+    <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; font-size: 0.9em;">
+        <div class="result-count">Showing 0 players</div>
+        <div class="pagination-controls" style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-secondary btn-sm prev-page">Previous</button>
+            <span class="page-info">Page 1 of 1</span>
+            <button class="btn btn-secondary btn-sm next-page">Next</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sort-icon::after {
+        content: ' ↕';
+        opacity: 0.3;
+        font-size: 0.8em;
+    }
+    .sort-asc::after {
+        content: ' ↑';
+        opacity: 1;
+    }
+    .sort-desc::after {
+        content: ' ↓';
+        opacity: 1;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const ownershipFilter = document.getElementById('ownershipFilter');
+    const tableBody = document.getElementById('tableBody');
+    const allRows = Array.from(document.querySelectorAll('.player-row'));
+    
+    let filteredRows = [...allRows];
+    let currentPage = 1;
+    const pageSize = 25;
+    
+    let currentSortCol = 'name';
+    let currentSortDir = 1; // 1 for asc, -1 for desc
+
+    window.setSort = function(col) {
+        if (currentSortCol === col) {
+            currentSortDir *= -1;
+        } else {
+            currentSortCol = col;
+            currentSortDir = 1;
+        }
+        
+        // Update UI icons
+        document.querySelectorAll('.sort-icon').forEach(el => {
+            el.classList.remove('sort-asc', 'sort-desc');
+        });
+        const icon = document.getElementById(`sort-${col}`);
+        if (currentSortDir === 1) icon.classList.add('sort-asc');
+        else icon.classList.add('sort-desc');
+
+        applyFilters();
+    };
+
+    function updateDisplay() {
+        const totalResults = filteredRows.length;
+        const totalPages = Math.ceil(totalResults / pageSize) || 1;
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        
+        // Hide all rows first
+        allRows.forEach(row => row.style.display = 'none');
+        
+        // Show current page rows
+        const pageRows = filteredRows.slice(start, end);
+        pageRows.forEach(row => {
+            row.style.display = '';
+            tableBody.appendChild(row); // Maintain DOM order for sorted view
+        });
+
+        // Update counts and page info
+        const displayStart = totalResults === 0 ? 0 : start + 1;
+        const displayEnd = Math.min(end, totalResults);
+        
+        document.querySelectorAll('.result-count').forEach(el => {
+            el.innerText = `Showing ${displayStart}-${displayEnd} of ${totalResults} players`;
+        });
+
+        document.querySelectorAll('.page-info').forEach(el => {
+            el.innerText = `Page ${currentPage} of ${totalPages}`;
+        });
+
+        // Update button states
+        document.querySelectorAll('.prev-page').forEach(btn => btn.disabled = currentPage === 1);
+        document.querySelectorAll('.next-page').forEach(btn => btn.disabled = currentPage === totalPages || totalResults === 0);
+    }
+
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const ownershipValue = ownershipFilter.value;
+        const selectedPositions = Array.from(document.querySelectorAll('.pos-checkbox:checked')).map(cb => cb.value);
+        
+        // Filter
+        filteredRows = allRows.filter(row => {
+            const text = row.innerText.toLowerCase();
+            const matchesSearch = text.includes(searchTerm);
+            
+            let matchesOwnership = true;
+            if (ownershipValue === 'in_league') {
+                matchesOwnership = row.dataset.inLeague === 'true';
+            } else if (ownershipValue === 'available') {
+                matchesOwnership = row.dataset.inLeague === 'false';
+            } else if (ownershipValue === 'mine') {
+                matchesOwnership = row.dataset.isMine === 'true';
+            }
+
+            const matchesPosition = selectedPositions.includes(row.dataset.position);
+            
+            return matchesSearch && matchesOwnership && matchesPosition;
+        });
+
+        // Custom position order
+        const posOrder = { "QB": 0, "RB": 1, "FB": 2, "WR": 3, "TE": 4, "K": 5 };
+
+        // Sort
+        filteredRows.sort((a, b) => {
+            let valA = a.dataset[currentSortCol];
+            let valB = b.dataset[currentSortCol];
+            
+            if (currentSortCol === 'position') {
+                let rankA = posOrder[valA] !== undefined ? posOrder[valA] : 99;
+                let rankB = posOrder[valB] !== undefined ? posOrder[valB] : 99;
+                return (rankA - rankB) * currentSortDir;
+            } else {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+                if (valA < valB) return -1 * currentSortDir;
+                if (valA > valB) return 1 * currentSortDir;
+                return 0;
+            }
+        });
+        
+        currentPage = 1;
+        updateDisplay();
+    }
+
+    // Event Listeners
+    searchInput.addEventListener('input', applyFilters);
+    ownershipFilter.addEventListener('change', applyFilters);
+    document.querySelectorAll('.pos-checkbox').forEach(cb => {
+        cb.addEventListener('change', applyFilters);
+    });
+
+    document.querySelectorAll('.prev-page').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateDisplay();
+                window.scrollTo({ top: document.querySelector('.player-list').offsetTop - 20, behavior: 'smooth' });
+            }
+        });
+    });
+
+    document.querySelectorAll('.next-page').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredRows.length / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateDisplay();
+                window.scrollTo({ top: document.querySelector('.player-list').offsetTop - 20, behavior: 'smooth' });
+            }
+        });
+    });
+
+    // Initial display and sort icon
+    document.getElementById('sort-name').classList.add('sort-asc');
+    applyFilters();
+});
+</script>
+{% endblock %}

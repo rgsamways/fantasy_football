@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block full_width %}
+<div class="sub-nav">
+    <ul>
+        <li>
+            <a href="{{ url_for('league_home', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_home' }}">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">{{ league.name }} Home</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('league_teams', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_teams', 'league_team'] }}">
+                <span class="nav-icon">🏈</span>
+                <span class="nav-label">Teams</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('league_players', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_players', 'league_player'] }}">
+                <span class="nav-icon">🏃</span>
+                <span class="nav-label">Players</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('league_rules', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_rules' }}">
+                <span class="nav-icon">📜</span>
+                <span class="nav-label">Rules</span>
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="league-layout {% block layout_class %}{% endblock %}">
+    <aside class="sidebar-left">
+        {% block league_sidebar_left %}{% endblock %}
+    </aside>
+
+    <main class="league-main-content">
+        {% block league_content %}{% endblock %}
+    </main>
+
+    <aside class="sidebar-right">
+        {% block league_sidebar_right %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}

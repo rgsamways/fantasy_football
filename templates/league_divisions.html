@@ -1,0 +1,30 @@
+{% extends "leagues_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block leagues_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Edit Divisions: {{ league.name }}</h2>
+    <p>Customize the names of your league's divisions.</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; border-top: 4px solid #e67e22;">
+    <form action="{{ url_for('league_divisions', league_id=league.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+        <p style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 10px;">Enter a unique name for each of your {{ league.num_divisions }} divisions.</p>
+        
+        {% for i in range(league.num_divisions) %}
+            <div class="form-group">
+                <label for="div_{{ i }}" style="font-weight: bold; display: block; margin-bottom: 8px;">Division {{ i + 1 }} Name:</label>
+                <input type="text" id="div_{{ i }}" name="division_names" 
+                       value="{{ league.division_names[i] if league.division_names and league.division_names|length > i else 'Division ' ~ (i + 1) }}" 
+                       required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+        {% endfor %}
+        
+        <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button type="submit" class="btn" style="width: 100%; background-color: #e67e22;">Save Division Names</button>
+            <a href="{{ url_for('league_home', league_id=league.id) }}" class="btn btn-secondary" style="width: 100%; margin-top: 10px; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

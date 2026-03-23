@@ -1,0 +1,37 @@
+{% extends "league_layout.html" %}
+
+{% block league_content %}
+<div class="rules-container card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <h3>League Type: {{ league.league_type }}</h3>
+    
+    <div style="margin-top: 20px;">
+        <h4 style="color: var(--secondary-color);">General Settings</h4>
+        <ul>
+            <li><strong>Draft Type:</strong> Snake Draft</li>
+            <li><strong>Roster Size:</strong> 15 Players</li>
+            <li><strong>Waiver Type:</strong> FAAB ($100 Budget)</li>
+        </ul>
+
+        <h4 style="color: var(--secondary-color); margin-top: 20px;">{{ league.league_type }} Specific Rules</h4>
+        {% if league.league_type == 'SuperFlex' %}
+            <p>One offensive flex spot can be filled by any offensive position, including Quarterback (QB).</p>
+        {% elif league.league_type == 'Keeper' %}
+            <p>Teams can retain up to 3 players from their previous season's roster in exchange for draft picks.</p>
+        {% elif league.league_type == 'Dynasty' %}
+            <p>Teams retain their entire roster from year to year. Annual drafts consist only of rookies.</p>
+        {% elif league.league_type == 'Roster Eliminator' %}
+            <p>Each week, the lowest-scoring team must cut one player from their roster who then becomes a free agent.</p>
+        {% elif league.league_type == 'Best Ball' %}
+            <p>No lineup management is required. The system automatically calculates your optimal score from your entire roster each week.</p>
+        {% else %}
+            <p>Standard fantasy football scoring and roster rules apply.</p>
+        {% endif %}
+    </div>
+
+    {% if is_admin %}
+        <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+            <p style="font-style: italic; color: #7f8c8d;">As an administrator, you will be able to customize these rules in a future update.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

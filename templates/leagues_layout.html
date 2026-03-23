@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block full_width %}
+<div class="sub-nav">
+    <ul>
+        <li>
+            <a href="{{ url_for('leagues_my') }}" class="{{ 'active' if active_tab == 'my' }}">
+                <span>🛡️ My Leagues</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('leagues_public') }}" class="{{ 'active' if active_tab == 'public' }}">
+                <span>🌍 Public Leagues</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('leagues_find') }}" class="{{ 'active' if active_tab == 'find' }}">
+                <span>🔍 Find a League</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('leagues_types') }}" class="{{ 'active' if active_tab == 'types' }}">
+                <span>📋 League Types</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('create_league') }}" class="{{ 'active' if active_tab == 'create' }}">
+                <span>➕ Create</span>
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="league-layout {% block layout_class %}{% endblock %}">
+    <aside class="sidebar-left">
+        {% block league_sidebar_left %}{% endblock %}
+    </aside>
+
+    <main class="league-main-content">
+        {% block leagues_content %}{% endblock %}
+    </main>
+
+    <aside class="sidebar-right">
+        {% block league_sidebar_right %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}

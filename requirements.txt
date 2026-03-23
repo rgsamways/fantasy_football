@@ -1,0 +1,9 @@
+Flask
+pymongo[srv]
+requests
+python-dotenv
+bcrypt
+pytest
+pytest-flask
+mongomock
+pytest-playwright

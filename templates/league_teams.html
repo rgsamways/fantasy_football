@@ -1,0 +1,125 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% macro render_team_card(member, league, is_admin) %}
+    <div class="card" style="flex: 1 1 calc(50% - 15px); min-width: 300px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; font-size: 0.9em; display: flex; flex-direction: column;">
+        <div style="text-align: center; margin-bottom: 15px;">
+            <div style="font-size: 1.5rem; margin-bottom: 5px;">👤</div>
+            <h4 style="margin: 5px 0; font-size: 1.2em; color: var(--primary-color);">
+                {% if member.roster and member.roster.team and member.roster.team.name %}
+                    {{ member.roster.team.name }}
+                    <br><small style="color: #7f8c8d; font-weight: normal; font-size: 0.75em;">Manager: {{ member.username }}</small>
+                {% else %}
+                    {{ member.username }}
+                {% endif %}
+            </h4>
+            
+            {% if member.roster and member.roster.team %}
+                <div style="font-size: 0.8em; color: #7f8c8d; margin-top: 5px;">
+                    {% if member.roster.team.acronym %}
+                        <strong>[{{ member.roster.team.acronym }}]</strong>
+                    {% endif %}
+                    {% if member.roster.team.fight_song %}
+                        <span style="font-style: italic; margin-left: 5px;">"{{ member.roster.team.fight_song }}"</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="roster-summary" style="flex-grow: 1; margin-bottom: 15px;">
+            {% if member.roster_players %}
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #eee;">
+                    <thead>
+                        <tr style="background: #f0f4f8; text-align: left; border-bottom: 1px solid #ddd;">
+                            <th style="padding: 6px 8px;">Pos</th>
+                            <th style="padding: 6px 8px;">Player</th>
+                            <th style="padding: 6px 8px;">NFL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in member.roster_players %}
+                            <tr style="border-bottom: 1px solid #f5f5f5;">
+                                <td style="padding: 4px 8px; font-weight: bold; color: #555;">{{ player.position }}</td>
+                                <td style="padding: 4px 8px;">
+                                    <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color);">
+                                        {{ player.name }} ({{ player.position }})
+                                    </a>
+                                </td>
+                                <td style="padding: 4px 8px; color: #7f8c8d; font-size: 0.9em;">{{ player.team }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="text-align: center; color: #7f8c8d; font-style: italic; padding: 10px;">No players drafted yet.</p>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: auto;">
+            <a href="{{ url_for('league_team', league_id=league.id, user_id=member._id|string) }}" class="btn btn-sm btn-secondary" style="width: 100%; text-align: center;">View Full Team</a>
+        </div>
+    </div>
+{% endmacro %}
+
+{% block league_content %}
+<div class="teams-container">
+    <div class="view-toggle" style="margin-bottom: 30px; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+        <span style="font-weight: bold; color: #7f8c8d; font-size: 0.9em;">View Mode:</span>
+        <div class="btn-group" style="display: flex; background: #eee; padding: 4px; border-radius: 6px;">
+            <a href="{{ url_for('league_teams', league_id=league.id, view='divisions') }}" 
+               class="btn btn-sm" 
+               style="background: {{ 'var(--primary-color)' if view_mode != 'alphabetical' else 'transparent' }}; 
+                      color: {{ 'white' if view_mode != 'alphabetical' else '#555' }}; 
+                      border-radius: 4px; transition: all 0.2s;">
+                Divisions
+            </a>
+            <a href="{{ url_for('league_teams', league_id=league.id, view='alphabetical') }}" 
+               class="btn btn-sm" 
+               style="background: {{ 'var(--primary-color)' if view_mode == 'alphabetical' else 'transparent' }}; 
+                      color: {{ 'white' if view_mode == 'alphabetical' else '#555' }}; 
+                      border-radius: 4px; transition: all 0.2s;">
+                Alphabetical
+            </a>
+        </div>
+    </div>
+
+    {% if view_mode == 'alphabetical' %}
+        {# Flatten and sort all members #}
+        {% set all_members = [] %}
+        {% for group in grouped_teams %}
+            {% for member in group.members %}
+                {% set _ = all_members.append(member) %}
+            {% endfor %}
+        {% endfor %}
+        
+        {# We sort by team name if available, otherwise username #}
+        <div class="alphabetical-section">
+            <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; color: var(--primary-color); margin-bottom: 20px;">
+                All Teams (A-Z)
+            </h3>
+            <div class="teams-grid" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                {% for member in all_members | sort(attribute='roster.team.name', case_sensitive=False) %}
+                    {{ render_team_card(member, league, is_admin) }}
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        {% for group in grouped_teams %}
+            <div class="division-section" style="margin-bottom: 40px;">
+                <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; color: var(--primary-color); margin-bottom: 20px;">
+                    {{ group.name }}
+                </h3>
+                <div class="teams-grid" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    {% for member in group.members %}
+                        {{ render_team_card(member, league, is_admin) }}
+                    {% endfor %}
+                </div>
+                {% if not group.members %}
+                    <p style="color: #7f8c8d; font-style: italic;">No teams assigned to this division yet.</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

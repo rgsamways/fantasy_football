@@ -1,0 +1,156 @@
+{% extends "league_layout.html" %}
+
+{% block league_sidebar_left %}
+<div class="team-info card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; margin-bottom: 20px;">
+    <div style="margin-top: 10px;">
+        <h4 style="margin: 0; color: var(--primary-color);">
+            {{ team_info.name if team_info and team_info.name else 'Unnamed Team' }}
+        </h4>
+        <div style="font-size: 0.85em; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
+            <p style="color: #7f8c8d; margin-bottom: 8px;"><strong>Manager:</strong> {{ manager.username }}</p>
+            {% if team_info and team_info.acronym %}
+                <p style="font-size: 0.85em; margin-bottom: 8px;"><strong>Acronym:</strong> {{ team_info.acronym }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block league_content %}
+<div class="roster-container card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    {% if roster %}
+        <table class="roster-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+                    <th style="padding: 10px;">Name</th>
+                    <th style="padding: 10px;">Pos</th>
+                    <th style="padding: 10px;">Team</th>
+                    {% if session.get('user_id') == manager._id|string %}
+                        <th style="padding: 10px;">Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in roster %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">
+                            <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                {{ player.name }}
+                            </a>
+                        </td>
+                        <td style="padding: 10px;">{{ player.position }}</td>
+                        <td style="padding: 10px;">{{ player.team }}</td>
+                        {% if session.get('user_id') == manager._id|string %}
+                            <td style="padding: 10px;">
+                                <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 0.75em;">Remove</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; padding: 20px;">No players on this roster yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block league_sidebar_right %}
+{% if session.get('user_id') == manager._id|string %}
+    <div class="actions card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; margin-bottom: 20px;">
+        <h3 style="font-size: 1.1em; margin-top: 0;">Actions</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="{{ url_for('league_team_edit', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Edit Team</a>
+            <a href="{{ url_for('league_trade', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #27ae60;">Trade</a>
+            <a href="{{ url_for('league_trade_offers', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #f39c12;">Trade Offers</a>
+        </div>
+    </div>
+{% endif %}
+
+<div class="player-search-pane card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; height: 100%; overflow-y: auto;">
+    <h3 style="margin-top: 0; font-size: 1.1em; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Player Search</h3>
+    
+    {% if available_players %}
+        <div class="filters" style="margin-bottom: 15px;">
+            <input type="text" id="sidebarSearch" placeholder="Search players..." style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                {% for pos in ['QB', 'RB', 'WR', 'TE', 'K'] %}
+                    <label style="font-size: 0.75em; display: flex; align-items: center; gap: 3px; background: #fff; padding: 2px 6px; border: 1px solid #eee; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="pos-filter" value="{{ pos }}"> {{ pos }}
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="max-height: 600px; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;" id="sidebarPlayersTable">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                        <th style="padding: 5px; cursor: pointer;" onclick="sortSidebar(0)">Name</th>
+                        <th style="padding: 5px; cursor: pointer;" onclick="sortSidebar(1)">Pos</th>
+                        <th style="padding: 5px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="sidebarTableBody">
+                    {% for player in available_players %}
+                        <tr class="player-row">
+                            <td style="padding: 8px 5px;">
+                                <strong>{{ player.name }}</strong><br>
+                                <small style="color: #7f8c8d;">{{ player.team }}</small>
+                            </td>
+                            <td style="padding: 8px 5px;">{{ player.position }}</td>
+                            <td style="padding: 8px 5px;">
+                                <a href="{{ url_for('add_player', player_id=player.id, league_id=league.id) }}" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.8em;">Add</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="font-size: 0.9em; color: #7f8c8d; text-align: center;">You cannot draft players for this manager.</p>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('sidebarSearch');
+    const posFilters = document.querySelectorAll('.pos-filter');
+    const rows = Array.from(document.querySelectorAll('.player-row'));
+
+    function applyFilters() {
+        const term = searchInput.value.toLowerCase();
+        const selectedPos = Array.from(posFilters).filter(i => i.checked).map(i => i.value);
+
+        rows.forEach(row => {
+            const name = row.cells[0].innerText.toLowerCase();
+            const pos = row.cells[1].innerText.trim();
+            
+            const matchesSearch = name.includes(term);
+            const matchesPos = selectedPos.length === 0 || selectedPos.includes(pos);
+
+            row.style.display = (matchesSearch && matchesPos) ? "" : "none";
+        });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    posFilters.forEach(f => f.addEventListener('change', applyFilters));
+});
+
+let sidebarSortDir = 1;
+function sortSidebar(col) {
+    const tbody = document.getElementById('sidebarTableBody');
+    const rows = Array.from(tbody.querySelectorAll('.player-row'));
+    sidebarSortDir *= -1;
+
+    rows.sort((a, b) => {
+        const valA = a.cells[col].innerText.toLowerCase();
+        const valB = b.cells[col].innerText.toLowerCase();
+        return valA < valB ? -sidebarSortDir : valA > valB ? sidebarSortDir : 0;
+    });
+
+    rows.forEach(r => tbody.appendChild(row));
+}
+</script>
+{% endblock %}

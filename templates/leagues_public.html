@@ -1,0 +1,60 @@
+{% extends "leagues_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block leagues_header %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Public Leagues</h2>
+    <p>Discover new communities and compete with managers from around the world.</p>
+</div>
+{% endblock %}
+
+{% block leagues_content %}
+<div class="leagues-list-container">
+    <div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+        <h3 style="margin-top: 0;">Available Leagues</h3>
+        {% if leagues %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+                        <th style="padding: 10px;">Name</th>
+                        <th style="padding: 10px;">Type</th>
+                        <th style="padding: 10px;">Scoring</th>
+                        <th style="padding: 10px;">Roster</th>
+                        <th style="padding: 10px;">Format</th>
+                        <th style="padding: 10px;">Members</th>
+                        <th style="padding: 10px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for league in leagues %}
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px;">
+                                <a href="{{ url_for('league_home', league_id=league.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                    {{ league.name }}
+                                </a>
+                            </td>
+                            <td style="padding: 10px;">{{ league.league_type }}</td>
+                            <td style="padding: 10px;">{{ league.scoring_format }}</td>
+                            <td style="padding: 10px;">{{ league.positional_format }}</td>
+                            <td style="padding: 10px;">{{ league.play_format }}</td>
+                            <td style="padding: 10px;">{{ league.user_ids | length }} / {{ league.max_teams if league.max_teams else 12 }}</td>
+                            <td style="padding: 10px;">
+                                {% if session.get('user_id') not in league.user_ids %}
+                                    <form action="{{ url_for('join_league', league_id=league.id) }}" method="POST" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm">Join</button>
+                                    </form>
+                                {% else %}
+                                    <span style="color: #27ae60; font-weight: bold; font-size: 0.9em;">Joined</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No public leagues are currently available. Why not <a href="{{ url_for('create_league') }}">start your own?</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

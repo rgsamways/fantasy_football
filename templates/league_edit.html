@@ -1,0 +1,111 @@
+{% extends "leagues_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block leagues_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Edit League: {{ league.name }}</h2>
+    <p>Update your league's settings and configurations.</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; border-top: 4px solid var(--primary-color);">
+    <form action="{{ url_for('edit_league', league_id=league.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="form-group">
+            <label for="league_name" style="font-weight: bold; display: block; margin-bottom: 8px;">League Name:</label>
+            <input type="text" id="league_name" name="league_name" value="{{ league.name }}" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        
+        <div class="form-group">
+            <label for="league_type" style="font-weight: bold; display: block; margin-bottom: 8px;">League Type:</label>
+            <select id="league_type" name="league_type" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="Redraft" {{ 'selected' if league.league_type == 'Redraft' }}>Redraft</option>
+                <option value="Keeper" {{ 'selected' if league.league_type == 'Keeper' }}>Keeper</option>
+                <option value="Dynasty" {{ 'selected' if league.league_type == 'Dynasty' }}>Dynasty</option>
+                <option value="Best Ball" {{ 'selected' if league.league_type == 'Best Ball' }}>Best Ball</option>
+                <option value="Vampire" {{ 'selected' if league.league_type == 'Vampire' }}>Vampire</option>
+                <option value="Guillotine" {{ 'selected' if league.league_type == 'Guillotine' }}>Guillotine</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="scoring_format" style="font-weight: bold; display: block; margin-bottom: 8px;">Scoring Format:</label>
+            <select id="scoring_format" name="scoring_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="PPR" {{ 'selected' if league.scoring_format == 'PPR' }}>PPR</option>
+                <option value="Half-PPR" {{ 'selected' if league.scoring_format == 'Half-PPR' }}>Half-PPR</option>
+                <option value="Standard" {{ 'selected' if league.scoring_format == 'Standard' }}>Standard</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="positional_format" style="font-weight: bold; display: block; margin-bottom: 8px;">Positional Format:</label>
+            <select id="positional_format" name="positional_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="Standard" {{ 'selected' if league.positional_format == 'Standard' }}>Standard (QB, 2RB, 2WR, TE, FLEX, K, DST)</option>
+                <option value="SuperFlex" {{ 'selected' if league.positional_format == 'SuperFlex' }}>SuperFlex (Standard + QB/RB/WR/TE Flex)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="play_format" style="font-weight: bold; display: block; margin-bottom: 8px;">Play Format:</label>
+            <select id="play_format" name="play_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="Head-2-Head" {{ 'selected' if league.play_format == 'Head-2-Head' }}>Head-2-Head</option>
+                <option value="Season-long" {{ 'selected' if league.play_format == 'Season-long' }}>Season-long</option>
+            </select>
+        </div>
+
+        <div id="division_settings">
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <input type="checkbox" id="has_divisions" name="has_divisions" style="width: 20px; height: 20px;" {{ 'checked' if league.has_divisions }}>
+                <label for="has_divisions" style="font-weight: bold;">Enable Divisions</label>
+            </div>
+
+            <div id="num_divisions_container" class="form-group" style="display: {{ 'block' if league.has_divisions else 'none' }}; margin-left: 30px;">
+                <label for="num_divisions" style="font-weight: bold; display: block; margin-bottom: 8px;">Number of Divisions:</label>
+                <input type="number" id="num_divisions" name="num_divisions" value="{{ league.num_divisions if league.num_divisions else 2 }}" min="2" max="8" class="form-control" style="width: 100%; max-width: 150px; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="max_teams" style="font-weight: bold; display: block; margin-bottom: 8px;">Number of Teams:</label>
+            <input type="number" id="max_teams" name="max_teams" value="{{ league.max_teams if league.max_teams else 12 }}" min="2" max="32" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <small style="color: #7f8c8d;">Standard is 12. Maximum is 32.</small>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const playFormat = document.getElementById('play_format');
+            const divisionSettings = document.getElementById('division_settings');
+            const hasDivisions = document.getElementById('has_divisions');
+            const num_divisions_container = document.getElementById('num_divisions_container');
+
+            function toggleDivisionSettings() {
+                if (playFormat.value === 'Head-2-Head') {
+                    divisionSettings.style.display = 'block';
+                } else {
+                    divisionSettings.style.display = 'none';
+                    // Don't uncheck hasDivisions here in edit mode unless we want to force it
+                }
+            }
+
+            function toggleNumDivisions() {
+                if (hasDivisions.checked) {
+                    num_divisions_container.style.display = 'block';
+                } else {
+                    num_divisions_container.style.display = 'none';
+                }
+            }
+
+            playFormat.addEventListener('change', toggleDivisionSettings);
+            hasDivisions.addEventListener('change', toggleNumDivisions);
+            
+            // Initial state
+            toggleDivisionSettings();
+        });
+        </script>
+        
+        <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button type="submit" class="btn" style="width: 100%;">Save Changes</button>
+            <a href="{{ url_for('league_home', league_id=league.id) }}" class="btn btn-secondary" style="width: 100%; margin-top: 10px; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

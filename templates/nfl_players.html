@@ -1,0 +1,151 @@
+{% extends "nfl_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block nfl_header %}
+<div class="players-header" style="text-align: center; margin-bottom: 30px;">
+    <h2>NFL Player Directory</h2>
+    <p>Browse all available NFL players. To draft players, please visit your specific league roster page.</p>
+</div>
+{% endblock %}
+
+{% block nfl_content %}
+<div class="player-list card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <div class="controls-container" style="margin-bottom: 20px;">
+        <div class="name-filter" style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-weight: bold; color: #2c3e50;">Search Players:</span>
+            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; max-width: 400px; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+    </div>
+
+    <!-- Top Pagination -->
+    <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9em;">
+        <div class="result-count">Showing 0 players</div>
+        <div class="pagination-controls" style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-secondary btn-sm prev-page">Previous</button>
+            <span class="page-info">Page 1 of 1</span>
+            <button class="btn btn-secondary btn-sm next-page">Next</button>
+        </div>
+    </div>
+
+    <table class="players-table" id="playersTable" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+                <th style="padding: 10px; cursor: pointer;">Name</th>
+                <th style="padding: 10px; cursor: pointer;">Team</th>
+                <th style="padding: 10px; cursor: pointer;">Position</th>
+                <th style="padding: 10px;">Jersey</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            {% for player in players %}
+                <tr class="player-row">
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                        <a href="{{ url_for('nfl_player', player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                            {{ player.name }}
+                        </a>
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.team }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.position }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">#{{ player.jersey }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Bottom Pagination -->
+    <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; font-size: 0.9em;">
+        <div class="result-count">Showing 0 players</div>
+        <div class="pagination-controls" style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-secondary btn-sm prev-page">Previous</button>
+            <span class="page-info">Page 1 of 1</span>
+            <button class="btn btn-secondary btn-sm next-page">Next</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('tableBody');
+    const allRows = Array.from(document.querySelectorAll('.player-row'));
+    
+    let filteredRows = [...allRows];
+    let currentPage = 1;
+    const pageSize = 25;
+
+    function updateDisplay() {
+        const totalResults = filteredRows.length;
+        const totalPages = Math.ceil(totalResults / pageSize) || 1;
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        
+        // Hide all rows first
+        allRows.forEach(row => row.style.display = 'none');
+        
+        // Show current page rows
+        const pageRows = filteredRows.slice(start, end);
+        pageRows.forEach(row => row.style.display = '');
+
+        // Update counts and page info
+        const displayStart = totalResults === 0 ? 0 : start + 1;
+        const displayEnd = Math.min(end, totalResults);
+        
+        document.querySelectorAll('.result-count').forEach(el => {
+            el.innerText = `Showing ${displayStart}-${displayEnd} of ${totalResults} players`;
+        });
+
+        document.querySelectorAll('.page-info').forEach(el => {
+            el.innerText = `Page ${currentPage} of ${totalPages}`;
+        });
+
+        // Update button states
+        document.querySelectorAll('.prev-page').forEach(btn => btn.disabled = currentPage === 1);
+        document.querySelectorAll('.next-page').forEach(btn => btn.disabled = currentPage === totalPages || totalResults === 0);
+    }
+
+    function applyFilters() {
+        const term = searchInput.value.toLowerCase();
+        
+        filteredRows = allRows.filter(row => {
+            const text = row.innerText.toLowerCase();
+            return text.includes(term);
+        });
+        
+        currentPage = 1;
+        updateDisplay();
+    }
+
+    // Event Listeners
+    searchInput.addEventListener('input', applyFilters);
+
+    document.querySelectorAll('.prev-page').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateDisplay();
+                window.scrollTo({ top: document.querySelector('.player-list').offsetTop - 20, behavior: 'smooth' });
+            }
+        });
+    });
+
+    document.querySelectorAll('.next-page').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredRows.length / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateDisplay();
+                window.scrollTo({ top: document.querySelector('.player-list').offsetTop - 20, behavior: 'smooth' });
+            }
+        });
+    });
+
+    // Initial display
+    applyFilters();
+});
+</script>
+{% endblock %}

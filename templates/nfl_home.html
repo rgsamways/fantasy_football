@@ -1,0 +1,35 @@
+{% extends "nfl_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block nfl_header %}
+<div class="nfl-header" style="text-align: center; margin-bottom: 30px;">
+    <h2>NFL Home</h2>
+    <p>The latest news and insights from around the National Football League.</p>
+</div>
+{% endblock %}
+
+{% block nfl_content %}
+<div class="nfl-home-content" style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+    <div class="news-section">
+        <div class="card" style="padding: 25px; margin-bottom: 25px; border-top: 4px solid var(--primary-color);">
+            <h3 style="margin-top: 0;">Featured Story: 2026 Season Outlook</h3>
+            <p>Experts predict a record-breaking year for quarterbacks as rule changes favor the passing game. We take a look at the top contenders for the upcoming season...</p>
+            <button class="btn btn-sm">Read More</button>
+        </div>
+        
+        <div class="card" style="padding: 25px; border-top: 4px solid var(--secondary-color);">
+            <h3 style="margin-top: 0;">Rookie Watch</h3>
+            <p>Which first-year players are making the most noise in early training sessions? Our analysts break down the tape from across the league.</p>
+            <button class="btn btn-sm">Read More</button>
+        </div>
+    </div>
+
+    <div class="quick-stats">
+        <div class="card" style="padding: 20px; background-color: #f0f4f8;">
+            <h4 style="margin-top: 0; color: var(--secondary-color);">About the League</h4>
+            <p style="font-size: 0.9em; line-height: 1.6;">The NFL consists of 32 teams, divided equally between the National Football Conference (NFC) and the American Football Conference (AFC). The season culminates in the Super Bowl.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

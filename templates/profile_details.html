@@ -1,0 +1,33 @@
+{% extends "profile_layout.html" %}
+
+{% block profile_sidebar_left %}
+<div class="profile-info card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; font-size: 0.9em; color: #2c3e50;">
+    <h3 style="margin-top: 0; font-size: 1.1em;">Account Information</h3>
+    <div style="font-size: 0.85em; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
+        <p style="margin-bottom: 8px;"><strong>Username:</strong><br>{{ user.username }}</p>
+        <p style="margin-bottom: 8px;"><strong>Email:</strong><br>{{ user.email }}</p>
+        <p style="margin-bottom: 8px;"><strong>Site Admin:</strong> {{ 'Yes' if user.is_site_admin else 'No' }}</p>
+        <p style="margin-bottom: 8px;"><strong>Member Since:</strong> (Soon)</p>
+        <p style="margin-bottom: 0;"><strong>Last Visited:</strong> (Soon)</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block profile_content %}
+<!-- Main content cleared as requested -->
+{% endblock %}
+
+{% block profile_sidebar_right %}
+<div class="actions card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <h3 style="font-size: 1.1em; margin-top: 0;">Actions</h3>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% if user.is_god %}
+            <a href="{{ url_for('speak') }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #9b59b6;">Speak to the Masses</a>
+        {% endif %}
+        <a href="{{ url_for('profile_edit') }}" class="btn btn-sm" style="text-align: center; width: 100%;">Edit Profile</a>
+        <a href="{{ url_for('profile_achievements') }}" class="btn btn-secondary btn-sm" style="text-align: center; width: 100%;">My Achievements</a>
+        <a href="{{ url_for('profile_actions') }}" class="btn btn-secondary btn-sm" style="text-align: center; width: 100%;">Account Security</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm" style="text-align: center; width: 100%;">Logout</a>
+    </div>
+</div>
+{% endblock %}

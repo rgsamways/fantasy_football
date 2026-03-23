@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block full_width %}
+<div class="sub-nav">
+    <ul>
+        <li>
+            <a href="{{ url_for('profile') }}" class="{{ 'active' if active_tab == 'details' }}">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Details</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('profile_achievements') }}" class="{{ 'active' if active_tab == 'achievements' }}">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Achievements</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('profile_actions') }}" class="{{ 'active' if active_tab == 'actions' }}">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Actions</span>
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="league-layout {% block layout_class %}{% endblock %}">
+    <aside class="sidebar-left">
+        {% block profile_sidebar_left %}{% endblock %}
+    </aside>
+
+    <main class="league-main-content">
+        {% block profile_content %}{% endblock %}
+    </main>
+
+    <aside class="sidebar-right">
+        {% block profile_sidebar_right %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}

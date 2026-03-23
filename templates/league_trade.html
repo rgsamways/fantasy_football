@@ -1,0 +1,171 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Trade Center: {{ league.name }}</h2>
+    <p>Propose a trade with another manager in your league.</p>
+</div>
+
+<div class="trade-container" style="display: flex; flex-direction: column; gap: 30px;">
+    <!-- Team Selection -->
+    <div class="card" style="padding: 20px; background: #f8f9fa;">
+        <form action="{{ url_for('league_trade', league_id=league.id) }}" method="GET" style="display: flex; align-items: center; gap: 15px; justify-content: center;">
+            <label for="target_user_id" style="font-weight: bold;">Select Team to Trade With:</label>
+            <select name="target_user_id" id="target_user_id" class="form-control" style="width: auto; min-width: 250px; padding: 8px;" onchange="this.form.submit()">
+                <option value="">-- Select a Team --</option>
+                {% for team in other_teams %}
+                    <option value="{{ team.id }}" {{ 'selected' if target_user_id == team.id }}>
+                        {{ team.team_name }} ({{ team.username }})
+                    </option>
+                {% endfor %}
+            </select>
+            <noscript><button type="submit" class="btn btn-sm">Load Roster</button></noscript>
+        </form>
+    </div>
+
+    <form action="{{ url_for('propose_trade', league_id=league.id) }}" method="POST">
+        <input type="hidden" name="target_user_id" value="{{ target_user_id }}">
+        
+        <!-- Trade Interface -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            
+            <!-- COLUMN 1: OFFERING TEAM (ME) -->
+            <div class="card" style="padding: 20px; border-top: 4px solid var(--primary-color);">
+                <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid #eee; padding-bottom: 10px;">My Assets</h3>
+                
+                <div class="roster-section" style="margin-top: 15px;">
+                    <h4 style="color: #7f8c8d; font-size: 0.9em; text-transform: uppercase;">Players</h4>
+                    {% if my_players %}
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                            <thead>
+                                <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+                                    <th style="padding: 8px;">Select</th>
+                                    <th style="padding: 8px;">Pos</th>
+                                    <th style="padding: 8px;">Player</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in my_players %}
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px;"><input type="checkbox" name="my_assets" value="player_{{ player.id }}"></td>
+                                        <td style="padding: 8px; font-weight: bold;">{{ player.position }}</td>
+                                        <td style="padding: 8px;">{{ player.name }} <br><small style="color: #7f8c8d;">{{ player.team }}</small></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p style="text-align: center; color: #7f8c8d; padding: 10px; font-style: italic;">No players available.</p>
+                    {% endif %}
+                </div>
+
+                <div class="picks-section" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
+                    <h4 style="color: #7f8c8d; font-size: 0.9em; text-transform: uppercase;">Draft Picks</h4>
+                    {% if my_draft_picks %}
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                            <thead>
+                                <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                                    <th style="padding: 5px;">Select</th>
+                                    <th style="padding: 5px;">Year</th>
+                                    <th style="padding: 5px;">Pick</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pick in my_draft_picks %}
+                                    <tr style="border-bottom: 1px solid #f5f5f5;">
+                                        <td style="padding: 5px;"><input type="checkbox" name="my_assets" value="pick_{{ pick.team_id }}_{{ pick.year }}_{{ pick.round }}_{{ pick.pick }}"></td>
+                                        <td style="padding: 5px;">{{ pick.year }}</td>
+                                        <td style="padding: 5px;">Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p style="text-align: center; color: #bbb; font-style: italic; font-size: 0.8em; padding: 10px;">No draft picks available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- COLUMN 2: RESPONDING TEAM (THEM) -->
+            <div class="card" style="padding: 20px; border-top: 4px solid #e67e22;">
+                <h3 style="margin-top: 0; color: #e67e22; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    {% if target_team_info and target_team_info.name %}
+                        {{ target_team_info.name }}'s Assets
+                    {% else %}
+                        Target Team Assets
+                    {% endif %}
+                </h3>
+                
+                {% if target_user_id %}
+                    <div class="roster-section" style="margin-top: 15px;">
+                        <h4 style="color: #7f8c8d; font-size: 0.9em; text-transform: uppercase;">Players</h4>
+                        {% if target_players %}
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                                <thead>
+                                    <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+                                        <th style="padding: 8px;">Select</th>
+                                        <th style="padding: 8px;">Pos</th>
+                                        <th style="padding: 8px;">Player</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for player in target_players %}
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 8px;"><input type="checkbox" name="target_assets" value="player_{{ player.id }}"></td>
+                                            <td style="padding: 8px; font-weight: bold;">{{ player.position }}</td>
+                                            <td style="padding: 8px;">{{ player.name }} <br><small style="color: #7f8c8d;">{{ player.team }}</small></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p style="text-align: center; color: #7f8c8d; padding: 10px; font-style: italic;">No players available.</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="picks-section" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <h4 style="color: #7f8c8d; font-size: 0.9em; text-transform: uppercase;">Draft Picks</h4>
+                        {% if target_draft_picks %}
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                                <thead>
+                                    <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                                        <th style="padding: 5px;">Select</th>
+                                        <th style="padding: 5px;">Year</th>
+                                        <th style="padding: 5px;">Pick</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pick in target_draft_picks %}
+                                        <tr style="border-bottom: 1px solid #f5f5f5;">
+                                            <td style="padding: 5px;"><input type="checkbox" name="target_assets" value="pick_{{ pick.team_id }}_{{ pick.year }}_{{ pick.round }}_{{ pick.pick }}"></td>
+                                            <td style="padding: 5px;">{{ pick.year }}</td>
+                                            <td style="padding: 5px;">Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p style="text-align: center; color: #bbb; font-style: italic; font-size: 0.8em; padding: 10px;">No draft picks available.</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; color: #7f8c8d; padding: 60px;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🤝</div>
+                        <p>Select a team from the dropdown above to view their available players and draft picks.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Trade Actions -->
+        <div class="card" style="padding: 25px; text-align: center; background: #f0f4f8; margin-top: 30px;">
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button type="submit" class="btn" style="background-color: #27ae60;" {% if not target_user_id %}disabled{% endif %}>Propose Trade</button>
+                <a href="{{ url_for('league_team', league_id=league.id, user_id=session.get('user_id')) }}" class="btn btn-secondary">Back to My Team</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

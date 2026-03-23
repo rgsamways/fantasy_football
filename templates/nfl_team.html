@@ -1,0 +1,52 @@
+{% extends "nfl_layout.html" %}
+
+{% block nfl_header %}
+<div class="team-header" style="margin-bottom: 30px; text-align: center;">
+    <h2 style="color: var(--primary-color); margin-bottom: 5px;">{{ team.market }} {{ team.name }}</h2>
+    <p style="color: #7f8c8d; font-weight: bold;">{{ team.conference }} {{ team.division }} | Alias: {{ team.alias }}</p>
+    
+    <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; font-size: 0.9em;">
+        <span><strong>Founded:</strong> {{ team.founded }}</span>
+        <span><strong>Championships:</strong> {{ team.championships_won }}</span>
+        <span><strong>Venue:</strong> {{ team.venue.name }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block nfl_content %}
+<div class="team-roster card" style="padding: 20px; background: #fff; border-radius: 8px;">
+    <h3 style="margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Official Roster</h3>
+    {% if players %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 10px;">Name</th>
+                    <th style="padding: 10px;">Position</th>
+                    <th style="padding: 10px;">Jersey</th>
+                    <th style="padding: 10px;">Experience</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">
+                            <a href="{{ url_for('nfl_player', player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                {{ player.name }}
+                            </a>
+                        </td>
+                        <td style="padding: 10px;">{{ player.position }}</td>
+                        <td style="padding: 10px;">#{{ player.jersey }}</td>
+                        <td style="padding: 10px;">{{ player.experience }} yrs</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="padding: 20px; text-align: center; color: #7f8c8d; font-style: italic;">No players found for this team in the database.</p>
+    {% endif %}
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('nfl_teams') }}" class="btn btn-secondary">Back to NFL Teams</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="hero">
+    <h1>Welcome to NFL Fantasy Football</h1>
+    <p>Build your dream team, compete with friends, and dominate the league.</p>
+    <div class="cta-buttons">
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('leagues') }}" class="btn">Go to My Leagues</a>
+        {% else %}
+            <a href="{{ url_for('register') }}" class="btn">Get Started</a>
+            <a href="{{ url_for('login') }}" class="btn btn-secondary">Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <h3>Real-time Data</h3>
+        <p>Powered by SportRadar for the most accurate NFL player information.</p>
+    </div>
+    <div class="feature-card">
+        <h3>Custom Rosters</h3>
+        <p>Draft your favorite players and manage your roster throughout the season.</p>
+    </div>
+    <div class="feature-card">
+        <h3>MongoDB Powered</h3>
+        <p>Fast and reliable data storage for your fantasy needs.</p>
+    </div>
+</div>
+{% endblock %}
