@@ -1,0 +1,275 @@
+{% extends "admin_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block admin_content %}
+<div class="edit-game-header" style="margin-bottom: 30px;">
+    <h2>Edit Game: {{ game.summary.away.name }} @ {{ game.summary.home.name }}</h2>
+    <p>Week {{ game.summary.week.sequence }} | {{ game.summary.away.points }} - {{ game.summary.home.points }}</p>
+</div>
+
+<form action="{{ url_for('admin_game_edit', game_id=game.id) }}" method="POST">
+    
+    {% for side in ['home', 'away'] %}
+        <div class="team-stats-section card" style="margin-bottom: 40px; padding: 25px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff;">
+            <h2 style="color: var(--primary-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                {{ game.summary[side].name }} Statistics
+                <div style="font-size: 0.5em; display: flex; gap: 10px;">
+                    <select id="add_player_{{ side }}_select" style="padding: 5px; border-radius: 4px;">
+                        <option value="">-- Add Player --</option>
+                        {% for player in (home_roster if side == 'home' else away_roster) %}
+                            <option value="{{ player.id }}">{{ player.name }} ({{ player.position }})</option>
+                        {% endfor %}
+                    </select>
+                    <select id="add_player_{{ side }}_cat" style="padding: 5px; border-radius: 4px;">
+                        <option value="passing">Passing</option>
+                        <option value="rushing">Rushing</option>
+                        <option value="receiving">Receiving</option>
+                    </select>
+                    <button type="button" class="btn btn-sm" onclick="addPlayerToGame('{{ side }}')" style="background-color: #2ecc71;">Add</button>
+                </div>
+            </h2>
+
+            <!-- PASSING -->
+            <div class="category-group" style="margin-bottom: 30px;">
+                <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Passing</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="text-align: left; font-size: 0.85em; color: #7f8c8d; border-bottom: 1px solid #eee;">
+                            <th style="padding: 10px;">Player</th>
+                            <th style="padding: 10px;">Att</th>
+                            <th style="padding: 10px;">Comp</th>
+                            <th style="padding: 10px;">Yds</th>
+                            <th style="padding: 10px;">TDs</th>
+                            <th style="padding: 10px;">INTs</th>
+                            <th style="padding: 10px;">FUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in game.statistics[side].passing.players %}
+                            <tr style="border-bottom: 1px solid #f9f9f9;">
+                                <td style="padding: 10px; font-weight: bold;">{{ p.name }}</td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_attempts" value="{{ p.attempts }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_completions" value="{{ p.completions }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -5)">-5</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_yards" value="{{ p.yards }}" style="width: 50px;">
+                                        <button type="button" onclick="step(this, 5)">+5</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_tds" value="{{ p.touchdowns }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_ints" value="{{ p.interceptions }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_fumbles" value="{{ p.fumbles_lost|default(0) }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RUSHING -->
+            <div class="category-group" style="margin-bottom: 30px;">
+                <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Rushing</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="text-align: left; font-size: 0.85em; color: #7f8c8d; border-bottom: 1px solid #eee;">
+                            <th style="padding: 10px;">Player</th>
+                            <th style="padding: 10px;">Att</th>
+                            <th style="padding: 10px;">Yds</th>
+                            <th style="padding: 10px;">TDs</th>
+                            <th style="padding: 10px;">FUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in game.statistics[side].rushing.players %}
+                            <tr style="border-bottom: 1px solid #f9f9f9;">
+                                <td style="padding: 10px; font-weight: bold;">{{ p.name }}</td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_attempts" value="{{ p.attempts }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -5)">-5</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_yards" value="{{ p.yards }}" style="width: 50px;">
+                                        <button type="button" onclick="step(this, 5)">+5</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_tds" value="{{ p.touchdowns }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_fumbles" value="{{ p.fumbles_lost|default(0) }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RECEIVING -->
+            <div class="category-group">
+                <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Receiving</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="text-align: left; font-size: 0.85em; color: #7f8c8d; border-bottom: 1px solid #eee;">
+                            <th style="padding: 10px;">Player</th>
+                            <th style="padding: 10px;">Rec</th>
+                            <th style="padding: 10px;">Yds</th>
+                            <th style="padding: 10px;">TDs</th>
+                            <th style="padding: 10px;">FUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in game.statistics[side].receiving.players %}
+                            <tr style="border-bottom: 1px solid #f9f9f9;">
+                                <td style="padding: 10px; font-weight: bold;">{{ p.name }}</td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_receptions" value="{{ p.receptions }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -5)">-5</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_yards" value="{{ p.yards }}" style="width: 50px;">
+                                        <button type="button" onclick="step(this, 5)">+5</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_tds" value="{{ p.touchdowns }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="inc-input">
+                                        <button type="button" onclick="step(this, -1)">-</button>
+                                        <input type="number" name="{{ side }}_{{ p.id }}_fumbles" value="{{ p.fumbles_lost|default(0) }}">
+                                        <button type="button" onclick="step(this, 1)">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div style="position: sticky; bottom: 20px; background: white; padding: 20px; border: 2px solid var(--primary-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; z-index: 100;">
+        <button type="submit" class="btn" style="flex: 2;">Save All Changes</button>
+        <button type="submit" name="continue" value="true" class="btn btn-secondary" style="flex: 1;">Save & Continue</button>
+        <a href="{{ url_for('admin_data') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">Cancel</a>
+    </div>
+</form>
+
+<style>
+    .inc-input {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .inc-input input {
+        width: 40px;
+        text-align: center;
+        padding: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .inc-input button {
+        padding: 4px 8px;
+        background: #eee;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8em;
+    }
+    .inc-input button:hover {
+        background: #ddd;
+    }
+</style>
+
+<script>
+function step(btn, amount) {
+    const input = btn.parentNode.querySelector('input');
+    input.value = parseInt(input.value || 0) + amount;
+}
+
+function addPlayerToGame(side) {
+    const playerId = document.getElementById(`add_player_${side}_select`).value;
+    const category = document.getElementById(`add_player_${side}_cat`).value;
+    
+    if (!playerId) {
+        alert("Please select a player first.");
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('player_id', playerId);
+    formData.append('side', side);
+    formData.append('category', category);
+    
+    fetch("{{ url_for('add_player_to_game', game_id=game.id) }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload(); // Reload to show the new player row
+        } else {
+            alert("Error adding player: " + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Failed to add player.");
+    });
+}
+</script>
+{% endblock %}

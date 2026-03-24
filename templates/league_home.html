@@ -93,6 +93,7 @@
 
         {% if is_admin %}
             <a href="{{ url_for('edit_league', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Edit League</a>
+            <a href="{{ url_for('league_scoring', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #8e44ad;">Scoring Settings</a>
             {% if league.play_format == 'Head-2-Head' and league.has_divisions %}
                 <a href="{{ url_for('league_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #e67e22;">Edit Divisions</a>
                 <a href="{{ url_for('league_assign_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #2980b9;">Assign Divisions</a>

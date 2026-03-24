@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"02ce79dbee1f4e92b7ff86b35e87f1e2","collectionName":"nfl_teams","type":"collection"}

@@ -46,8 +46,9 @@
         <thead>
             <tr style="text-align: left; border-bottom: 2px solid #ddd;">
                 <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('name')">Name <span class="sort-icon" id="sort-name"></span></th>
-                <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('team')">NFL Team <span class="sort-icon" id="sort-team"></span></th>
                 <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('position')">Pos <span class="sort-icon" id="sort-position"></span></th>
+                <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('team')">NFL Team <span class="sort-icon" id="sort-team"></span></th>
+                <th style="padding: 10px; cursor: pointer; user-select: none; text-align: right;" onclick="setSort('points')">Points <span class="sort-icon" id="sort-points"></span></th>
                 <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('owner')">Status / Owner <span class="sort-icon" id="sort-owner"></span></th>
                 <th style="padding: 10px;">Action</th>
             </tr>
@@ -60,14 +61,16 @@
                     data-name="{{ player.name }}"
                     data-team="{{ player.team }}"
                     data-position="{{ player.position }}"
+                    data-points="{{ player.points }}"
                     data-owner="{{ player.owned_by if player.owned_by else 'Available' }}">
                     <td style="padding: 10px; border-bottom: 1px solid #eee;">
                         <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
                             {{ player.name }}
                         </a>
                     </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.team }}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.position }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.team }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; text-align: right;">{{ "%.2f"|format(player.points) }}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #eee;">
                         {% if player.in_league %}
                             <span class="badge" style="background-color: #eee; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
@@ -222,6 +225,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 let rankA = posOrder[valA] !== undefined ? posOrder[valA] : 99;
                 let rankB = posOrder[valB] !== undefined ? posOrder[valB] : 99;
                 return (rankA - rankB) * currentSortDir;
+            } else if (currentSortCol === 'points') {
+                return (parseFloat(valA) - parseFloat(valB)) * currentSortDir;
             } else {
                 valA = valA.toLowerCase();
                 valB = valB.toLowerCase();

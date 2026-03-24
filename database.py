@@ -20,6 +20,9 @@ class Database:
         self.site_admins = self.db.site_admins
         self.trades = self.db.trades
         self.announcements = self.db.announcements
+        self.nfl_games = self.db.nfl_games
+        self.nfl_schedule = self.db.nfl_schedule
+        self.nfl_teams = self.db.nfl_teams
 
     def create_announcement(self, announcement_type, message, user_id):
         import uuid
@@ -79,6 +82,29 @@ class Database:
         if has_divisions and num_divisions:
             division_names = [f"Division {i+1}" for i in range(int(num_divisions))]
 
+        default_scoring = {
+            "passing": {
+                "td": 6.0,
+                "yard": 0.1,
+                "attempt": 0.2,
+                "completion": 0.5,
+                "interception": -2.0
+            },
+            "rushing": {
+                "td": 6.0,
+                "yard": 0.1,
+                "attempt": 0.2
+            },
+            "receiving": {
+                "td": 6.0,
+                "yard": 0.1,
+                "reception": 1.0
+            },
+            "misc": {
+                "fumble_lost": -3.0
+            }
+        }
+
         league = {
             "id": league_id,
             "name": name,
@@ -92,12 +118,25 @@ class Database:
             "division_names": division_names,
             "division_assignments": {str(i): [] for i in range(len(division_names))},
             "user_ids": user_ids,
-            "administrators": administrators
+            "administrators": administrators,
+            "scoring_settings": default_scoring
         }
         return self.leagues.insert_one(league)
 
     def get_league(self, league_id):
         return self.leagues.find_one({"id": league_id})
+
+    def get_league_scoring_settings(self, league_id):
+        league = self.get_league(league_id)
+        if league and 'scoring_settings' in league:
+            return league['scoring_settings']
+        # Fallback to defaults if not present
+        return {
+            "passing": {"td": 6.0, "yard": 0.1, "attempt": 0.2, "completion": 0.5, "interception": -2.0},
+            "rushing": {"td": 6.0, "yard": 0.1, "attempt": 0.2},
+            "receiving": {"td": 6.0, "yard": 0.1, "reception": 1.0},
+            "misc": {"fumble_lost": -3.0}
+        }
 
     def add_user_to_league(self, league_id, user_id):
         return self.leagues.update_one(
@@ -277,6 +316,6 @@ class Database:
         return self.roster_freeze.find_one({"user_id": user_id, "week_number": week_number})
 
     def get_all_teams(self):
-        return list(self.db.teams_meta.find({"name": {"$ne": "TBD"}}))
+        return list(self.nfl_teams.find({"name": {"$ne": "TBD"}}))
 
 db = Database()

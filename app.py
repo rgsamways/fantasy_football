@@ -50,6 +50,72 @@ def login():
             return redirect(url_for('login'))
     return render_template('login.html')
 
+def calculate_fantasy_points(player_id, league_id=None):
+    """Calculates fantasy points for a player based on Week 1 stats and league scoring settings."""
+    # Fetch scoring settings from the league, or use defaults
+    settings = db.get_league_scoring_settings(league_id)
+    
+    pass_settings = settings.get('passing', {})
+    rush_settings = settings.get('rushing', {})
+    rec_settings = settings.get('receiving', {})
+    misc_settings = settings.get('misc', {})
+
+    # Fetch all games
+    all_games = list(db.db.nfl_games.find())
+    total_points = 0.0
+
+    for game in all_games:
+        stats = game.get('statistics', {})
+
+        # Search in both home and away statistics
+        for side in ['home', 'away']:
+            side_stats = stats.get(side, {})
+            
+            # Passing
+            passing_players = side_stats.get('passing', {}).get('players', [])
+            for p in passing_players:
+                if p.get('id') == player_id:
+                    total_points += p.get('touchdowns', 0) * pass_settings.get('td', 0)
+                    total_points += p.get('yards', 0) * pass_settings.get('yard', 0)
+                    total_points += p.get('attempts', 0) * pass_settings.get('attempt', 0)
+                    total_points += p.get('completions', 0) * pass_settings.get('completion', 0)
+                    total_points += p.get('interceptions', 0) * pass_settings.get('interception', 0)
+
+            # Rushing
+            rushing_players = side_stats.get('rushing', {}).get('players', [])
+            for p in rushing_players:
+                if p.get('id') == player_id:
+                    total_points += p.get('touchdowns', 0) * rush_settings.get('td', 0)
+                    total_points += p.get('yards', 0) * rush_settings.get('yard', 0)
+                    total_points += p.get('attempts', 0) * rush_settings.get('attempt', 0)
+
+            # Receiving
+            receiving_players = side_stats.get('receiving', {}).get('players', [])
+            for p in receiving_players:
+                if p.get('id') == player_id:
+                    total_points += p.get('touchdowns', 0) * rec_settings.get('td', 0)
+                    total_points += p.get('yards', 0) * rec_settings.get('yard', 0)
+                    total_points += p.get('receptions', 0) * rec_settings.get('reception', 0)
+
+            # Fumbles
+            for p in passing_players + rushing_players + receiving_players:
+                if p.get('id') == player_id:
+                    # Deduct fumbles once per player per game, even if they appear in multiple categories
+                    # (Though usually they're only in one category or have fumbles in one)
+                    # To be safe, we'll track if we already counted fumbles for this player in this side/game
+                    pass # We'll use a better approach below
+            
+            # Refined Fumble/Category-independent check
+            # We'll collect all unique players on this side and check their fumbles
+            seen_player_ids = set()
+            for cat in ['passing', 'rushing', 'receiving']:
+                for p in side_stats.get(cat, {}).get('players', []):
+                    if p.get('id') == player_id and player_id not in seen_player_ids:
+                        total_points += p.get('fumbles_lost', 0) * misc_settings.get('fumble_lost', 0)
+                        seen_player_ids.add(player_id)
+
+    return round(total_points, 2)
+
 @app.route('/admin')
 def admin_panel():
     if not session.get('is_site_admin'):
@@ -108,6 +174,142 @@ def toggle_admin(user_id):
         flash(f"Updated admin status for {user['username']}.", "success")
     
     return redirect(url_for('manage_users'))
+
+@app.route('/admin/data')
+def admin_data():
+    if not session.get('is_site_admin'):
+        flash("Unauthorized access.", "error")
+        return redirect(url_for('index'))
+    
+    # Fetch all games from nfl_games
+    games = list(db.db.nfl_games.find().sort([("summary.week.sequence", 1)]))
+    
+    # Group by week for display
+    weeks = {}
+    for game in games:
+        wk_num = game.get('summary', {}).get('week', {}).get('sequence', 'Unknown')
+        if wk_num not in weeks:
+            weeks[wk_num] = []
+        weeks[wk_num].append(game)
+    
+    sorted_weeks = dict(sorted(weeks.items()))
+    return render_template('admin_data.html', weeks=sorted_weeks, active_tab='data')
+
+@app.route('/admin/data/game/<game_id>', methods=['GET', 'POST'])
+def admin_game_edit(game_id):
+    if not session.get('is_site_admin'):
+        flash("Unauthorized access.", "error")
+        return redirect(url_for('index'))
+    
+    game = db.db.nfl_games.find_one({"id": game_id})
+    if not game:
+        flash("Game not found.", "error")
+        return redirect(url_for('admin_data'))
+        
+    if request.method == 'POST':
+        # Processing a massive form. We'll iterate through home/away and pass/rush/rec
+        updated_stats = game.get('statistics', {})
+        
+        for side in ['home', 'away']:
+            for category in ['passing', 'rushing', 'receiving']:
+                players = updated_stats.get(side, {}).get(category, {}).get('players', [])
+                for p in players:
+                    p_id = p['id']
+                    # Dynamically get fields based on category
+                    if category == 'passing':
+                        p['attempts'] = int(request.form.get(f"{side}_{p_id}_attempts", 0))
+                        p['completions'] = int(request.form.get(f"{side}_{p_id}_completions", 0))
+                        p['yards'] = int(request.form.get(f"{side}_{p_id}_yards", 0))
+                        p['touchdowns'] = int(request.form.get(f"{side}_{p_id}_tds", 0))
+                        p['interceptions'] = int(request.form.get(f"{side}_{p_id}_ints", 0))
+                    elif category == 'rushing':
+                        p['attempts'] = int(request.form.get(f"{side}_{p_id}_attempts", 0))
+                        p['yards'] = int(request.form.get(f"{side}_{p_id}_yards", 0))
+                        p['touchdowns'] = int(request.form.get(f"{side}_{p_id}_tds", 0))
+                    elif category == 'receiving':
+                        p['receptions'] = int(request.form.get(f"{side}_{p_id}_receptions", 0))
+                        p['yards'] = int(request.form.get(f"{side}_{p_id}_yards", 0))
+                        p['touchdowns'] = int(request.form.get(f"{side}_{p_id}_tds", 0))
+                    
+                    # Look for fumbles in any player object
+                    p['fumbles_lost'] = int(request.form.get(f"{side}_{p_id}_fumbles", 0))
+
+        db.db.nfl_games.update_one({"id": game_id}, {"$set": {"statistics": updated_stats}})
+        flash("Game statistics updated successfully!", "success")
+        
+        if request.form.get('continue') == 'true':
+            return redirect(url_for('admin_game_edit', game_id=game_id))
+            
+        return redirect(url_for('admin_data'))
+
+    # Fetch rosters for the 'Add Player' dropdowns
+    home_team_id = game['summary']['home']['id']
+    away_team_id = game['summary']['away']['id']
+    
+    # Get team names from nfl_teams
+    home_team_data = db.db.nfl_teams.find_one({"id": home_team_id})
+    away_team_data = db.db.nfl_teams.find_one({"id": away_team_id})
+    
+    home_team_name = f"{home_team_data['market']} {home_team_data['name']}" if home_team_data else ""
+    away_team_name = f"{away_team_data['market']} {away_team_data['name']}" if away_team_data else ""
+    
+    home_roster = list(db.players.find({"team": home_team_name}).sort("name", 1))
+    away_roster = list(db.players.find({"team": away_team_name}).sort("name", 1))
+
+    return render_template('admin_game_edit.html', 
+                           game=game, 
+                           home_roster=home_roster, 
+                           away_roster=away_roster, 
+                           active_tab='data')
+
+@app.route('/admin/data/game/<game_id>/add_player', methods=['POST'])
+def add_player_to_game(game_id):
+    if not session.get('is_site_admin'):
+        return {"success": False, "message": "Unauthorized"}, 403
+        
+    game = db.db.nfl_games.find_one({"id": game_id})
+    if not game:
+        return {"success": False, "message": "Game not found"}, 404
+        
+    player_id = request.form.get('player_id')
+    side = request.form.get('side') # 'home' or 'away'
+    category = request.form.get('category') # 'passing', 'rushing', 'receiving'
+    
+    player = db.get_player_by_id(player_id)
+    if not player:
+        return {"success": False, "message": "Player not found"}, 404
+        
+    # Prepare the stat object
+    new_player_stats = {
+        "id": player['id'],
+        "name": player['name'],
+        "jersey": player.get('jersey', ''),
+        "position": player.get('position', ''),
+        "sr_id": player.get('sr_id', '')
+    }
+    
+    # Initialize category-specific fields
+    if category == 'passing':
+        new_player_stats.update({"attempts": 0, "completions": 0, "yards": 0, "touchdowns": 0, "interceptions": 0})
+    elif category == 'rushing':
+        new_player_stats.update({"attempts": 0, "yards": 0, "touchdowns": 0})
+    elif category == 'receiving':
+        new_player_stats.update({"receptions": 0, "yards": 0, "touchdowns": 0})
+    
+    new_player_stats["fumbles_lost"] = 0
+
+    # Check if already exists
+    current_players = game.get('statistics', {}).get(side, {}).get(category, {}).get('players', [])
+    if any(p['id'] == player_id for p in current_players):
+        return {"success": False, "message": "Player already in this category"}, 400
+        
+    # Update DB
+    db.db.nfl_games.update_one(
+        {"id": game_id},
+        {"$push": {f"statistics.{side}.{category}.players": new_player_stats}}
+    )
+    
+    return {"success": True}
 
 @app.route('/logout')
 def logout():
@@ -242,12 +444,37 @@ def nfl_standings():
 
 @app.route('/nfl/schedule')
 def nfl_schedule():
-    return render_template('nfl_schedule.html', active_tab='schedule')
+    # Fetch all schedule records
+    schedule_cursor = db.nfl_schedule.find().sort([("week_number", 1), ("scheduled", 1)])
+    schedule = list(schedule_cursor)
+    
+    # Group by week
+    weeks = {}
+    for game in schedule:
+        wk_num = game.get('week_number', 'Unknown')
+        if wk_num not in weeks:
+            weeks[wk_num] = []
+        weeks[wk_num].append(game)
+    
+    # Sort weeks
+    sorted_weeks = dict(sorted(weeks.items()))
+    
+    return render_template('nfl_schedule.html', weeks=sorted_weeks, active_tab='schedule')
+
+@app.route('/nfl/game/<game_id>')
+def nfl_game_details(game_id):
+    # Fetch game details from nfl_games
+    game_info = db.db.nfl_games.find_one({"id": game_id})
+    if not game_info:
+        flash("Game details not found.", "error")
+        return redirect(url_for('nfl_schedule'))
+    
+    return render_template('nfl_game_details.html', game=game_info, active_tab='schedule')
 
 @app.route('/nfl/team/<team_alias>')
 def nfl_team(team_alias):
-    # Fetch team info from teams_meta
-    team_info = db.db.teams_meta.find_one({"alias": team_alias})
+    # Fetch team info from nfl_teams
+    team_info = db.db.nfl_teams.find_one({"alias": team_alias})
     if not team_info:
         flash("Team not found.", "error")
         return redirect(url_for('nfl_teams'))
@@ -471,6 +698,51 @@ def edit_league(league_id):
         return redirect(url_for('league_home', league_id=league_id))
         
     return render_template('league_edit.html', league=league, active_tab='my')
+
+@app.route('/league/<league_id>/scoring', methods=['GET', 'POST'])
+def league_scoring(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+        
+    if not is_admin:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('league_home', league_id=league_id))
+        
+    if request.method == 'POST':
+        new_settings = {
+            "passing": {
+                "td": float(request.form.get('pass_td', 6.0)),
+                "yard": float(request.form.get('pass_yard', 0.1)),
+                "attempt": float(request.form.get('pass_attempt', 0.2)),
+                "completion": float(request.form.get('pass_completion', 0.5)),
+                "interception": float(request.form.get('pass_int', -2.0))
+            },
+            "rushing": {
+                "td": float(request.form.get('rush_td', 6.0)),
+                "yard": float(request.form.get('rush_yard', 0.1)),
+                "attempt": float(request.form.get('rush_attempt', 0.2))
+            },
+            "receiving": {
+                "td": float(request.form.get('rec_td', 6.0)),
+                "yard": float(request.form.get('rec_yard', 0.1)),
+                "reception": float(request.form.get('rec_reception', 1.0))
+            },
+            "misc": {
+                "fumble_lost": float(request.form.get('fumble_lost', -3.0))
+            }
+        }
+        
+        db.update_league(league_id, {"scoring_settings": new_settings})
+        flash("Scoring settings updated successfully!", "success")
+        return redirect(url_for('league_home', league_id=league_id))
+        
+    scoring = league.get('scoring_settings', db.get_league_scoring_settings(league_id))
+    return render_template('league_scoring.html', league=league, scoring=scoring, active_tab='my')
 
 @app.route('/league/<league_id>/divisions', methods=['GET', 'POST'])
 def league_divisions(league_id):
@@ -728,9 +1000,11 @@ def league_players(league_id):
     # Fetch all players
     all_players = db.get_all_players()
     
-    # Decorate players with ownership info
+    # Decorate players with ownership info and points
     for player in all_players:
         p_id = player['id']
+        player['points'] = calculate_fantasy_points(p_id, league_id)
+        
         ownership = player_ownership.get(p_id)
         if ownership:
             player['owned_by'] = ownership['owner_name']
@@ -810,11 +1084,15 @@ def league_team(league_id, user_id):
     for p_id in player_ids:
         p = db.players.find_one({"id": p_id})
         if p:
+            # Calculate fantasy points
+            p['points'] = calculate_fantasy_points(p_id, league_id)
             roster_players.append(p)
 
     # Order by: QB, RB, WR, TE, K
     pos_order = {"QB": 0, "RB": 1, "FB": 2, "WR": 3, "TE": 4, "K": 5}
     roster_players.sort(key=lambda x: pos_order.get(x.get('position'), 99))
+
+    total_roster_points = round(sum(p.get('points', 0) for p in roster_players), 2)
     
     # Fetch available players for the player search pane (right pane)
     # Only if the viewer is the manager of this roster
@@ -830,6 +1108,7 @@ def league_team(league_id, user_id):
                            is_admin=is_admin, 
                            manager=manager, 
                            roster=roster_players,
+                           total_points=total_roster_points,
                            available_players=available_players,
                            team_info=team_info)
 
@@ -1195,8 +1474,8 @@ def delete_league(league_id):
 
 @app.route('/team/<team_alias>')
 def team_roster(team_alias):
-    # Fetch team info from teams_meta
-    team_info = db.db.teams_meta.find_one({"alias": team_alias})
+    # Fetch team info from nfl_teams
+    team_info = db.db.nfl_teams.find_one({"alias": team_alias})
     if not team_info:
         flash("Team not found.", "error")
         return redirect(url_for('nfl'))

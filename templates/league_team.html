@@ -11,6 +11,10 @@
             {% if team_info and team_info.acronym %}
                 <p style="font-size: 0.85em; margin-bottom: 8px;"><strong>Acronym:</strong> {{ team_info.acronym }}</p>
             {% endif %}
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid var(--primary-color);">
+                <p style="margin: 0; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;"><strong>Total Points</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: var(--primary-color);">{{ "%.2f"|format(total_points) }}</p>
+            </div>
         </div>
     </div>
 </div>
@@ -25,6 +29,7 @@
                     <th style="padding: 10px;">Name</th>
                     <th style="padding: 10px;">Pos</th>
                     <th style="padding: 10px;">Team</th>
+                    <th style="padding: 10px; text-align: right;">Points</th>
                     {% if session.get('user_id') == manager._id|string %}
                         <th style="padding: 10px;">Action</th>
                     {% endif %}
@@ -40,6 +45,7 @@
                         </td>
                         <td style="padding: 10px;">{{ player.position }}</td>
                         <td style="padding: 10px;">{{ player.team }}</td>
+                        <td style="padding: 10px; font-weight: bold; text-align: right;">{{ "%.2f"|format(player.points) }}</td>
                         {% if session.get('user_id') == manager._id|string %}
                             <td style="padding: 10px;">
                                 <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 0.75em;">Remove</a>

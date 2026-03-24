@@ -1,0 +1,98 @@
+{% extends "leagues_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block leagues_content %}
+<div class="leagues-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Scoring Settings: {{ league.name }}</h2>
+    <p>Configure how fantasy points are calculated for this league.</p>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; border-top: 4px solid var(--primary-color);">
+    <form action="{{ url_for('league_scoring', league_id=league.id) }}" method="POST">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <!-- Passing Section -->
+            <div class="scoring-group">
+                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--primary-color);">Passing</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Passing TD</label>
+                        <input type="number" step="0.1" name="pass_td" value="{{ scoring.passing.td }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Passing Yard</label>
+                        <input type="number" step="0.01" name="pass_yard" value="{{ scoring.passing.yard }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Pass Attempt</label>
+                        <input type="number" step="0.1" name="pass_attempt" value="{{ scoring.passing.attempt }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Completion</label>
+                        <input type="number" step="0.1" name="pass_completion" value="{{ scoring.passing.completion }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Interception</label>
+                        <input type="number" step="0.1" name="pass_int" value="{{ scoring.passing.interception }}" style="width: 80px; padding: 5px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rushing Section -->
+            <div class="scoring-group">
+                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--primary-color);">Rushing</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Rushing TD</label>
+                        <input type="number" step="0.1" name="rush_td" value="{{ scoring.rushing.td }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Rushing Yard</label>
+                        <input type="number" step="0.01" name="rush_yard" value="{{ scoring.rushing.yard }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Rush Attempt</label>
+                        <input type="number" step="0.1" name="rush_attempt" value="{{ scoring.rushing.attempt }}" style="width: 80px; padding: 5px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receiving Section -->
+            <div class="scoring-group">
+                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--primary-color);">Receiving</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Receiving TD</label>
+                        <input type="number" step="0.1" name="rec_td" value="{{ scoring.receiving.td }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Receiving Yard</label>
+                        <input type="number" step="0.01" name="rec_yard" value="{{ scoring.receiving.yard }}" style="width: 80px; padding: 5px;">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Reception (PPR)</label>
+                        <input type="number" step="0.1" name="rec_reception" value="{{ scoring.receiving.reception }}" style="width: 80px; padding: 5px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Misc Section -->
+            <div class="scoring-group">
+                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px; color: var(--primary-color);">Miscellaneous</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>Fumble Lost</label>
+                        <input type="number" step="0.1" name="fumble_lost" value="{{ scoring.misc.fumble_lost }}" style="width: 80px; padding: 5px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; display: flex; gap: 15px;">
+            <button type="submit" class="btn" style="flex: 1;">Save Scoring Settings</button>
+            <a href="{{ url_for('league_home', league_id=league.id) }}" class="btn btn-secondary" style="flex: 1; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

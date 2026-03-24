@@ -1,0 +1,40 @@
+{% extends "admin_layout.html" %}
+
+{% block admin_content %}
+<div class="admin-data-header" style="margin-bottom: 30px;">
+    <h2>NFL Game Data Management</h2>
+    <p>Select a game to edit its box score and statistics.</p>
+</div>
+
+{% for week, games in weeks.items() %}
+    <div class="week-section card" style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff;">
+        <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px; color: var(--primary-color);">Week {{ week }}</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #eee;">
+                    <th style="padding: 10px;">Away Team</th>
+                    <th style="padding: 10px;">@</th>
+                    <th style="padding: 10px;">Home Team</th>
+                    <th style="padding: 10px;">Score</th>
+                    <th style="padding: 10px; text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                    <tr style="border-bottom: 1px solid #f9f9f9;">
+                        <td style="padding: 10px;">{{ game.summary.away.name }}</td>
+                        <td style="padding: 10px; color: #7f8c8d;">@</td>
+                        <td style="padding: 10px;">{{ game.summary.home.name }}</td>
+                        <td style="padding: 10px; font-weight: bold;">
+                            {{ game.summary.away.points }} - {{ game.summary.home.points }}
+                        </td>
+                        <td style="padding: 10px; text-align: right;">
+                            <a href="{{ url_for('admin_game_edit', game_id=game.id) }}" class="btn btn-sm">Edit Stats</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endfor %}
+{% endblock %}
