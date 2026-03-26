@@ -441,6 +441,23 @@ def get_league_roster_slots(league):
     return slots
 # --- End of functions to be moved ---
 
+@app.route('/api/team_colors')
+def api_team_colors():
+    teams = list(db.nfl_teams.find({"team_colors": {"$exists": True, "$ne": []}}, {"alias": 1, "market": 1, "name": 1, "team_colors": 1}))
+    result = {}
+    for t in teams:
+        alias = t.get('alias')
+        if not alias: continue
+        primary = next((c['hex_color'] for c in t.get('team_colors', []) if c['type'] == 'primary'), None)
+        secondary = next((c['hex_color'] for c in t.get('team_colors', []) if c['type'] == 'secondary'), None)
+        if primary and secondary:
+            result[alias] = {
+                "name": f"{t['market']} {t['name']}",
+                "primary": primary,
+                "secondary": secondary
+            }
+    return result
+
 @app.route('/nfl')
 def nfl():
     return redirect(url_for('nfl_home'))
@@ -883,9 +900,13 @@ def finalize_week():
                 league_best_score = score
                 league_winner = u_id
 
-            # Award Century Club officially if they hit it this week
+            # Award scoring achievements based on weekly score
             if score >= 100:
                 db.award_achievement(u_id, "high_scorer")
+            if score >= 150:
+                db.award_achievement(u_id, "sharp_shooter")
+            if score >= 200:
+                db.award_achievement(u_id, "unstoppable")
 
         if league_winner:
             league_winners.append({
@@ -922,88 +943,286 @@ def finalize_week():
     }
     db.save_weekly_snapshot(snapshot)
 
-    # Achievement: Perfect Month (4-game win streak)
-    # Check if the current week is eligible for this check (e.g., after week 4)
-    if week >= 4:
-        for league in all_leagues:
-            league_id = league['id']
-            # Re-fetch player data for this league as it might be specific
-            league_all_points = get_all_player_data(league_id)
-            slots = get_league_roster_slots(league)
-            
-            for u_id in league.get('user_ids', []):
-                win_streak = 0
-                # Check the last 4 weeks for win streaks
-                for prev_week in range(week - 1, max(0, week - 5), -1):
-                    # Get matchup for this user in this week
-                    # Note: This lookup needs to be robust and handle potential missing matchups or byes.
-                    # For now, we assume a direct matchup exists for simplicity.
-                    matchup = db.get_league_matchup(league_id, prev_week, season, u_id)
-                    
-                    if not matchup:
-                        # If no matchup, streak is broken or league is too new.
-                        break 
-                    
-                    # Determine if user won this matchup.
-                    # This requires calculating scores for both users.
-                    # For prototype, we're using current player data to simulate scores for past weeks.
-                    # In a production system, this would use historical snapshot data.
-                    user_score = 0.0
-                    opponent_score = 0.0
-                    
+    # --- Per-league matchup achievements ---
+    regular_season_weeks = 14
+    for league in all_leagues:
+        league_id = league['id']
+        season_year = league.get('current_season', 2026)
+        slots = get_league_roster_slots(league)
+        all_points = get_all_player_data(league_id)
+
+        def get_score(u_id):
+            roster = db.get_roster(u_id, league_id)
+            if not roster: return 0.0
+            starter_ids = roster.get('starters', {})
+            return round(sum(all_points.get(starter_ids.get(s), {}).get('points', 0.0) for s in slots), 2)
+
+        matchups_this_week = db.get_league_matchups(league_id, week, season_year)
+
+        for m in matchups_this_week:
+            h_id, a_id = m['home_id'], m['away_id']
+            h_score = get_score(h_id)
+            a_score = get_score(a_id)
+            margin = abs(h_score - a_score)
+            winner_id = h_id if h_score > a_score else (a_id if a_score > h_score else None)
+            loser_id  = a_id if h_score > a_score else (h_id if a_score > h_score else None)
+
+            if winner_id:
+                # Dominant Victory
+                if margin >= 50:
+                    db.award_achievement(winner_id, 'dominant_victory')
+                # Nail Biter
+                if margin < 5:
+                    db.award_achievement(winner_id, 'nail_biter')
+                # Shutout
+                if loser_id and min(h_score, a_score) < 50:
+                    db.award_achievement(winner_id, 'shutout')
+
+        # Per-user weekly roster achievements
+        for u_id in league.get('user_ids', []):
+            roster = db.get_roster(u_id, league_id)
+            if not roster: continue
+            starter_ids = roster.get('starters', {})
+            player_ids_on_roster = roster.get('player_ids', [])
+
+            # Get points for each starter and bench player
+            starter_pts = {slot: all_points.get(pid, {}).get('points', 0.0)
+                           for slot, pid in starter_ids.items() if pid}
+            bench_ids = [pid for pid in player_ids_on_roster if pid not in starter_ids.values()]
+            bench_pts = [all_points.get(pid, {}).get('points', 0.0) for pid in bench_ids]
+
+            if starter_pts:
+                min_starter = min(starter_pts.values())
+                max_bench = max(bench_pts) if bench_pts else 0.0
+
+                # Perfect Lineup — every starter scores 10+
+                if min_starter >= 10:
+                    db.award_achievement(u_id, 'perfect_lineup')
+
+                # Bench Warmer — a bench player outscores all starters
+                if bench_pts and max_bench > max(starter_pts.values()):
+                    db.award_achievement(u_id, 'bench_warmer')
+
+            # QB Whisperer — any QB on roster scores 40+
+            for pid in player_ids_on_roster:
+                player = db.get_player_by_id(pid)
+                if player and player.get('position') == 'QB':
+                    if all_points.get(pid, {}).get('points', 0.0) >= 40:
+                        db.award_achievement(u_id, 'qb_whisperer')
+                        break
+
+            # Backfield Boss — 2 RBs score 20+ in same week
+            rb_scores = [
+                all_points.get(pid, {}).get('points', 0.0)
+                for pid in player_ids_on_roster
+                if db.get_player_by_id(pid) and db.get_player_by_id(pid).get('position') in ('RB', 'FB')
+            ]
+            if sum(1 for s in rb_scores if s >= 20) >= 2:
+                db.award_achievement(u_id, 'backfield_boss')
+
+            # Receiving Corps — 3 WRs score 15+ in same week
+            wr_scores = [
+                all_points.get(pid, {}).get('points', 0.0)
+                for pid in player_ids_on_roster
+                if db.get_player_by_id(pid) and db.get_player_by_id(pid).get('position') == 'WR'
+            ]
+            if sum(1 for s in wr_scores if s >= 15) >= 3:
+                db.award_achievement(u_id, 'receiving_corps')
+
+            # Instant Upgrade — player added this week scores 20+
+            # (approximated: any player on roster not in previous week's frozen roster)
+            frozen = db.get_frozen_roster(u_id, max(1, week - 1))
+            prev_ids = set(frozen.get('player_ids', [])) if frozen else set()
+            new_ids = set(player_ids_on_roster) - prev_ids
+            for pid in new_ids:
+                if all_points.get(pid, {}).get('points', 0.0) >= 20:
+                    db.award_achievement(u_id, 'instant_upgrade')
+                    break
+
+            # Elite Squad — 3+ players on roster each with 100+ season points
+            elite_count = sum(
+                1 for pid in player_ids_on_roster
+                if all_points.get(pid, {}).get('points', 0.0) >= 100
+            )
+            if elite_count >= 3:
+                db.award_achievement(u_id, 'elite_squad')
+            else:
+                db.award_achievement(u_id, 'elite_squad', progress=int(elite_count / 3 * 100))
+
+            # Rotation Master — different player in same slot 3 weeks in a row
+            # Check QB slot as proxy (most commonly rotated)
+            if week >= 3:
+                qb_history = set()
+                for wk in range(week - 2, week + 1):
+                    snap = db.get_weekly_snapshot(season, wk)
+                    if snap:
+                        for perf in snap.get('all_performances', []):
+                            if perf.get('user_id') == u_id and perf.get('league_id') == league_id:
+                                # We don\'t store per-slot in snapshot yet, use current as proxy
+                                qb_slot_pid = starter_ids.get('QB')
+                                if qb_slot_pid:
+                                    qb_history.add(qb_slot_pid)
+                if len(qb_history) >= 3:
+                    db.award_achievement(u_id, 'rotation_master')
+
+        # Buy Low — check if any player acquired via trade last week scores 20+ this week
+        for u_id in league.get('user_ids', []):
+            if week > 1:
+                prev_week_trades = list(db.trades.find({
+                    "league_id": league_id,
+                    "status": "Finalized",
+                    "$or": [
+                        {"team_responding.team_id": u_id},
+                        {"team_offering.team_id": u_id}
+                    ]
+                }))
+                roster = db.get_roster(u_id, league_id)
+                current_player_ids = set(roster.get('player_ids', [])) if roster else set()
+                for t in prev_week_trades:
+                    received = t['team_offering'].get('player_ids', []) if t['team_responding']['team_id'] == u_id else t['team_responding'].get('player_ids', [])
+                    for p_id in received:
+                        if p_id in current_player_ids and all_points.get(p_id, {}).get('points', 0.0) >= 20:
+                            db.award_achievement(u_id, 'buy_low')
+                            break
+
+        # Win streak achievements — look at last N weeks
+        all_matchups = db.get_all_league_matchups(league_id, season_year)
+        matchups_by_week = {}
+        for m in all_matchups:
+            matchups_by_week.setdefault(m['week_number'], []).append(m)
+
+        for u_id in league.get('user_ids', []):
+            # Build win/loss record per week up to current week
+            results = []  # list of (week, won, score, opp_score)
+            for wk in range(1, week + 1):
+                wk_matchups = matchups_by_week.get(wk, [])
+                for m in wk_matchups:
+                    if m['home_id'] == u_id or m['away_id'] == u_id:
+                        my_score = get_score(u_id)
+                        opp_id = m['away_id'] if m['home_id'] == u_id else m['home_id']
+                        opp_score = get_score(opp_id)
+                        results.append((wk, my_score > opp_score, my_score, opp_score))
+                        break
+
+            if not results:
+                continue
+
+            # Win streak
+            streak = 0
+            for _, won, _, _ in reversed(results):
+                if won: streak += 1
+                else: break
+
+            if streak >= 3:
+                db.award_achievement(u_id, 'hot_streak')
+            if streak >= 5:
+                db.award_achievement(u_id, 'unstoppable_force')
+
+            # Perfect Month (4 consecutive wins)
+            for i in range(len(results) - 3):
+                if all(results[i+j][1] for j in range(4)):
+                    db.award_achievement(u_id, 'perfect_month')
+                    break
+
+            # End-of-regular-season achievements
+            if week == regular_season_weeks:
+                wins = sum(1 for _, won, _, _ in results if won)
+                total = len(results)
+
+                # Precision: exactly 7-7
+                if wins == 7 and total == 14:
+                    db.award_achievement(u_id, 'precision')
+
+                # Ironman: had a full lineup every week (check starters all filled)
+                league_slots = get_league_roster_slots(league)
+                all_full = True
+                for wk in range(1, regular_season_weeks + 1):
                     roster = db.get_roster(u_id, league_id)
-                    if roster:
-                        starter_ids = roster.get('starters', {})
-                        for slot in slots:
-                            p_id = starter_ids.get(slot)
-                            if p_id:
-                                pd = league_all_points.get(p_id, {})
-                                user_score += pd.get('points', 0.0)
+                    starters = roster.get('starters', {}) if roster else {}
+                    if not all(starters.get(s) for s in league_slots):
+                        all_full = False
+                        break
+                if all_full:
+                    db.award_achievement(u_id, 'ironman')
 
-                    # Find opponent ID and calculate their score
-                    opponent_id = matchup['away_id'] if matchup['home_id'] == u_id else matchup['home_id']
-                    opponent_roster = db.get_roster(opponent_id, league_id)
-                    if opponent_roster:
-                        opponent_starter_ids = opponent_roster.get('starters', {})
-                        for slot in slots:
-                            p_id = opponent_starter_ids.get(slot)
-                            if p_id:
-                                pd = league_all_points.get(p_id, {})
-                                opponent_score += pd.get('points', 0.0)
-                    
-                    # Check win/loss/tie for the user
-                    if matchup['home_id'] == u_id: # User was home
-                        if user_score > opponent_score: win_streak += 1
-                        else: break # Streak broken
-                    else: # User was away
-                        if user_score > opponent_score: win_streak += 1
-                        else: break # Streak broken
-                
-                # If user has a 4-game win streak, award achievement
-                if win_streak >= 4:
-                    db.award_achievement(u_id, "perfect_month")
+        # End-of-regular-season standings achievements
+        if week == regular_season_weeks:
+            # Build standings
+            standings = []
+            for u_id in league.get('user_ids', []):
+                wins = 0
+                pf = 0.0
+                all_matchups_user = db.get_all_league_matchups(league_id, season_year)
+                for m in all_matchups_user:
+                    if m['home_id'] == u_id or m['away_id'] == u_id:
+                        my_score = get_score(u_id)
+                        opp_id = m['away_id'] if m['home_id'] == u_id else m['home_id']
+                        opp_score = get_score(opp_id)
+                        if my_score > opp_score: wins += 1
+                        pf += my_score
+                standings.append({'user_id': u_id, 'wins': wins, 'pf': pf})
 
-    # 5. Save Permanent Snapshot
-    from datetime import datetime
-    snapshot = {
-        "week_id": f"{season}_W{week}",
-        "season": season,
-        "week": week,
-        "finalized_at": datetime.utcnow(),
-        "mvp": mvp_data,
-        "league_winners": league_winners,
-        "all_performances": all_team_performances # Store all for future history/standings
-    }
+            standings.sort(key=lambda x: (x['wins'], x['pf']), reverse=True)
+            total_teams = len(standings)
 
-    return {
-        "status": draft_state['status'],
-        "current_pick": cp,
-        "round_num": rd,
-        "pick_in_round": pick_in_rd + 1,
-        "on_the_clock_username": on_the_clock['username'] if on_the_clock else "Unknown",
-        "on_the_clock_id": str(on_the_clock['_id']) if on_the_clock else None,
-        "latest_picks": picks
-    }
+            for rank, s in enumerate(standings, 1):
+                u_id = s['user_id']
+                if rank == 1:
+                    db.award_achievement(u_id, 'regular_season_champ')
+                if rank <= 3:
+                    db.award_achievement(u_id, 'podium_finish')
+
+                # Comeback Kid: last place after week 4, top half at end
+                if week >= 4:
+                    early_wins = 0
+                    early_standings = []
+                    for uid2 in league.get('user_ids', []):
+                        w = sum(1 for m in db.get_all_league_matchups(league_id, season_year)
+                                if (m['home_id'] == uid2 or m['away_id'] == uid2)
+                                and m['week_number'] <= 4
+                                and get_score(uid2) > get_score(m['away_id'] if m['home_id'] == uid2 else m['home_id']))
+                        early_standings.append((uid2, w))
+                    early_standings.sort(key=lambda x: x[1])
+                    last_place_ids = {early_standings[0][0]} if early_standings else set()
+                    if u_id in last_place_ids and rank <= total_teams // 2:
+                        db.award_achievement(u_id, 'comeback_kid')
+
+            # Mutual Benefit — both teams in a finalized trade finish with winning record
+            winning_user_ids = {s['user_id'] for s in standings if s['wins'] > len(results) // 2}
+            finalized_trades = list(db.trades.find({"league_id": league_id, "status": "Finalized"}))
+            for t in finalized_trades:
+                o_id = t['team_offering']['team_id']
+                r_id = t['team_responding']['team_id']
+                if o_id in winning_user_ids and r_id in winning_user_ids:
+                    db.award_achievement(o_id, 'mutual_benefit')
+                    db.award_achievement(r_id, 'mutual_benefit')
+
+            # Fair Dealer — no rejected or cancelled trades this season
+            for u_id in league.get('user_ids', []):
+                bad_trades = db.trades.count_documents({
+                    "league_id": league_id,
+                    "status": {"$in": ["Rejected", "Cancelled"]},
+                    "$or": [
+                        {"team_offering.team_id": u_id},
+                        {"team_responding.team_id": u_id}
+                    ]
+                })
+                if bad_trades == 0:
+                    any_trade = db.trades.count_documents({
+                        "league_id": league_id,
+                        "$or": [
+                            {"team_offering.team_id": u_id},
+                            {"team_responding.team_id": u_id}
+                        ]
+                    })
+                    if any_trade > 0:
+                        db.award_achievement(u_id, 'fair_dealer')
+
+    if mvp_data:
+        flash(f"Week {week} finalized! MVP: {mvp_data['username']} with {mvp_data['score']} pts.", "success")
+    else:
+        flash(f"Week {week} finalized.", "info")
+    return redirect(url_for('admin_panel'))
 
 @app.route('/league/<league_id>/draft/initialize', methods=['POST'])
 def initialize_league_draft(league_id):
@@ -1089,8 +1308,22 @@ def profile_achievements():
                 "earned_at": None,
                 "unlocked": False
             })
-    achievements_list.sort(key=lambda x: (not x['unlocked'], x['category'], x['name']))
-    return render_template('profile_achievements.html', achievements=achievements_list, active_tab='achievements')
+    achievements_list.sort(key=lambda x: (not x['unlocked'], x['name']))
+
+    # Group by category, Scoring first
+    category_order = ['Scoring', 'Competitive', 'Trading', 'Roster', 'Social', 'General']
+    grouped = {}
+    for a in achievements_list:
+        cat = a.get('category', 'General')
+        grouped.setdefault(cat, []).append(a)
+    for cat in grouped:
+        grouped[cat].sort(key=lambda x: (not x['unlocked'], x['name']))
+    sections = [(cat, grouped[cat]) for cat in category_order if cat in grouped]
+    for cat in grouped:
+        if cat not in category_order:
+            sections.append((cat, grouped[cat]))
+
+    return render_template('profile_achievements.html', sections=sections, active_tab='achievements')
 
 @app.route('/profile/actions')
 def profile_actions():
@@ -1278,7 +1511,31 @@ def league_home(league_id):
     pending_invites = []
     if is_admin:
         pending_invites = db.get_league_invitations(league_id)
-    return render_template('league_home.html', league=league, members=members, is_admin=is_admin, pending_invites=pending_invites)
+
+    # Fetch pending trade offers for the logged-in user
+    pending_trades = []
+    if current_user_id and current_user_id in league.get('user_ids', []):
+        all_trades = db.get_league_trades(league_id)
+        for trade in all_trades:
+            if trade['status'] != 'Pending':
+                continue
+            is_offering = trade['team_offering']['team_id'] == current_user_id
+            is_responding = trade['team_responding']['team_id'] == current_user_id
+            if not is_offering and not is_responding:
+                continue
+            other_id = trade['team_responding']['team_id'] if is_offering else trade['team_offering']['team_id']
+            other_user = db.get_user_by_id(other_id)
+            other_roster = db.get_roster(other_id, league_id)
+            other_name = (other_roster.get('team', {}).get('name') if other_roster else None) or (other_user['username'] if other_user else 'Unknown')
+            pending_trades.append({
+                'id': trade['id'],
+                'direction': 'outgoing' if is_offering else 'incoming',
+                'other_name': other_name,
+                'player_count': len(trade['team_offering'].get('player_ids', [])) + len(trade['team_responding'].get('player_ids', [])),
+                'pick_count': len(trade['team_offering'].get('draft_picks', [])) + len(trade['team_responding'].get('draft_picks', []))
+            })
+
+    return render_template('league_home.html', league=league, members=members, is_admin=is_admin, pending_invites=pending_invites, pending_trades=pending_trades)
 
 @app.route('/league/<league_id>/edit', methods=['GET', 'POST'])
 def edit_league(league_id):
@@ -1725,6 +1982,165 @@ def league_roster_settings(league_id):
     settings = league.get('roster_settings', [])
     return render_template('league_roster_settings.html', league=league, settings=settings, active_tab='my')
 
+@app.route('/league/<league_id>/board')
+def league_board(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+    user_id = session['user_id']
+    threads = db.get_threads(league_id)
+    last_visited = db.get_board_last_visited(user_id, league_id)
+    # Decorate threads with author name and unread status
+    user_cache = {}
+    def get_username(uid):
+        if uid not in user_cache:
+            u = db.get_user_by_id(uid)
+            user_cache[uid] = u['username'] if u else 'Unknown'
+        return user_cache[uid]
+    for t in threads:
+        t['author_name'] = get_username(t['author_id'])
+        t['unread'] = last_visited is None or t['last_post_at'].replace(tzinfo=None) > last_visited.replace(tzinfo=None)
+    db.mark_board_visited(user_id, league_id)
+    return render_template('league_board.html', league=league, is_admin=is_admin, threads=threads)
+
+@app.route('/league/<league_id>/board/new', methods=['GET', 'POST'])
+def league_board_new_thread(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        if not title or not content:
+            flash("Title and message are required.", "error")
+            return redirect(url_for('league_board_new_thread', league_id=league_id))
+        user_id = session['user_id']
+        thread = db.create_thread(league_id, user_id, title, content)
+
+        # Achievements
+        db.award_achievement(user_id, 'first_word')
+
+        thread_count = db.count_user_threads(user_id)
+        if thread_count >= 5:
+            db.award_achievement(user_id, 'town_crier')
+        else:
+            db.award_achievement(user_id, 'town_crier', progress=int(thread_count / 5 * 100))
+
+        # Icebreaker — first thread on this league's board
+        all_threads = db.get_threads(league_id)
+        if len(all_threads) == 1:
+            db.award_achievement(user_id, 'icebreaker')
+
+        flash("Thread created!", "success")
+        return redirect(url_for('league_board', league_id=league_id))
+    return render_template('league_board_new.html', league=league, is_admin=is_admin)
+
+@app.route('/league/<league_id>/board/<thread_id>', methods=['GET', 'POST'])
+def league_board_thread(league_id, thread_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+    thread = db.get_thread(thread_id)
+    if not thread or thread['league_id'] != league_id:
+        flash("Thread not found.", "error")
+        return redirect(url_for('league_board', league_id=league_id))
+    if request.method == 'POST':
+        content = request.form.get('content', '').strip()
+        if not content:
+            flash("Reply cannot be empty.", "error")
+            return redirect(url_for('league_board_thread', league_id=league_id, thread_id=thread_id))
+        user_id = session['user_id']
+        db.add_post(thread_id, user_id, content)
+
+        # Achievements
+        db.award_achievement(user_id, 'first_word')
+
+        total_posts = db.count_user_posts(user_id)
+        if total_posts >= 10:
+            db.award_achievement(user_id, 'conversationalist')
+        else:
+            db.award_achievement(user_id, 'conversationalist', progress=int(total_posts / 10 * 100))
+
+        # Hot Topic — thread has 10+ replies from other members
+        updated_thread = db.get_thread(thread_id)
+        other_replies = [p for p in updated_thread.get('posts', []) if p['author_id'] != updated_thread['author_id']]
+        if len(other_replies) >= 10:
+            db.award_achievement(updated_thread['author_id'], 'hot_topic')
+
+        return redirect(url_for('league_board_thread', league_id=league_id, thread_id=thread_id) + '#latest')
+    # Decorate posts with author names
+    user_cache = {}
+    def get_username(uid):
+        if uid not in user_cache:
+            u = db.get_user_by_id(uid)
+            user_cache[uid] = u['username'] if u else 'Unknown'
+        return user_cache[uid]
+    for p in thread['posts']:
+        p['author_name'] = get_username(p['author_id'])
+    thread['author_name'] = get_username(thread['author_id'])
+    return render_template('league_board_thread.html', league=league, is_admin=is_admin, thread=thread)
+
+@app.route('/league/<league_id>/board/<thread_id>/delete', methods=['POST'])
+def league_board_delete_thread(league_id, thread_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    thread = db.get_thread(thread_id)
+    if not thread or thread['league_id'] != league_id:
+        flash("Thread not found.", "error")
+        return redirect(url_for('league_board', league_id=league_id))
+    if not is_admin and thread['author_id'] != session['user_id']:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('league_board', league_id=league_id))
+    db.delete_thread(thread_id)
+    flash("Thread deleted.", "success")
+    return redirect(url_for('league_board', league_id=league_id))
+
+@app.route('/league/<league_id>/board/<thread_id>/post/<post_id>/delete', methods=['POST'])
+def league_board_delete_post(league_id, thread_id, post_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    thread = db.get_thread(thread_id)
+    if not thread or thread['league_id'] != league_id:
+        flash("Thread not found.", "error")
+        return redirect(url_for('league_board', league_id=league_id))
+    post = next((p for p in thread['posts'] if p['id'] == post_id), None)
+    if not post:
+        flash("Post not found.", "error")
+        return redirect(url_for('league_board_thread', league_id=league_id, thread_id=thread_id))
+    if not is_admin and post['author_id'] != session['user_id']:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('league_board_thread', league_id=league_id, thread_id=thread_id))
+    db.delete_post(thread_id, post_id)
+    flash("Post deleted.", "success")
+    return redirect(url_for('league_board', league_id=league_id))
+
+@app.route('/league/<league_id>/board/<thread_id>/pin', methods=['POST'])
+def league_board_pin_thread(league_id, thread_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not is_admin:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('league_board', league_id=league_id))
+    thread = db.get_thread(thread_id)
+    if thread:
+        db.toggle_pin_thread(thread_id, not thread.get('pinned', False))
+        # Commissioner's Corner achievement
+        if not thread.get('pinned', False):
+            db.award_achievement(session['user_id'], 'commissioners_corner')
+    return redirect(url_for('league_board', league_id=league_id))
+
 @app.route('/league/<league_id>/rules')
 def league_rules(league_id):
     league, is_admin = get_league_context(league_id)
@@ -1733,6 +2149,59 @@ def league_rules(league_id):
         return redirect(url_for('leagues'))
         
     return render_template('league_rules.html', league=league, is_admin=is_admin)
+
+@app.route('/league/<league_id>/rules/save', methods=['POST'])
+def league_rules_save(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league or not is_admin:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('league_rules', league_id=league_id))
+    rules = {
+        "roster": {
+            "max_roster_size": int(request.form.get('max_roster_size', 15)),
+            "ir_slots": int(request.form.get('ir_slots', 1)),
+            "waiver_type": request.form.get('waiver_type', 'FAAB'),
+            "faab_budget": int(request.form.get('faab_budget', 100)),
+            "waiver_claim_window_hours": int(request.form.get('waiver_claim_window_hours', 24))
+        },
+        "scoring": {
+            "bonus_100_rush_yards": float(request.form.get('bonus_100_rush_yards', 0)),
+            "bonus_100_rec_yards": float(request.form.get('bonus_100_rec_yards', 0)),
+            "bonus_300_pass_yards": float(request.form.get('bonus_300_pass_yards', 0)),
+            "bonus_rush_td_40_plus": float(request.form.get('bonus_rush_td_40_plus', 0)),
+            "bonus_rec_td_40_plus": float(request.form.get('bonus_rec_td_40_plus', 0)),
+            "bonus_pass_td_40_plus": float(request.form.get('bonus_pass_td_40_plus', 0))
+        },
+        "trading": {
+            "trading_enabled": request.form.get('trading_enabled') == 'on',
+            "review_period_hours": int(request.form.get('review_period_hours', 48)),
+            "trade_deadline_week": int(request.form.get('trade_deadline_week', 11)),
+            "max_players_per_trade": int(request.form.get('max_players_per_trade', 5)),
+            "veto_votes_required": int(request.form.get('veto_votes_required', 3))
+        },
+        "draft": {
+            "draft_type": request.form.get('draft_type', 'Snake'),
+            "order_method": request.form.get('order_method', 'Random'),
+            "pick_time_limit_seconds": int(request.form.get('pick_time_limit_seconds', 120)),
+            "autopick_enabled": request.form.get('autopick_enabled') == 'on'
+        },
+        "playoffs": {
+            "regular_season_weeks": int(request.form.get('regular_season_weeks', 14)),
+            "playoff_teams": int(request.form.get('playoff_teams', 4)),
+            "seeding_method": request.form.get('seeding_method', 'Record then Points'),
+            "tiebreaker": request.form.get('tiebreaker', 'Total Points For')
+        },
+        "conduct": {
+            "collusion_policy": request.form.get('collusion_policy', ''),
+            "inactive_team_policy": request.form.get('inactive_team_policy', ''),
+            "commissioner_veto": request.form.get('commissioner_veto') == 'on'
+        }
+    }
+    db.update_league(league_id, {"rules": rules})
+    flash("League rules updated!", "success")
+    return redirect(url_for('league_rules', league_id=league_id))
 
 @app.route('/league/<league_id>/players')
 def league_players(league_id):
@@ -2014,9 +2483,13 @@ def league_team(league_id, user_id):
     # Total points (Only from Starters)
     total_roster_points = round(sum(p['points'] for p in roster_starters.values() if p), 2)
     
-    # Trigger High Scorer Achievement
+    # Trigger scoring achievements
     if session.get('user_id') == user_id and total_roster_points >= 100:
         db.award_achievement(user_id, "high_scorer")
+    if session.get('user_id') == user_id and total_roster_points >= 150:
+        db.award_achievement(user_id, "sharp_shooter")
+    if session.get('user_id') == user_id and total_roster_points >= 200:
+        db.award_achievement(user_id, "unstoppable")
     
     # Fetch available players for search
     available_players = []
@@ -2427,6 +2900,96 @@ def accept_trade(league_id, trade_id):
     # Trigger Achievements
     db.award_achievement(offerer_id, "first_trade")
     db.award_achievement(responder_id, "first_trade")
+
+    # Volume achievements
+    for u_id in [offerer_id, responder_id]:
+        total = db.count_user_finalized_trades(u_id)
+        if total >= 10:
+            db.award_achievement(u_id, 'trade_machine')
+        elif total >= 5:
+            db.award_achievement(u_id, 'deal_maker')
+        else:
+            db.award_achievement(u_id, 'deal_maker', progress=int(total / 5 * 100))
+
+        # Wheelin' & Dealin' — 3 trades in this league this season
+        league_total = db.count_user_finalized_trades_in_league(u_id, league_id)
+        if league_total >= 3:
+            db.award_achievement(u_id, 'wheelin_dealin')
+        else:
+            db.award_achievement(u_id, 'wheelin_dealin', progress=int(league_total / 3 * 100))
+
+        # League Diplomat — traded with every other team
+        league_obj = db.get_league(league_id)
+        if league_obj:
+            other_teams = set(league_obj.get('user_ids', [])) - {u_id}
+            partners = db.get_user_trade_partners(u_id, league_id)
+            if other_teams and other_teams.issubset(partners):
+                db.award_achievement(u_id, 'league_diplomat')
+            else:
+                progress = int(len(partners & other_teams) / len(other_teams) * 100) if other_teams else 0
+                db.award_achievement(u_id, 'league_diplomat', progress=progress)
+
+    # Future Focused — trade includes a draft pick
+    has_picks = (len(trade['team_offering'].get('draft_picks', [])) > 0 or
+                 len(trade['team_responding'].get('draft_picks', [])) > 0)
+    if has_picks:
+        db.award_achievement(offerer_id, 'future_focused')
+        db.award_achievement(responder_id, 'future_focused')
+
+    # Asset Manager — has traded both players and picks at some point
+    for u_id in [offerer_id, responder_id]:
+        all_user_trades = list(db.trades.find({
+            "status": "Finalized",
+            "$or": [{"team_offering.team_id": u_id}, {"team_responding.team_id": u_id}]
+        }))
+        has_player_trade = any(
+            len(t['team_offering'].get('player_ids', [])) > 0 or
+            len(t['team_responding'].get('player_ids', [])) > 0
+            for t in all_user_trades
+        )
+        has_pick_trade = any(
+            len(t['team_offering'].get('draft_picks', [])) > 0 or
+            len(t['team_responding'].get('draft_picks', [])) > 0
+            for t in all_user_trades
+        )
+        if has_player_trade and has_pick_trade:
+            db.award_achievement(u_id, 'asset_manager')
+
+    # Quick Draw — responder accepted within 1 hour of trade creation
+    from datetime import timezone as tz
+    created = trade.get('status_modified') or trade.get('_id').generation_time
+    now_utc = datetime.now(tz.utc)
+    if hasattr(created, 'tzinfo') and created.tzinfo is None:
+        created = created.replace(tzinfo=tz.utc)
+    elapsed_hours = (now_utc - created).total_seconds() / 3600
+    if elapsed_hours <= 1:
+        db.award_achievement(responder_id, 'quick_draw')
+
+    # Full Circle — responder received a player they previously traded away
+    for received_id in trade['team_offering'].get('player_ids', []):
+        prev = db.trades.find_one({
+            "league_id": league_id,
+            "status": "Finalized",
+            "$or": [
+                {"team_offering.team_id": responder_id, "team_offering.player_ids": received_id},
+                {"team_responding.team_id": responder_id, "team_responding.player_ids": received_id}
+            ]
+        })
+        if prev:
+            db.award_achievement(responder_id, 'full_circle')
+            break
+    for received_id in trade['team_responding'].get('player_ids', []):
+        prev = db.trades.find_one({
+            "league_id": league_id,
+            "status": "Finalized",
+            "$or": [
+                {"team_offering.team_id": offerer_id, "team_offering.player_ids": received_id},
+                {"team_responding.team_id": offerer_id, "team_responding.player_ids": received_id}
+            ]
+        })
+        if prev:
+            db.award_achievement(offerer_id, 'full_circle')
+            break
     
     flash("Trade successful! Your roster and draft picks have been updated.", "success")
     return redirect(url_for('league_team', league_id=league_id, user_id=user_id))
@@ -2486,6 +3049,26 @@ def update_team_info(league_id):
     flash("Team information updated successfully!", "success")
     return redirect(url_for('league_team', league_id=league_id, user_id=user_id))
 
+@app.route('/league/<league_id>/important_dates', methods=['POST'])
+def league_important_dates(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league or not is_admin:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('league_home', league_id=league_id))
+
+    db.update_league(league_id, {"important_dates": {
+        "draft_date": request.form.get('draft_date') or None,
+        "trading_deadline": request.form.get('trading_deadline') or None,
+        "roster_lock": request.form.get('roster_lock') or None,
+        "playoffs_start": request.form.get('playoffs_start') or None,
+        "season_end": request.form.get('season_end') or None,
+        "notes": request.form.get('notes', '')
+    }})
+    flash("Important dates updated!", "success")
+    return redirect(url_for('league_home', league_id=league_id))
+
 @app.route('/delete_league/<league_id>', methods=['POST'])
 def delete_league(league_id):
     if 'user_id' not in session:
@@ -2534,9 +3117,28 @@ def add_player(player_id, league_id=None):
     player_ids = roster_data.get('player_ids', []) if roster_data else []
 
     if player_id not in player_ids:
+        # Enforce max roster size
+        if league_id:
+            league = db.get_league(league_id)
+            max_size = league.get('rules', {}).get('roster', {}).get('max_roster_size', 15) if league else 15
+            if len(player_ids) >= max_size:
+                flash(f"Roster full. Maximum roster size is {max_size} players.", "error")
+                return redirect(url_for('league_team', league_id=league_id, user_id=user_id))
         player_ids.append(player_id)
         db.update_roster(user_id, league_id, player_ids)
         flash("Player added to roster.", "success")
+
+        # Roster achievements
+        db.award_achievement(user_id, 'first_pick')
+        if len(player_ids) >= 10:
+            db.award_achievement(user_id, 'depth_chart')
+        # Waiver Hawk — track adds per league per season using roster size as proxy
+        if league_id:
+            total_adds = len(player_ids)
+            if total_adds >= 5:
+                db.award_achievement(user_id, 'waiver_hawk')
+            else:
+                db.award_achievement(user_id, 'waiver_hawk', progress=int(total_adds / 5 * 100))
     else:
         flash("Player already in roster.", "info")
 

@@ -45,6 +45,12 @@
                 <span class="nav-label">Rules</span>
             </a>
         </li>
+        <li>
+            <a href="{{ url_for('league_board', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_board', 'league_board_thread', 'league_board_new_thread'] }}">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label">Board</span>
+            </a>
+        </li>
     </ul>
 </div>
 {% endblock %}

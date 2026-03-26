@@ -3,47 +3,67 @@
 {% block profile_content %}
 <div class="profile-header" style="margin-bottom: 30px;">
     <h2 style="color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Achievements</h2>
-    <p style="color: var(--muted-color);">Your history of dominance and milestones.</p>
+    <p class="muted">Your history of dominance and milestones.</p>
 </div>
 
-<div class="achievements-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-    {% for achievement in achievements %}
-    <div class="achievement-card card" style="padding: 20px; border: 1px solid {{ '#27ae60' if achievement.unlocked else '#ddd' }}; border-radius: 8px; background-color: {{ '#fafffa' if achievement.unlocked else '#fff' }}; position: relative; overflow: hidden; transition: transform 0.2s;">
-        {% if not achievement.unlocked %}
-        <div class="locked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.4); pointer-events: none; filter: grayscale(100%);"></div>
-        {% endif %}
-        
-        <div style="display: flex; align-items: flex-start; gap: 15px;">
-            <div class="achievement-icon" style="font-size: 2.5rem; background: var(--table-header-bg); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
-                {{ achievement.icon }}
-            </div>
-            <div style="flex: 1;">
-                <h4 style="margin: 0; color: {{ '#27ae60' if achievement.unlocked else '#2c3e50' }};">{{ achievement.name }}</h4>
-                <p style="margin: 5px 0; font-size: 0.85em; color: var(--muted-color); line-height: 1.4;">{{ achievement.description }}</p>
-                <div style="font-size: 0.75em; color: var(--muted-color); margin-top: 10px; font-weight: bold; text-transform: uppercase;">
-                    {{ achievement.category }}
+{% for category, achievements in sections %}
+<div style="margin-bottom: 40px;">
+    <!-- Section Header -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <h3 style="margin: 0; color: var(--text-color); font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px;">
+            {% if category == 'Scoring' %}💯
+            {% elif category == 'Competitive' %}🏆
+            {% elif category == 'Trading' %}🔄
+            {% elif category == 'Roster' %}🏈
+            {% elif category == 'Social' %}💬
+            {% else %}⭐
+            {% endif %}
+            {{ category }}
+        </h3>
+        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+        <span class="muted" style="font-size: 0.8em;">
+            {{ achievements | selectattr('unlocked') | list | length }} / {{ achievements | length }} unlocked
+        </span>
+    </div>
+
+    <!-- Achievement Cards -->
+    <div class="achievements-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+        {% for achievement in achievements %}
+        <div class="achievement-card card" style="padding: 20px; border: 1px solid {{ '#27ae60' if achievement.unlocked else 'var(--border-color)' }}; border-radius: 8px; background-color: var(--card-bg); position: relative; overflow: hidden; transition: transform 0.2s;">
+            {% if not achievement.unlocked %}
+            <div class="locked-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.15); pointer-events: none; filter: grayscale(100%);"></div>
+            {% endif %}
+
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+                <div class="achievement-icon" style="font-size: 2.5rem; background: var(--table-header-bg); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; flex-shrink: 0;">
+                    {{ achievement.icon }}
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0; color: {{ '#27ae60' if achievement.unlocked else 'var(--text-color)' }};">{{ achievement.name }}</h4>
+                    <p class="muted" style="margin: 5px 0; font-size: 0.85em; line-height: 1.4;">{{ achievement.description }}</p>
                 </div>
             </div>
-        </div>
-        
-        <div class="progress-container" style="margin-top: 15px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 5px;">
-                <span style="color: var(--muted-color);">Progress</span>
-                <span style="font-weight: bold;">{{ achievement.progress }}%</span>
+
+            <div class="progress-container" style="margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 5px;">
+                    <span class="muted">Progress</span>
+                    <span style="font-weight: bold;">{{ achievement.progress }}%</span>
+                </div>
+                <div class="progress-bar" style="width: 100%; height: 6px; background: var(--table-header-bg); border-radius: 3px; overflow: hidden;">
+                    <div style="width: {{ achievement.progress }}%; height: 100%; background: {{ '#27ae60' if achievement.unlocked else 'var(--primary-color)' }};"></div>
+                </div>
             </div>
-            <div class="progress-bar" style="width: 100%; height: 6px; background: var(--table-header-bg); border-radius: 3px; overflow: hidden;">
-                <div style="width: {{ achievement.progress }}%; height: 100%; background: {{ '#27ae60' if achievement.unlocked else 'var(--primary-color)' }};"></div>
+
+            {% if achievement.unlocked %}
+            <div class="earned-badge" style="margin-top: 10px; font-size: 0.7em; color: #27ae60; font-weight: bold; text-align: right;">
+                Unlocked: {{ achievement.earned_at.strftime('%b %d, %Y') if achievement.earned_at }}
             </div>
+            {% endif %}
         </div>
-        
-        {% if achievement.unlocked %}
-        <div class="earned-badge" style="margin-top: 10px; font-size: 0.7em; color: #27ae60; font-weight: bold; text-align: right;">
-            Unlocked: {{ achievement.earned_at.strftime('%b %d, %Y') if achievement.earned_at }}
-        </div>
-        {% endif %}
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
+{% endfor %}
 
 <style>
 .achievement-card:hover {
@@ -52,5 +72,3 @@
 }
 </style>
 {% endblock %}
-
-

@@ -3,67 +3,270 @@
 {% block layout_class %}no-sidebars{% endblock %}
 
 {% block league_content %}
-<div class="rules-container card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color);">
-    <h3>League Type: {{ league.league_type }}</h3>
-    
-    <div style="margin-top: 20px;">
-        <h4 style="color: var(--secondary-color);">General Settings</h4>
-        <ul>
-            <li><strong>Draft Type:</strong> Snake Draft</li>
-            <li><strong>Roster Size:</strong> 15 Players</li>
-            <li><strong>Waiver Type:</strong> FAAB ($100 Budget)</li>
-        </ul>
+{% set r = league.get('rules', {}) %}
+{% set roster = r.get('roster', {}) %}
+{% set scoring = r.get('scoring', {}) %}
+{% set trading = r.get('trading', {}) %}
+{% set draft = r.get('draft', {}) %}
+{% set playoffs = r.get('playoffs', {}) %}
+{% set conduct = r.get('conduct', {}) %}
 
-        <h4 style="color: var(--secondary-color); margin-top: 20px;">{{ league.league_type }} Specific Rules</h4>
-        {% if league.league_type == 'SuperFlex' %}
-            <p>One offensive flex spot can be filled by any offensive position, including Quarterback (QB).</p>
-        {% elif league.league_type == 'Keeper' %}
-            <p>Teams can retain up to 3 players from their previous season's roster in exchange for draft picks.</p>
-        {% elif league.league_type == 'Dynasty' %}
-            <p>Teams retain their entire roster from year to year. Annual drafts consist only of rookies.</p>
-        {% elif league.league_type == 'Roster Eliminator' %}
-            <p>Each week, the lowest-scoring team must cut one player from their roster who then becomes a free agent.</p>
-        {% elif league.league_type == 'Best Ball' %}
-            <p>No lineup management is required. The system automatically calculates your optimal score from your entire roster each week.</p>
-        {% else %}
-            <p>Standard fantasy football scoring and roster rules apply.</p>
-        {% endif %}
+<div style="display: flex; flex-direction: column; gap: 25px;">
 
-        <h4 style="color: var(--secondary-color); margin-top: 20px;">Salary Models</h4>
-        <div class="salary-models" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <strong style="color: var(--primary-color);">1. Points-Based</strong>
-                <p style="font-size: 0.9em; margin: 5px 0 0 0;">Salaries are directly tied to performance. Total Points * Multiplier (e.g. $1,000 per point).</p>
+    <!-- HEADER -->
+    <div class="card panel" style="border-top: 4px solid var(--primary-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="margin: 0; color: var(--primary-color);">📜 League Rules</h2>
+                <p class="muted" style="margin: 5px 0 0 0;">{{ league.league_type }} &bull; {{ league.scoring_format }} &bull; {{ league.play_format }}</p>
             </div>
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <strong style="color: var(--primary-color);">2. Touchdown-Based</strong>
-                <p style="font-size: 0.9em; margin: 5px 0 0 0;">High stakes model. Total Touchdowns * $100,000. Kickers are capped at $100,000 maximum.</p>
-            </div>
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <strong style="color: var(--primary-color);">3. Performance Floor</strong>
-                <p style="font-size: 0.9em; margin: 5px 0 0 0;">Base minimum salary plus a bonus for every point scored above the league average.</p>
-            </div>
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <strong style="color: var(--primary-color);">4. Auction Value</strong>
-                <p style="font-size: 0.9em; margin: 5px 0 0 0;">Salary is the winning bid from the draft, with a fixed annual inflation for retained players.</p>
-            </div>
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <strong style="color: var(--primary-color);">5. NFL Cap Mirror</strong>
-                <p style="font-size: 0.9em; margin: 5px 0 0 0;">General Manager realism. Salaries are scaled mirrors of the player's actual NFL contract cap hit.</p>
-            </div>
-            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
-                <strong style="color: var(--primary-color);">6. Tiered Positional</strong>
-                <p style="font-size: 0.9em; margin: 5px 0 0 0;">Fixed prices based on positional rank (e.g. Top 5 QBs all share the same elite price tag).</p>
-            </div>
+            {% if is_admin %}
+                <button onclick="document.getElementById('editRulesForm').classList.toggle('hidden')" class="btn btn-sm">✏️ Edit Rules</button>
+            {% endif %}
         </div>
     </div>
 
-    {% if is_admin %}
-        <div style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-            <p style="font-style: italic; color: var(--muted-color);">As an administrator, you will be able to customize these rules in a future update.</p>
+    <!-- READ-ONLY VIEW -->
+    <div id="rulesView" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+
+        <!-- Roster & Waivers -->
+        <div class="card panel-sm">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🏈 Roster & Waivers</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;">
+                <li><strong>Max Roster Size:</strong> {{ roster.get('max_roster_size', 15) }} players</li>
+                <li><strong>IR Slots:</strong> {{ roster.get('ir_slots', 1) }}</li>
+                <li><strong>Waiver Type:</strong> {{ roster.get('waiver_type', 'FAAB') }}</li>
+                {% if roster.get('waiver_type', 'FAAB') == 'FAAB' %}
+                <li><strong>FAAB Budget:</strong> ${{ roster.get('faab_budget', 100) }}</li>
+                {% endif %}
+                <li><strong>Claim Window:</strong> {{ roster.get('waiver_claim_window_hours', 24) }} hours</li>
+            </ul>
         </div>
+
+        <!-- Scoring Bonuses -->
+        <div class="card panel-sm">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">💯 Scoring Bonuses</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;">
+                <li><strong>100+ Rush Yards:</strong> +{{ scoring.get('bonus_100_rush_yards', 0) }} pts</li>
+                <li><strong>100+ Rec Yards:</strong> +{{ scoring.get('bonus_100_rec_yards', 0) }} pts</li>
+                <li><strong>300+ Pass Yards:</strong> +{{ scoring.get('bonus_300_pass_yards', 0) }} pts</li>
+                <li><strong>40+ Yd Rush TD:</strong> +{{ scoring.get('bonus_rush_td_40_plus', 0) }} pts</li>
+                <li><strong>40+ Yd Rec TD:</strong> +{{ scoring.get('bonus_rec_td_40_plus', 0) }} pts</li>
+                <li><strong>40+ Yd Pass TD:</strong> +{{ scoring.get('bonus_pass_td_40_plus', 0) }} pts</li>
+            </ul>
+        </div>
+
+        <!-- Trading -->
+        <div class="card panel-sm">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🔄 Trading</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;">
+                <li><strong>Trading Enabled:</strong> {{ '✅ Yes' if trading.get('trading_enabled', True) else '❌ No' }}</li>
+                <li><strong>Review Period:</strong> {{ trading.get('review_period_hours', 48) }} hours</li>
+                <li><strong>Trade Deadline:</strong> After Week {{ trading.get('trade_deadline_week', 11) }}</li>
+                <li><strong>Max Assets Per Trade:</strong> {{ trading.get('max_players_per_trade', 5) }}</li>
+                <li><strong>Veto Votes Required:</strong> {{ trading.get('veto_votes_required', 3) }}</li>
+            </ul>
+        </div>
+
+        <!-- Draft -->
+        <div class="card panel-sm">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🎯 Draft</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;">
+                <li><strong>Draft Type:</strong> {{ draft.get('draft_type', 'Snake') }}</li>
+                <li><strong>Order Method:</strong> {{ draft.get('order_method', 'Random') }}</li>
+                <li><strong>Pick Time Limit:</strong> {{ draft.get('pick_time_limit_seconds', 120) }} seconds</li>
+                <li><strong>Autopick:</strong> {{ '✅ Enabled' if draft.get('autopick_enabled', True) else '❌ Disabled' }}</li>
+            </ul>
+        </div>
+
+        <!-- Playoffs -->
+        <div class="card panel-sm">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🏆 Playoffs</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;">
+                <li><strong>Regular Season:</strong> {{ playoffs.get('regular_season_weeks', 14) }} weeks</li>
+                <li><strong>Playoff Teams:</strong> {{ playoffs.get('playoff_teams', 4) }}</li>
+                <li><strong>Seeding:</strong> {{ playoffs.get('seeding_method', 'Record then Points') }}</li>
+                <li><strong>Tiebreaker:</strong> {{ playoffs.get('tiebreaker', 'Total Points For') }}</li>
+            </ul>
+        </div>
+
+        <!-- Conduct -->
+        <div class="card panel-sm">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">⚖️ Conduct</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;">
+                <li><strong>Commissioner Veto:</strong> {{ '✅ Enabled' if conduct.get('commissioner_veto', True) else '❌ Disabled' }}</li>
+                {% if conduct.get('collusion_policy') %}
+                <li><strong>Collusion:</strong> {{ conduct.collusion_policy }}</li>
+                {% endif %}
+                {% if conduct.get('inactive_team_policy') %}
+                <li><strong>Inactive Teams:</strong> {{ conduct.inactive_team_policy }}</li>
+                {% endif %}
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- EDIT FORM (admin only, hidden by default) -->
+    {% if is_admin %}
+    <div id="editRulesForm" class="hidden">
+        <form action="{{ url_for('league_rules_save', league_id=league.id) }}" method="POST">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+
+                <!-- Roster -->
+                <div class="card panel-sm">
+                    <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🏈 Roster & Waivers</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9em;">
+                        <label>Max Roster Size
+                            <input type="number" name="max_roster_size" value="{{ roster.get('max_roster_size', 15) }}" min="1" max="50" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>IR Slots
+                            <input type="number" name="ir_slots" value="{{ roster.get('ir_slots', 1) }}" min="0" max="10" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Waiver Type
+                            <select name="waiver_type" class="form-control" style="margin-top: 3px;">
+                                {% for opt in ['FAAB', 'Rolling', 'Reverse Standings'] %}
+                                    <option value="{{ opt }}" {{ 'selected' if roster.get('waiver_type', 'FAAB') == opt }}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>FAAB Budget ($)
+                            <input type="number" name="faab_budget" value="{{ roster.get('faab_budget', 100) }}" min="0" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Claim Window (hours)
+                            <input type="number" name="waiver_claim_window_hours" value="{{ roster.get('waiver_claim_window_hours', 24) }}" min="1" max="168" class="form-control" style="margin-top: 3px;">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Scoring Bonuses -->
+                <div class="card panel-sm">
+                    <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">💯 Scoring Bonuses</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9em;">
+                        {% set bonus_fields = [
+                            ('bonus_100_rush_yards', '100+ Rush Yards'),
+                            ('bonus_100_rec_yards', '100+ Rec Yards'),
+                            ('bonus_300_pass_yards', '300+ Pass Yards'),
+                            ('bonus_rush_td_40_plus', '40+ Yd Rush TD'),
+                            ('bonus_rec_td_40_plus', '40+ Yd Rec TD'),
+                            ('bonus_pass_td_40_plus', '40+ Yd Pass TD')
+                        ] %}
+                        {% for field, label in bonus_fields %}
+                        <label>{{ label }} (pts)
+                            <input type="number" name="{{ field }}" value="{{ scoring.get(field, 0) }}" step="0.5" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Trading -->
+                <div class="card panel-sm">
+                    <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🔄 Trading</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9em;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" name="trading_enabled" {{ 'checked' if trading.get('trading_enabled', True) }}>
+                            Trading Enabled
+                        </label>
+                        <label>Review Period (hours)
+                            <input type="number" name="review_period_hours" value="{{ trading.get('review_period_hours', 48) }}" min="0" max="168" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Trade Deadline (after week #)
+                            <input type="number" name="trade_deadline_week" value="{{ trading.get('trade_deadline_week', 11) }}" min="1" max="18" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Max Assets Per Trade
+                            <input type="number" name="max_players_per_trade" value="{{ trading.get('max_players_per_trade', 5) }}" min="1" max="20" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Veto Votes Required
+                            <input type="number" name="veto_votes_required" value="{{ trading.get('veto_votes_required', 3) }}" min="1" max="12" class="form-control" style="margin-top: 3px;">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Draft -->
+                <div class="card panel-sm">
+                    <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🎯 Draft</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9em;">
+                        <label>Draft Type
+                            <select name="draft_type" class="form-control" style="margin-top: 3px;">
+                                {% for opt in ['Snake', 'Auction', 'Linear'] %}
+                                    <option value="{{ opt }}" {{ 'selected' if draft.get('draft_type', 'Snake') == opt }}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>Order Method
+                            <select name="order_method" class="form-control" style="margin-top: 3px;">
+                                {% for opt in ['Random', 'Reverse Standings', 'Commissioner Set'] %}
+                                    <option value="{{ opt }}" {{ 'selected' if draft.get('order_method', 'Random') == opt }}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>Pick Time Limit (seconds)
+                            <input type="number" name="pick_time_limit_seconds" value="{{ draft.get('pick_time_limit_seconds', 120) }}" min="30" max="600" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" name="autopick_enabled" {{ 'checked' if draft.get('autopick_enabled', True) }}>
+                            Autopick Enabled
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Playoffs -->
+                <div class="card panel-sm">
+                    <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🏆 Playoffs</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9em;">
+                        <label>Regular Season Weeks
+                            <input type="number" name="regular_season_weeks" value="{{ playoffs.get('regular_season_weeks', 14) }}" min="1" max="17" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Playoff Teams
+                            <input type="number" name="playoff_teams" value="{{ playoffs.get('playoff_teams', 4) }}" min="2" max="12" class="form-control" style="margin-top: 3px;">
+                        </label>
+                        <label>Seeding Method
+                            <select name="seeding_method" class="form-control" style="margin-top: 3px;">
+                                {% for opt in ['Record then Points', 'Total Points', 'Record then Head-to-Head'] %}
+                                    <option value="{{ opt }}" {{ 'selected' if playoffs.get('seeding_method', 'Record then Points') == opt }}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>Tiebreaker
+                            <select name="tiebreaker" class="form-control" style="margin-top: 3px;">
+                                {% for opt in ['Total Points For', 'Head-to-Head Record', 'Points Against'] %}
+                                    <option value="{{ opt }}" {{ 'selected' if playoffs.get('tiebreaker', 'Total Points For') == opt }}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Conduct -->
+                <div class="card panel-sm">
+                    <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">⚖️ Conduct</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9em;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" name="commissioner_veto" {{ 'checked' if conduct.get('commissioner_veto', True) }}>
+                            Commissioner Veto Power
+                        </label>
+                        <label>Collusion Policy
+                            <textarea name="collusion_policy" rows="3" class="form-control" style="margin-top: 3px; resize: vertical;">{{ conduct.get('collusion_policy', '') }}</textarea>
+                        </label>
+                        <label>Inactive Team Policy
+                            <textarea name="inactive_team_policy" rows="3" class="form-control" style="margin-top: 3px; resize: vertical;">{{ conduct.get('inactive_team_policy', '') }}</textarea>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="submit" class="btn">Save Rules</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('editRulesForm').classList.add('hidden')">Cancel</button>
+            </div>
+        </form>
+    </div>
     {% endif %}
+
 </div>
+
+<style>
+.hidden { display: none !important; }
+.form-control { background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px; padding: 6px 8px; width: 100%; box-sizing: border-box; }
+</style>
 {% endblock %}
-
-

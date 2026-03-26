@@ -141,6 +141,55 @@ class Database:
                 "td_value": 100000, # $100k per TD
                 "base_salary": 500000, # $500k minimum
                 "scaling_factor": 1.0
+            },
+            "important_dates": {
+                "draft_date": None,
+                "trading_deadline": None,
+                "roster_lock": None,
+                "playoffs_start": None,
+                "season_end": None,
+                "notes": ""
+            },
+            "rules": {
+                "roster": {
+                    "max_roster_size": 15,
+                    "ir_slots": 1,
+                    "waiver_type": "FAAB",
+                    "faab_budget": 100,
+                    "waiver_claim_window_hours": 24
+                },
+                "scoring": {
+                    "bonus_100_rush_yards": 0.0,
+                    "bonus_100_rec_yards": 0.0,
+                    "bonus_300_pass_yards": 0.0,
+                    "bonus_rush_td_40_plus": 0.0,
+                    "bonus_rec_td_40_plus": 0.0,
+                    "bonus_pass_td_40_plus": 0.0
+                },
+                "trading": {
+                    "trading_enabled": True,
+                    "review_period_hours": 48,
+                    "trade_deadline_week": 11,
+                    "max_players_per_trade": 5,
+                    "veto_votes_required": 3
+                },
+                "draft": {
+                    "draft_type": "Snake",
+                    "order_method": "Random",
+                    "pick_time_limit_seconds": 120,
+                    "autopick_enabled": True
+                },
+                "playoffs": {
+                    "regular_season_weeks": 14,
+                    "playoff_teams": 4,
+                    "seeding_method": "Record then Points",
+                    "tiebreaker": "Total Points For"
+                },
+                "conduct": {
+                    "collusion_policy": "Any team found colluding will be immediately removed from the league.",
+                    "inactive_team_policy": "Teams with no lineup changes for 2 consecutive weeks may be replaced.",
+                    "commissioner_veto": True
+                }
             }
         }
         return self.leagues.insert_one(league)
@@ -560,6 +609,135 @@ class Database:
                     "updated_at": datetime.utcnow()
                 }}}
             )
+
+    # --- Message Board ---
+    def get_threads(self, league_id):
+        return list(self.db.message_board.find({"league_id": league_id}).sort([
+            ("pinned", -1), ("last_post_at", -1)
+        ]))
+
+    def get_thread(self, thread_id):
+        return self.db.message_board.find_one({"id": thread_id})
+
+    def create_thread(self, league_id, author_id, title, content):
+        now = datetime.now(timezone.utc)
+        thread = {
+            "id": str(uuid.uuid4()),
+            "league_id": league_id,
+            "title": title,
+            "author_id": author_id,
+            "created_at": now,
+            "last_post_at": now,
+            "post_count": 1,
+            "pinned": False,
+            "posts": [{
+                "id": str(uuid.uuid4()),
+                "author_id": author_id,
+                "content": content,
+                "created_at": now
+            }]
+        }
+        self.db.message_board.insert_one(thread)
+        return thread
+
+    def add_post(self, thread_id, author_id, content):
+        now = datetime.now(timezone.utc)
+        post = {
+            "id": str(uuid.uuid4()),
+            "author_id": author_id,
+            "content": content,
+            "created_at": now
+        }
+        self.db.message_board.update_one(
+            {"id": thread_id},
+            {"$push": {"posts": post}, "$set": {"last_post_at": now}, "$inc": {"post_count": 1}}
+        )
+        return post
+
+    def delete_post(self, thread_id, post_id):
+        thread = self.get_thread(thread_id)
+        if not thread: return
+        remaining = [p for p in thread['posts'] if p['id'] != post_id]
+        if not remaining:
+            self.db.message_board.delete_one({"id": thread_id})
+        else:
+            last_post_at = remaining[-1]['created_at']
+            self.db.message_board.update_one(
+                {"id": thread_id},
+                {"$set": {"posts": remaining, "post_count": len(remaining), "last_post_at": last_post_at}}
+            )
+
+    def delete_thread(self, thread_id):
+        self.db.message_board.delete_one({"id": thread_id})
+
+    def toggle_pin_thread(self, thread_id, pinned):
+        self.db.message_board.update_one({"id": thread_id}, {"$set": {"pinned": pinned}})
+
+    def mark_board_visited(self, user_id, league_id):
+        from bson import ObjectId
+        now = datetime.now(timezone.utc)
+        self.db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {f"board_visited.{league_id}": now}}
+        )
+
+    def get_board_last_visited(self, user_id, league_id):
+        from bson import ObjectId
+        user = self.db.users.find_one({"_id": ObjectId(user_id)}, {"board_visited": 1})
+        if user:
+            return user.get('board_visited', {}).get(league_id)
+        return None
+
+    def count_user_finalized_trades(self, user_id):
+        """Count total finalized trades involving a user across all leagues."""
+        return self.trades.count_documents({
+            "status": "Finalized",
+            "$or": [
+                {"team_offering.team_id": user_id},
+                {"team_responding.team_id": user_id}
+            ]
+        })
+
+    def count_user_finalized_trades_in_league(self, user_id, league_id):
+        """Count finalized trades for a user in a specific league."""
+        return self.trades.count_documents({
+            "league_id": league_id,
+            "status": "Finalized",
+            "$or": [
+                {"team_offering.team_id": user_id},
+                {"team_responding.team_id": user_id}
+            ]
+        })
+
+    def get_user_trade_partners(self, user_id, league_id):
+        """Return set of user_ids this user has completed trades with in a league."""
+        trades = self.trades.find({
+            "league_id": league_id,
+            "status": "Finalized",
+            "$or": [
+                {"team_offering.team_id": user_id},
+                {"team_responding.team_id": user_id}
+            ]
+        })
+        partners = set()
+        for t in trades:
+            if t['team_offering']['team_id'] == user_id:
+                partners.add(t['team_responding']['team_id'])
+            else:
+                partners.add(t['team_offering']['team_id'])
+        return partners
+
+    def count_user_posts(self, user_id):
+        """Count total posts made by a user across all boards."""
+        total = 0
+        threads = self.db.message_board.find({"posts.author_id": user_id}, {"posts": 1})
+        for t in threads:
+            total += sum(1 for p in t.get('posts', []) if p['author_id'] == user_id)
+        return total
+
+    def count_user_threads(self, user_id):
+        """Count total threads created by a user across all boards."""
+        return self.db.message_board.count_documents({"author_id": user_id})
 
     # --- Weekly Snapshots ---
     def save_weekly_snapshot(self, snapshot):

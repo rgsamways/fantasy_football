@@ -33,6 +33,26 @@
 {% endblock %}
 
 {% block league_content %}
+{% set max_roster = league.get('rules', {}).get('roster', {}).get('max_roster_size', 15) %}
+{% set roster_count = (starters.values() | list | selectattr('id') | list | length) + (bench | length) %}
+{% set is_over = roster_count > max_roster %}
+{% set is_at_max = roster_count == max_roster %}
+
+{% if is_over or is_at_max %}
+<div style="padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+     background: {{ 'rgba(231,76,60,0.15)' if is_over else 'rgba(243,156,18,0.15)' }};
+     border-left: 4px solid {{ '#e74c3c' if is_over else '#f39c12' }};">
+    <span style="font-size: 1.2rem;">{{ '🚨' if is_over else '⚠️' }}</span>
+    <div>
+        <strong style="color: {{ '#e74c3c' if is_over else '#f39c12' }};">{{ 'Roster Limit Exceeded' if is_over else 'Roster Full' }}</strong>
+        <span style="font-size: 0.9em; color: var(--text-color); margin-left: 8px;">
+            {{ roster_count }} / {{ max_roster }} players
+            {% if is_over %} — Drop {{ roster_count - max_roster }} player{{ 's' if roster_count - max_roster > 1 }} to comply.{% endif %}
+        </span>
+    </div>
+</div>
+{% endif %}
+
 <div class="roster-container" style="display: flex; flex-direction: column; gap: 30px;">
 
     <!-- STARTERS SECTION -->

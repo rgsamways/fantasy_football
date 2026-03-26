@@ -21,10 +21,13 @@
     --overlay-bg: #ffffff;
     --danger: #e74c3c;
     --info: #2ecc71;
-    --muted-color: #95a5a6;: 1200px;
+    --muted-color: #7f8c8d;
+    --container-max-width: 1200px;
     --container-padding: 2rem;
     --sidebar-left-width: 225px;
     --sidebar-right-width: 250px;
+    --team-primary: #3498db;
+    --team-secondary: #2980b9;
 }
 
 [data-theme="dark"] {
@@ -44,6 +47,55 @@
     --actions-bg: #16213e;
     --actions-border: #2a2a4a;
     --overlay-bg: #16213e;
+    --danger: #e74c3c;
+    --info: #2ecc71;
+    --muted-color: #95a5a6;
+}
+
+/* Home Colors: light background, team primary as accent */
+[data-theme="home"] {
+    --primary-color: var(--team-primary);
+    --secondary-color: var(--team-secondary);
+    --bg-color: #ffffff;
+    --text-color: #1a1a1a;
+    --card-bg: #f8f9fa;
+    --nav-bg: var(--team-primary);
+    --nav-text: #ffffff;
+    --border-color: #ddd;
+    --input-bg: #ffffff;
+    --input-border: #ddd;
+    --table-header-bg: #f0f0f0;
+    --sub-nav-bg: #ffffff;
+    --footer-bg: #f8f9fa;
+    --actions-bg: #f9f9f9;
+    --actions-border: #ddd;
+    --overlay-bg: #ffffff;
+    --danger: #e74c3c;
+    --info: #2ecc71;
+    --muted-color: #7f8c8d;
+}
+
+/* Away Colors: dark background using team primary, secondary as accent */
+[data-theme="away"] {
+    --primary-color: var(--team-secondary);
+    --secondary-color: var(--team-secondary);
+    --bg-color: var(--team-primary);
+    --text-color: #f0f0f0;
+    --card-bg: rgba(0,0,0,0.25);
+    --nav-bg: rgba(0,0,0,0.35);
+    --nav-text: #ffffff;
+    --border-color: rgba(255,255,255,0.15);
+    --input-bg: rgba(0,0,0,0.2);
+    --input-border: rgba(255,255,255,0.2);
+    --table-header-bg: rgba(0,0,0,0.3);
+    --sub-nav-bg: rgba(0,0,0,0.2);
+    --footer-bg: rgba(0,0,0,0.35);
+    --actions-bg: rgba(0,0,0,0.2);
+    --actions-border: rgba(255,255,255,0.15);
+    --overlay-bg: rgba(0,0,0,0.6);
+    --danger: #e74c3c;
+    --info: #2ecc71;
+    --muted-color: rgba(255,255,255,0.6);
 }
 
 body {

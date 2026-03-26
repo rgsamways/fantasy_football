@@ -1,6 +1,112 @@
 {% extends "league_layout.html" %}
 
 {% block league_content %}
+<div style="display: flex; flex-direction: column; gap: 25px;">
+
+<!-- IMPORTANT LEAGUE NOTES -->
+<div class="card panel">
+    <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">📌 Important League Notes</h3>
+
+    {% set dates = league.get('important_dates', {}) %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+        {% set date_fields = [
+            ('draft_date', '🎯', 'Draft Date'),
+            ('trading_deadline', '🔁', 'Trading Deadline'),
+            ('roster_lock', '🔒', 'Roster Lock'),
+            ('playoffs_start', '🏆', 'Playoffs Start'),
+            ('season_end', '🏁', 'Season End')
+        ] %}
+        {% for field, icon, label in date_fields %}
+            <div class="inner-card" style="text-align: center;">
+                <div style="font-size: 1.5rem; margin-bottom: 5px;">{{ icon }}</div>
+                <div class="muted" style="font-size: 0.75em; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">{{ label }}</div>
+                <div style="font-weight: bold; font-size: 0.95em;">
+                    {{ dates.get(field) if dates.get(field) else '—' }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if dates.get('notes') %}
+        <div style="padding: 12px; border-left: 3px solid var(--primary-color); background: var(--table-header-bg); border-radius: 0 4px 4px 0; font-size: 0.9em;">
+            {{ dates.notes }}
+        </div>
+    {% endif %}
+
+    {% if is_admin %}
+        <details style="margin-top: 15px;">
+            <summary style="cursor: pointer; font-size: 0.85em; color: var(--primary-color); font-weight: bold;">✏️ Edit Dates</summary>
+            <form action="{{ url_for('league_important_dates', league_id=league.id) }}" method="POST" style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+                {% for field, icon, label in date_fields %}
+                    <div>
+                        <label style="display: block; font-size: 0.8em; font-weight: bold; color: var(--muted-color); margin-bottom: 4px;">{{ icon }} {{ label }}</label>
+                        <input type="text" name="{{ field }}" value="{{ dates.get(field) or '' }}" placeholder="e.g. Aug 15, 2026 7:00 PM"
+                               style="width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.85em; box-sizing: border-box;">
+                    </div>
+                {% endfor %}
+                <div style="grid-column: 1 / -1;">
+                    <label style="display: block; font-size: 0.8em; font-weight: bold; color: var(--muted-color); margin-bottom: 4px;">📝 Additional Notes</label>
+                    <textarea name="notes" rows="2" placeholder="Any other important info for league members..."
+                              style="width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.85em; box-sizing: border-box; resize: vertical;">{{ dates.get('notes') or '' }}</textarea>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn btn-sm">Save Dates</button>
+                </div>
+            </form>
+        </details>
+    {% endif %}
+</div>
+
+<!-- TRADE OFFERS -->
+{% if pending_trades %}
+<div style="border-radius: 8px; overflow: hidden; border: 2px solid #f39c12; box-shadow: 0 4px 15px rgba(243,156,18,0.2);">
+    <div style="background: #f39c12; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">🔔</span>
+            <strong style="color: white; font-size: 1.05em;">Pending Trade Offers</strong>
+            <span style="background: white; color: #f39c12; font-weight: bold; font-size: 0.8em; padding: 2px 8px; border-radius: 10px;">{{ pending_trades | length }}</span>
+        </div>
+        <a href="{{ url_for('league_trade_offers', league_id=league.id) }}" style="color: white; font-size: 0.85em; font-weight: bold; text-decoration: underline;">View All →</a>
+    </div>
+    <div class="card" style="border-radius: 0; border: none; padding: 0;">
+        {% for trade in pending_trades %}
+        <div style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.2rem;">{{ '📤' if trade.direction == 'outgoing' else '📥' }}</span>
+                <div>
+                    <div style="font-weight: bold; font-size: 0.95em;">
+                        {{ 'Offer sent to' if trade.direction == 'outgoing' else 'Offer received from' }}
+                        <span style="color: var(--primary-color);">{{ trade.other_name }}</span>
+                    </div>
+                    <div class="muted" style="font-size: 0.8em; margin-top: 2px;">
+                        {{ trade.player_count }} player{{ 's' if trade.player_count != 1 }}
+                        {% if trade.pick_count %} + {{ trade.pick_count }} pick{{ 's' if trade.pick_count != 1 }}{% endif %}
+                        involved
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                {% if trade.direction == 'incoming' %}
+                    <form action="{{ url_for('accept_trade', league_id=league.id, trade_id=trade.id) }}" method="POST">
+                        <button type="submit" class="btn btn-sm" style="background: #27ae60;">Accept</button>
+                    </form>
+                    <form action="{{ url_for('reject_trade', league_id=league.id, trade_id=trade.id) }}" method="POST">
+                        <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                    </form>
+                {% else %}
+                    <form action="{{ url_for('cancel_trade', league_id=league.id, trade_id=trade.id) }}" method="POST">
+                        <button type="submit" class="btn btn-sm btn-secondary">Cancel</button>
+                    </form>
+                {% endif %}
+                <a href="{{ url_for('league_trade_offers', league_id=league.id) }}" class="btn btn-sm btn-secondary">Details</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- LEAGUE MEMBERS -->
 <div class="members-section card panel">
     <h3 style="margin-bottom: 20px;">League Members</h3>
     <table style="width: 100%; border-collapse: collapse; margin-top: 0;">
@@ -51,6 +157,8 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+
 </div>
 {% endblock %}
 

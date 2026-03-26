@@ -42,7 +42,7 @@
                             </thead>
                             <tbody>
                                 {% for team in teams %}
-                                    <tr style="border-bottom: 1px solid var(--border-color); {{ 'background: #f0f7ff; font-weight: bold;' if loop.index == 1 else '' }}">
+                                    <tr style="border-bottom: 1px solid var(--border-color); {{ 'font-weight: bold; border-left: 3px solid var(--primary-color);' if loop.index == 1 else '' }}">
                                         <td style="padding: 8px;">
                                             <a href="{{ url_for('nfl_team', team_alias=team.alias) }}" style="text-decoration: none; color: inherit;">
                                                 {{ team.name }}

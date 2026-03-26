@@ -1,0 +1,86 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- HEADER -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: var(--primary-color);">💬 Message Board</h2>
+        <a href="{{ url_for('league_board_new_thread', league_id=league.id) }}" class="btn btn-sm">+ New Thread</a>
+    </div>
+
+    <!-- THREAD LIST -->
+    {% if threads %}
+    <div class="card" style="border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+        {% for thread in threads %}
+        <div style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); transition: background 0.15s;"
+             onmouseover="this.style.background='var(--table-header-bg)'" onmouseout="this.style.background='transparent'">
+
+            <!-- Unread dot -->
+            <div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+                        background: {{ 'var(--primary-color)' if thread.unread else 'var(--border-color)' }};"></div>
+
+            <!-- Thread info -->
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    {% if thread.pinned %}
+                        <span style="font-size: 0.7em; background: #f39c12; color: white; padding: 1px 6px; border-radius: 10px; font-weight: bold;">📌 PINNED</span>
+                    {% endif %}
+                    <a href="{{ url_for('league_board_thread', league_id=league.id, thread_id=thread.id) }}"
+                       style="font-weight: bold; font-size: 1em; color: var(--text-color); text-decoration: none;">
+                        {{ thread.title }}
+                    </a>
+                    {% if thread.unread %}
+                        <span style="font-size: 0.7em; background: var(--primary-color); color: white; padding: 1px 6px; border-radius: 10px; font-weight: bold;">NEW</span>
+                    {% endif %}
+                </div>
+                <div class="muted" style="font-size: 0.8em; margin-top: 3px;">
+                    Started by <strong>{{ thread.author_name }}</strong> &bull;
+                    {{ thread.post_count }} post{{ 's' if thread.post_count != 1 }} &bull;
+                    Last activity: <span class="localize-time" data-utc="{{ thread.last_post_at.isoformat() }}Z">{{ thread.last_post_at.strftime('%b %d') }}</span>
+                </div>
+            </div>
+
+            <!-- Admin actions -->
+            {% if is_admin %}
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <form action="{{ url_for('league_board_pin_thread', league_id=league.id, thread_id=thread.id) }}" method="POST">
+                    <button type="submit" class="btn btn-sm btn-secondary" style="font-size: 0.75em; padding: 3px 8px;" title="{{ 'Unpin' if thread.pinned else 'Pin' }}">
+                        {{ '📌 Unpin' if thread.pinned else '📌 Pin' }}
+                    </button>
+                </form>
+                <form action="{{ url_for('league_board_delete_thread', league_id=league.id, thread_id=thread.id) }}" method="POST"
+                      onsubmit="return confirm('Delete this entire thread?')">
+                    <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.75em; padding: 3px 8px;">🗑</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card panel" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 3rem; margin-bottom: 15px;">💬</div>
+        <h3 style="margin: 0 0 10px 0;">No threads yet</h3>
+        <p class="muted" style="margin: 0 0 20px 0;">Be the first to start a conversation.</p>
+        <a href="{{ url_for('league_board_new_thread', league_id=league.id) }}" class="btn">Start a Thread</a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.localize-time').forEach(el => {
+        const utc = el.getAttribute('data-utc');
+        if (utc) {
+            const d = new Date(utc);
+            el.textContent = d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+    });
+});
+</script>
+{% endblock %}
