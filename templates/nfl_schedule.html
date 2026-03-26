@@ -4,7 +4,7 @@
 
 {% block nfl_content %}
 <div class="season-selector" style="text-align: center; margin-bottom: 25px;">
-    <form action="{{ url_for('nfl_schedule') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: var(--card-bg); padding: 10px 25px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <form action="{{ url_for('nfl_schedule') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: var(--input-bg); padding: 10px 25px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
         <label for="season" style="font-weight: bold; color: var(--muted-color); font-size: 0.9em;">Select Season:</label>
         <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary-color); outline: none; cursor: pointer; font-weight: bold; color: var(--primary-color); background: var(--card-bg);">
             {% for season in available_seasons %}
@@ -66,4 +66,5 @@
     </div>
 </div>
 {% endblock %}
+
 
