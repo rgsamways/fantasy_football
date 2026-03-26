@@ -30,6 +30,89 @@
         <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm" style="text-align: center; width: 100%;">Logout</a>
     </div>
 </div>
+
+<div class="card panel-sm" style="margin-top: 20px;">
+    <h3 style="font-size: 1.1em; margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🎨 Theme</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.9em;">
+
+        <!-- Mode selector -->
+        <div>
+            <label style="display: block; font-weight: bold; font-size: 0.8em; color: var(--muted-color); margin-bottom: 6px;">COLOR MODE</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button onclick="setTheme('light')" id="theme-btn-light" class="btn btn-sm btn-secondary" style="font-size: 0.8em;">☀️ Light</button>
+                <button onclick="setTheme('dark')" id="theme-btn-dark" class="btn btn-sm btn-secondary" style="font-size: 0.8em;">🌙 Dark</button>
+                <button onclick="setTheme('home')" id="theme-btn-home" class="btn btn-sm btn-secondary" style="font-size: 0.8em;">🏠 Home</button>
+                <button onclick="setTheme('away')" id="theme-btn-away" class="btn btn-sm btn-secondary" style="font-size: 0.8em;">✈️ Away</button>
+            </div>
+        </div>
+
+        <!-- Team picker -->
+        <div id="profileTeamPickerWrap">
+            <label style="display: block; font-weight: bold; font-size: 0.8em; color: var(--muted-color); margin-bottom: 6px;">NFL TEAM COLORS</label>
+            <select id="profileTeamPicker" style="width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.85em; cursor: pointer;">
+                <option value="">Select a team...</option>
+            </select>
+            <p class="muted" style="font-size: 0.75em; margin: 6px 0 0 0;">Applied in Home &amp; Away modes.</p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    // sync the nav toggle icon if it exists
+    if (window.updateToggleIcon) window.updateToggleIcon();
+    highlightActiveThemeBtn(theme);
+}
+
+function highlightActiveThemeBtn(theme) {
+    ['light','dark','home','away'].forEach(t => {
+        const btn = document.getElementById('theme-btn-' + t);
+        if (btn) {
+            btn.style.opacity = t === theme ? '1' : '0.5';
+            btn.style.outline = t === theme ? '2px solid var(--primary-color)' : 'none';
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const current = localStorage.getItem('theme') || 'light';
+    highlightActiveThemeBtn(current);
+
+    // Populate team picker
+    fetch('/api/team_colors')
+        .then(r => r.json())
+        .then(teams => {
+            const picker = document.getElementById('profileTeamPicker');
+            const sorted = Object.entries(teams).sort((a, b) => a[1].name.localeCompare(b[1].name));
+            sorted.forEach(([alias, data]) => {
+                const opt = document.createElement('option');
+                opt.value = alias;
+                opt.textContent = data.name;
+                opt.dataset.primary = data.primary;
+                opt.dataset.secondary = data.secondary;
+                picker.appendChild(opt);
+            });
+            const saved = localStorage.getItem('teamAlias');
+            if (saved) picker.value = saved;
+
+            picker.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (!opt.value) return;
+                document.documentElement.style.setProperty('--team-primary', opt.dataset.primary);
+                document.documentElement.style.setProperty('--team-secondary', opt.dataset.secondary);
+                localStorage.setItem('teamPrimary', opt.dataset.primary);
+                localStorage.setItem('teamSecondary', opt.dataset.secondary);
+                localStorage.setItem('teamAlias', opt.value);
+                // sync nav picker if present
+                const navPicker = document.getElementById('teamPicker');
+                if (navPicker) navPicker.value = opt.value;
+            });
+        });
+});
+</script>
 {% endblock %}
 
 

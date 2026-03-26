@@ -164,9 +164,28 @@ nav {
 }
 
 .nav-links a.active {
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
+    color: var(--nav-text);
+    border-bottom: 2px solid var(--nav-text);
     padding-bottom: 5px;
+    opacity: 1;
+}
+
+/* In light/dark mode, use primary color for active link */
+[data-theme="light"] .nav-links a.active,
+[data-theme="dark"] .nav-links a.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* Brand always readable against nav background */
+[data-theme="home"] .brand,
+[data-theme="away"] .brand {
+    color: var(--nav-text);
+}
+
+[data-theme="home"] .nav-links a:hover,
+[data-theme="away"] .nav-links a:hover {
+    color: rgba(255,255,255,0.75);
 }
 
 .sub-nav {
