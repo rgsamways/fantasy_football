@@ -282,11 +282,6 @@ footer {
     border-top: 1px solid #eee;
 }
 
-/* Hide all divs with a class name containing header */
-div[class*='header'] {
-    display: none !important;
-}
-
 /* Size all buttons in Action sections equally */
 div[class*='actions'] .btn,
 div[class*='actions'] form .btn {

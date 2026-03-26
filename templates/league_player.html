@@ -64,12 +64,95 @@
     </div>
 </div>
 
-<div class="player-stats-placeholder card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
-    <h3 style="margin-top: 0;">NFL Season Performance</h3>
-    <p style="color: #7f8c8d; font-style: italic;">Real-time stats for the current NFL season are loading...</p>
-    <div style="background: #fff; padding: 30px; border: 1px solid #eee; border-radius: 4px; text-align: center;">
-        <div style="font-size: 2em; color: #eee; margin-bottom: 10px;">📊</div>
-        <p>Advanced metrics and season totals will appear here once the data sync is complete.</p>
+<div class="player-stats-section card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 20px;">
+        <h3 style="margin: 0;">NFL Season Performance</h3>
+        
+        <form action="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" method="GET" style="display: flex; align-items: center; gap: 10px;">
+            <label for="season" style="font-weight: bold; font-size: 0.9em; color: #7f8c8d;">Season:</label>
+            <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; background: #f8f9fa;">
+                {% for year in available_seasons %}
+                    <option value="{{ year }}" {{ 'selected' if year == selected_season }}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </form>
     </div>
+    
+    {% set current_performance = seasons_data[selected_season].performance if selected_season in seasons_data else [] %}
+    {% set current_total = seasons_data[selected_season].total_points if selected_season in seasons_data else 0.0 %}
+
+    {% if current_performance %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;">
+                        <th style="padding: 12px 10px;">Week</th>
+                        <th style="padding: 12px 10px;">Opponent</th>
+                        
+                        {% if player.position == 'QB' %}
+                            <th style="padding: 12px 10px;">Pass Yds</th>
+                            <th style="padding: 12px 10px;">Pass TD</th>
+                            <th style="padding: 12px 10px;">INT</th>
+                        {% endif %}
+                        
+                        <th style="padding: 12px 10px;">Rush Yds</th>
+                        <th style="padding: 12px 10px;">Rush TD</th>
+                        
+                        {% if player.position in ['WR', 'TE', 'RB'] %}
+                            <th style="padding: 12px 10px;">Rec</th>
+                            <th style="padding: 12px 10px;">Rec Yds</th>
+                            <th style="padding: 12px 10px;">Rec TD</th>
+                        {% endif %}
+                        
+                        <th style="padding: 12px 10px;">FUM</th>
+                        <th style="padding: 12px 10px; text-align: right;">FPTS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in current_performance %}
+                        <tr style="border-bottom: 1px solid #eee; font-size: 0.9em; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                            <td style="padding: 12px 10px; font-weight: bold;">{{ entry.week }}</td>
+                            <td style="padding: 12px 10px;">vs {{ entry.opponent }}</td>
+                            
+                            {% if player.position == 'QB' %}
+                                <td style="padding: 12px 10px;">{{ entry.stats.yards if 'attempts' in entry.stats else '-' }}</td>
+                                <td style="padding: 12px 10px;">{{ entry.stats.touchdowns if 'attempts' in entry.stats else '-' }}</td>
+                                <td style="padding: 12px 10px; color: #e74c3c;">{{ entry.stats.interceptions if 'interceptions' in entry.stats else '-' }}</td>
+                            {% endif %}
+                            
+                            <td style="padding: 12px 10px;">{{ entry.stats.yards if 'attempts' in entry.stats and player.position != 'QB' else entry.stats.yards if 'attempts' in entry.stats and 'completions' not in entry.stats else '-' }}</td>
+                            <td style="padding: 12px 10px;">{{ entry.stats.touchdowns if 'attempts' in entry.stats and 'completions' not in entry.stats else '-' }}</td>
+                            
+                            {% if player.position in ['WR', 'TE', 'RB'] %}
+                                <td style="padding: 12px 10px;">{{ entry.stats.receptions if 'receptions' in entry.stats else '-' }}</td>
+                                <td style="padding: 12px 10px;">{{ entry.stats.yards if 'receptions' in entry.stats else '-' }}</td>
+                                <td style="padding: 12px 10px;">{{ entry.stats.touchdowns if 'receptions' in entry.stats else '-' }}</td>
+                            {% endif %}
+                            
+                            <td style="padding: 12px 10px;">{{ entry.stats.fumbles_lost|default(0) }}</td>
+                            <td style="padding: 12px 10px; text-align: right; font-weight: bold; color: var(--primary-color);">{{ "%.2f"|format(entry.points) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f8f9fa; font-weight: 800; border-top: 2px solid #dee2e6;">
+                        <td colspan="2" style="padding: 15px 10px;">{{ selected_season }} SEASON TOTAL</td>
+                        {% set col_count = 0 %}
+                        {% if player.position == 'QB' %}{% set col_count = col_count + 3 %}{% endif %}
+                        {% set col_count = col_count + 2 %}
+                        {% if player.position in ['WR', 'TE', 'RB'] %}{% set col_count = col_count + 3 %}{% endif %}
+                        {% set col_count = col_count + 1 %}
+                        <td colspan="{{ col_count }}"></td>
+                        <td style="padding: 15px 10px; text-align: right; color: var(--primary-color); font-size: 1.1em;">{{ "%.2f"|format(current_total) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    {% else %}
+        <div style="background: #f8f9fa; padding: 40px 20px; border: 1px dashed #cbd5e0; border-radius: 8px; text-align: center;">
+            <div style="font-size: 2em; margin-bottom: 10px;">📉</div>
+            <p style="color: #7f8c8d; margin: 0;">No statistics recorded for {{ player.name }} in the {{ selected_season }} season.</p>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

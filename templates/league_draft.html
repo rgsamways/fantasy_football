@@ -1,0 +1,272 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div class="draft-container" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px;">
+    
+    {% if not draft_state %}
+    <div style="text-align: center; padding: 100px 20px; background: #fff; border-radius: 12px; border: 2px dashed #e2e8f0;">
+        <div style="font-size: 4em; margin-bottom: 20px;">🎯</div>
+        <h2 style="color: #1e293b;">The Draft has not started</h2>
+        <p style="color: #64748b; max-width: 500px; margin: 0 auto 30px;">Once initialized, the draft order will be randomized and the room will open for live drafting.</p>
+        {% if is_admin %}
+        <form action="{{ url_for('initialize_league_draft', league_id=league.id) }}" method="POST">
+            <button type="submit" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.1em; font-weight: bold;">Initialize Draft & Randomize Order</button>
+        </form>
+        {% endif %}
+    </div>
+    {% else %}
+
+    <div class="draft-header" id="draftHeader" style="background: #1e293b; color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: all 0.3s ease;">
+        <div>
+            <div style="text-transform: uppercase; font-size: 0.8em; letter-spacing: 2px; color: #94a3b8; font-weight: bold; margin-bottom: 5px;">On the Clock</div>
+            <h1 style="margin: 0; font-size: 2.2em; color: #f8fafc;" id="onTheClockUser">@{{ on_the_clock.username }}</h1>
+            <div style="margin-top: 5px; color: #38bdf8; font-weight: bold;" id="pickInfo">Round {{ round_num }} | Pick {{ pick_in_round }} (Overall #{{ draft_state.current_pick }})</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.9em; color: #94a3b8;">Draft Status</div>
+            <div style="color: #10b981; font-weight: bold; font-size: 1.2em;">● <span id="draftStatusText">{{ draft_state.status }}</span></div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 25px; display: flex; gap: 10px;">
+        <button id="viewDraftRoom" class="btn btn-primary" onclick="switchView('room')">Draft Room</button>
+        <button id="viewDraftChart" class="btn btn-outline" onclick="switchView('chart')">Draft Chart</button>
+    </div>
+
+    <div id="draftRoomView">
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
+            <!-- Left: Player Pool -->
+            <div class="player-pool-section">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">Available Players</h3>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span id="liveIndicator" style="font-size: 0.7em; color: #10b981; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                                <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span> LIVE
+                            </span>
+                            <input type="text" id="playerSearch" placeholder="Search name, position, team..." style="padding: 8px 15px; border-radius: 20px; border: 1px solid #cbd5e0; width: 250px; outline: none;">
+                        </div>
+                    </div>
+                    <div style="max-height: 600px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: #f8fafc; position: sticky; top: 0; z-index: 10;">
+                                <tr style="text-align: left; font-size: 0.8em; color: #64748b; text-transform: uppercase;">
+                                    <th style="padding: 12px 20px;">Player</th>
+                                    <th style="padding: 12px 20px;">Pos</th>
+                                    <th style="padding: 12px 20px;">NFL Team</th>
+                                    <th style="padding: 12px 20px; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="playerTable">
+                                {% for p in available_players %}
+                                <tr class="player-row" id="player-{{ p.id }}" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                                    <td style="padding: 15px 20px; font-weight: bold; color: #1e293b;">{{ p.name }}</td>
+                                    <td style="padding: 15px 20px;"><span class="badge pos-{{ p.position }}">{{ p.position }}</span></td>
+                                    <td style="padding: 15px 20px; color: #64748b; font-size: 0.9em;">{{ p.team }}</td>
+                                    <td style="padding: 15px 20px; text-align: right;" class="action-cell">
+                                        {% if is_admin or session.user_id == on_the_clock._id|string %}
+                                        <button onclick="makePick('{{ p.id }}', '{{ on_the_clock._id }}')" class="btn btn-sm btn-primary draft-btn">Draft</button>
+                                        {% else %}
+                                        <button disabled class="btn btn-sm wait-btn" style="background: #e2e8f0; color: #94a3b8; cursor: not-allowed;">Wait</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Draft Board (Recent Picks) -->
+            <div class="draft-board-section">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                        <h3 style="margin: 0;">Draft Board</h3>
+                    </div>
+                    <div style="padding: 10px; max-height: 600px; overflow-y: auto;" id="draftBoardContainer">
+                        {% if not picks %}
+                        <div style="text-align: center; color: #94a3b8; padding: 40px 20px;" id="noPicksMsg">
+                            No picks made yet
+                        </div>
+                        {% endif %}
+                        {% for pick in picks|reverse %}
+                        <div class="pick-card" style="display: flex; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #f1f5f9; background: {{ '#f0f9ff' if loop.first else 'transparent' }}; border-left: 4px solid var(--primary-color);">
+                            <div style="font-weight: 800; color: #94a3b8; font-size: 0.8em; min-width: 25px;">{{ pick.pick_number }}</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; font-size: 0.95em; color: #1e293b;">{{ pick.player_name }}</div>
+                                <div style="font-size: 0.8em; color: #64748b;">{{ pick.player_pos }} - {{ pick.player_team }}</div>
+                                <div style="font-size: 0.75em; color: var(--primary-color); font-weight: bold; margin-top: 3px;">@{{ pick.manager_name }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draft Chart View (Hidden by default) -->
+    <div id="draftChartView" style="display: none;">
+        <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <table style="width: 100%; border-collapse: collapse; min-width: 1000px;">
+                <thead>
+                    <tr style="background: #1e293b; color: white;">
+                        <th style="padding: 15px; text-align: center; width: 80px; border-right: 1px solid #334155;">Round</th>
+                        {% for manager in ordered_managers %}
+                        <th style="padding: 15px; text-align: center; min-width: 150px; border-right: 1px solid #334155;">@{{ manager }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for round_picks in draft_grid %}
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 15px; text-align: center; background: #f8fafc; font-weight: 800; color: #64748b; border-right: 1px solid #e2e8f0;">{{ loop.index }}</td>
+                        {% for pick in round_picks %}
+                        <td style="padding: 10px; border-right: 1px solid #e2e8f0; vertical-align: top; width: {{ 100 / ordered_managers|length }}%;">
+                            <div style="font-size: 0.7em; color: #94a3b8; font-weight: bold; margin-bottom: 5px;">Pick {{ pick.pick_number }}</div>
+                            {% if pick.player %}
+                            <div style="background: #fff; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; border-left: 3px solid {{ '#ff4d4d' if pick.player.player_pos == 'QB' else '#2ecc71' if pick.player.player_pos == 'RB' else '#3498db' if pick.player.player_pos == 'WR' else '#f1c40f' if pick.player.player_pos == 'TE' else '#9b59b6' if pick.player.player_pos == 'K' else '#7f8c8d' }};">
+                                <div style="font-weight: bold; font-size: 0.85em; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ pick.player.player_name }}</div>
+                                <div style="font-size: 0.7em; color: #64748b;">{{ pick.player.player_pos }} - {{ pick.player.player_team }}</div>
+                            </div>
+                            {% else %}
+                            <div style="height: 45px; border: 1px dashed #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #cbd5e0; font-size: 0.7em; font-style: italic;">Empty</div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+    @keyframes flashGreen {
+        0% { background-color: #1e293b; }
+        50% { background-color: #065f46; }
+        100% { background-color: #1e293b; }
+    }
+    .flash-header {
+        animation: flashGreen 1s ease;
+    }
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: bold;
+        color: white;
+    }
+    .pos-QB { background: #ff4d4d; }
+    .pos-RB { background: #2ecc71; }
+    .pos-WR { background: #3498db; }
+    .pos-TE { background: #f1c40f; }
+    .pos-K { background: #9b59b6; }
+    .pos-DEF { background: #7f8c8d; }
+
+    .player-row:hover {
+        background: #f8fafc;
+    }
+    .btn-outline {
+        border: 1px solid #cbd5e0;
+        background: transparent;
+        color: #4a5568;
+    }
+    .btn-outline:hover {
+        background: #f7fafc;
+    }
+</style>
+
+<script>
+    let currentPickNumber = {{ draft_state.current_pick if draft_state else 0 }};
+    const currentUserId = "{{ session.user_id }}";
+    const isAdmin = {{ 'true' if is_admin else 'false' }};
+
+    function makePick(playerId, userId) {
+        if (!confirm("Confirm this pick?")) return;
+
+        const formData = new FormData();
+        formData.append('player_id', playerId);
+        formData.append('user_id', userId);
+
+        fetch("{{ url_for('make_draft_pick', league_id=league.id) }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Polling will handle the UI update
+            } else {
+                alert("Pick failed: " + data.message);
+            }
+        });
+    }
+
+    function switchView(view) {
+        const room = document.getElementById('draftRoomView');
+        const chart = document.getElementById('draftChartView');
+        const btnRoom = document.getElementById('viewDraftRoom');
+        const btnChart = document.getElementById('viewDraftChart');
+
+        if (view === 'room') {
+            room.style.display = 'block';
+            chart.style.display = 'none';
+            btnRoom.className = 'btn btn-primary';
+            btnChart.className = 'btn btn-outline';
+        } else {
+            room.style.display = 'none';
+            chart.style.display = 'block';
+            btnRoom.className = 'btn btn-outline';
+            btnChart.className = 'btn btn-primary';
+        }
+    }
+
+    // Real-Time Polling
+    function pollDraftStatus() {
+        if (!{{ 'true' if draft_state else 'false' }}) return;
+
+        fetch("{{ url_for('league_draft_status', league_id=league.id) }}")
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "inactive") return;
+
+                if (data.current_pick !== currentPickNumber) {
+                    handleNewPick(data);
+                }
+            })
+            .catch(err => console.error("Polling error:", err));
+    }
+
+    function handleNewPick(data) {
+        // For a smoother UI and to refresh the Chart, let's just refresh the page 
+        // when a pick happens. This ensures the available pool AND the chart 
+        // are 100% accurate.
+        window.location.reload(); 
+    }
+
+    // Start polling every 3 seconds
+    setInterval(pollDraftStatus, 3000);
+
+    // Search functionality
+    document.getElementById('playerSearch')?.addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.player-row');
+        
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+        });
+    });
+</script>
+{% endblock %}

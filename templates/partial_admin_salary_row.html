@@ -1,0 +1,15 @@
+<div class="admin-salary-row" style="padding: 10px; background: #fff; border: 1px solid #feb2b2; border-radius: 6px; font-size: 0.8em;">
+    <div style="font-weight: bold; margin-bottom: 5px;">{{ player.name }} ({{ player.position }})</div>
+    <div style="display: flex; gap: 5px; align-items: center;">
+        <input type="number" id="salary_val_{{ player.id }}" value="{{ player.salary }}" style="width: 100px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+        <button onclick="overrideSalary('{{ player.id }}')" class="btn btn-sm" style="background: #e74c3c; color: white; padding: 4px 8px; font-size: 0.8em;">Set</button>
+        
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 3px;">
+            <input type="checkbox" id="lock_{{ player.id }}" {{ 'checked' if player.is_salary_locked }} onchange="toggleSalaryLock('{{ player.id }}', this.checked)">
+            <label for="lock_{{ player.id }}" style="font-size: 0.9em; color: #7f8c8d;">Lock</label>
+        </div>
+    </div>
+    {% if player.is_salary_locked %}
+        <div style="font-size: 0.8em; color: #e74c3c; margin-top: 3px; font-weight: bold;">🔒 Locked</div>
+    {% endif %}
+</div>

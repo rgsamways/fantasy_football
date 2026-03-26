@@ -15,49 +15,49 @@
                 {% endif %}
             </h4>
             
-            {% if member.roster and member.roster.team %}
-                <div style="font-size: 0.8em; color: #7f8c8d; margin-top: 5px;">
-                    {% if member.roster.team.acronym %}
-                        <strong>[{{ member.roster.team.acronym }}]</strong>
-                    {% endif %}
-                    {% if member.roster.team.fight_song %}
-                        <span style="font-style: italic; margin-left: 5px;">"{{ member.roster.team.fight_song }}"</span>
-                    {% endif %}
-                </div>
-            {% endif %}
+            <div style="margin-top: 10px; font-weight: bold; color: var(--primary-color);">
+                Total Points: {{ "%.2f"|format(member.total_points or 0.0) }}
+            </div>
         </div>
 
         <div class="roster-summary" style="flex-grow: 1; margin-bottom: 15px;">
-            {% if member.roster_players %}
+            <h5 style="margin: 0 0 8px 0; font-size: 0.8em; color: #7f8c8d; text-transform: uppercase;">Starters</h5>
+            {% if member.starters %}
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.8em; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #eee;">
                     <thead>
                         <tr style="background: #f0f4f8; text-align: left; border-bottom: 1px solid #ddd;">
-                            <th style="padding: 6px 8px;">Pos</th>
+                            <th style="padding: 6px 8px;">Slot</th>
                             <th style="padding: 6px 8px;">Player</th>
-                            <th style="padding: 6px 8px;">NFL</th>
+                            <th style="padding: 6px 8px; text-align: right;">Pts</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for player in member.roster_players %}
+                        {% for slot, player in member.starters.items() %}
                             <tr style="border-bottom: 1px solid #f5f5f5;">
-                                <td style="padding: 4px 8px; font-weight: bold; color: #555;">{{ player.position }}</td>
+                                <td style="padding: 4px 8px; font-weight: bold; color: #7f8c8d; background: #fafafa; width: 50px;">{{ slot }}</td>
                                 <td style="padding: 4px 8px;">
-                                    <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color);">
-                                        {{ player.name }} ({{ player.position }})
-                                    </a>
+                                    {% if player %}
+                                        <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                            {{ player.name }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color: #cbd5e0; font-style: italic;">Empty</span>
+                                    {% endif %}
                                 </td>
-                                <td style="padding: 4px 8px; color: #7f8c8d; font-size: 0.9em;">{{ player.team }}</td>
+                                <td style="padding: 4px 8px; text-align: right; color: #7f8c8d;">
+                                    {{ "%.2f"|format(player.points) if player else '-' }}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             {% else %}
-                <p style="text-align: center; color: #7f8c8d; font-style: italic; padding: 10px;">No players drafted yet.</p>
+                <p style="text-align: center; color: #7f8c8d; font-style: italic; padding: 10px;">No lineup set.</p>
             {% endif %}
         </div>
 
         <div style="margin-top: auto;">
-            <a href="{{ url_for('league_team', league_id=league.id, user_id=member._id|string) }}" class="btn btn-sm btn-secondary" style="width: 100%; text-align: center;">View Full Team</a>
+            <a href="{{ url_for('league_team', league_id=league.id, user_id=member._id|string) }}" class="btn btn-sm btn-secondary" style="width: 100%; text-align: center;">View Full Team & Bench</a>
         </div>
     </div>
 {% endmacro %}

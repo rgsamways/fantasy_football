@@ -3,6 +3,18 @@
 {% block admin_content %}
 <div class="admin-data-header" style="margin-bottom: 30px;">
     <h2>NFL Game Data Management</h2>
+    
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+        <label for="season-select" style="font-weight: bold;">Select Season:</label>
+        <select id="season-select" onchange="window.location.href = '?season=' + this.value;">
+            {% for season in available_seasons %}
+                <option value="{{ season }}" {% if season == selected_season %}selected{% endif %}>
+                    {{ season }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
     <p>Select a game to edit its box score and statistics.</p>
 </div>
 

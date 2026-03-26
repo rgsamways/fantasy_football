@@ -2,59 +2,55 @@
 
 {% block layout_class %}no-sidebars{% endblock %}
 
-{% block nfl_header %}
-<div class="nfl-header" style="text-align: center; margin-bottom: 30px;">
-    <h2>NFL Schedule</h2>
-    <p>Comprehensive 2024 Regular Season schedule and results.</p>
-</div>
-{% endblock %}
-
 {% block nfl_content %}
+<div class="season-selector" style="text-align: center; margin-bottom: 25px;">
+    <form action="{{ url_for('nfl_schedule') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: #fff; padding: 10px 25px; border-radius: 30px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <label for="season" style="font-weight: bold; color: #7f8c8d; font-size: 0.9em;">Select Season:</label>
+        <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary-color); outline: none; cursor: pointer; font-weight: bold; color: var(--primary-color); background: #fff;">
+            {% for season in available_seasons %}
+                <option value="{{ season }}" {{ 'selected' if selected_season == season }}>{{ season }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
 <div class="card" style="padding: 25px; border-top: 4px solid var(--primary-color);">
-    <div class="schedule-container" style="max-height: 800px; overflow-y: auto; padding: 5px;">
+    <div class="schedule-container" style="padding: 5px;">
         {% if weeks %}
-            {% for wk_num, games in weeks.items() %}
-                <div class="week-section">
-                    <h4 style="color: #013369; border-bottom: 2px solid #013369; padding-bottom: 5px; margin-top: 20px;">Week {{ wk_num }}</h4>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">
+            {% for wk_num, data in weeks.items() %}
+                <div class="week-section" style="margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #013369; padding-bottom: 5px; margin-top: 20px; margin-bottom: 15px;">
+                        <h4 style="color: #013369; margin: 0;">Week {{ wk_num }}</h4>
+                        {% if data.byes %}
+                            <span style="font-size: 0.85em; color: #7f8c8d;">
+                                <strong>Byes:</strong> {{ data.byes|join(', ') }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
                         <thead>
                             <tr style="background: #f8f9fa; border-bottom: 2px solid #eee; text-align: left;">
-                                <th style="padding: 10px;">Status</th>
                                 <th style="padding: 10px;">Matchup</th>
-                                <th style="padding: 10px; text-align: right;">Result</th>
+                                <th style="padding: 10px; text-align: right;">Result / Box Score</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for game in games %}
-                                <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 10px; text-transform: capitalize;">{{ game.status }}</td>
+                            {% for game in data.games %}
+                                <tr style="border-bottom: 1px solid #f9f9f9;">
                                     <td style="padding: 10px;">
                                         <a href="{{ url_for('nfl_team', team_alias=game.away.alias) }}" style="text-decoration: none; color: inherit;">
                                             {{ game.away.name }}
                                         </a> 
-                                        @ 
+                                        <span style="color: #7f8c8d; margin: 0 5px;">@</span>
                                         <a href="{{ url_for('nfl_team', team_alias=game.home.alias) }}" style="text-decoration: none; color: inherit;">
                                             <strong>{{ game.home.name }}</strong>
                                         </a>
                                     </td>
                                     <td style="padding: 10px; text-align: right;">
-                                        {% if game.status == 'closed' %}
-                                            <a href="{{ url_for('nfl_game_details', game_id=game.id) }}" style="text-decoration: none; color: inherit;">
-                                                {{ game.home.alias }} {{ game.scoring.home_points }} - {{ game.away.alias }} {{ game.scoring.away_points }}
-                                                <br>
-                                                <small style="color: #27ae60; font-weight: bold;">
-                                                    {% if game.scoring.home_points > game.scoring.away_points %}
-                                                        {{ game.home.alias }} Won
-                                                    {% elif game.scoring.away_points > game.scoring.home_points %}
-                                                        {{ game.away.alias }} Won
-                                                    {% else %}
-                                                        Tie
-                                                    {% endif %}
-                                                </small>
-                                            </a>
-                                        {% else %}
-                                            <span style="color: #7f8c8d;">Scheduled</span>
-                                        {% endif %}
+                                        <a href="{{ url_for('nfl_game_details', game_id=game.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                            {{ game.away.alias }} {{ game.scoring.away_points }} - {{ game.home.alias }} {{ game.scoring.home_points }}
+                                        </a>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -67,37 +63,6 @@
                 <p>No schedule data available at this time.</p>
             </div>
         {% endif %}
-
-        <div class="week-section" style="margin-top: 40px;">
-            <h4 style="color: #013369; border-bottom: 2px solid #013369; padding-bottom: 5px;">NFL Postseason</h4>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr style="background-color: #f0f4f8; font-weight: bold;">
-                    <td style="padding: 10px;">Round</td>
-                    <td style="padding: 10px;">Status</td>
-                    <td style="padding: 10px; text-align: right;">Result</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px;">Wild Card</td>
-                    <td style="padding: 10px;">Upcoming</td>
-                    <td style="padding: 10px; text-align: right;">-</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px;">Divisional</td>
-                    <td style="padding: 10px;">Upcoming</td>
-                    <td style="padding: 10px; text-align: right;">-</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px;">Championship</td>
-                    <td style="padding: 10px;">Upcoming</td>
-                    <td style="padding: 10px; text-align: right;">-</td>
-                </tr>
-                <tr style="background-color: #e8f5e9; font-weight: bold;">
-                    <td style="padding: 10px;">Super Bowl LIX</td>
-                    <td style="padding: 10px;">Upcoming</td>
-                    <td style="padding: 10px; text-align: right;">-</td>
-                </tr>
-            </table>
-        </div>
     </div>
 </div>
 {% endblock %}

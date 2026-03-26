@@ -11,10 +11,28 @@
 
 {% block nfl_content %}
 <div class="player-list card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
-    <div class="controls-container" style="margin-bottom: 20px;">
+    <div class="controls-container" style="margin-bottom: 25px; display: flex; flex-direction: column; gap: 15px;">
         <div class="name-filter" style="display: flex; flex-direction: column; gap: 5px;">
-            <span style="font-weight: bold; color: #2c3e50;">Search Players:</span>
-            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; max-width: 400px; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc;">
+            <span style="font-weight: bold; color: #2c3e50; font-size: 0.9em;">Search Players:</span>
+            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; max-width: 450px; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+        </div>
+        
+        <div class="position-filter" style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #eee; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; max-width: 450px;">
+                <span style="font-weight: bold; color: #2c3e50; font-size: 0.9em;">Filter by Position:</span>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllPos(true)" style="padding: 2px 8px; font-size: 0.7em;">All</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllPos(false)" style="padding: 2px 8px; font-size: 0.7em;">None</button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                {% for pos in ['QB', 'RB', 'FB', 'WR', 'TE', 'K'] %}
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9em; background: #fff; padding: 5px 10px; border-radius: 20px; border: 1px solid #ddd; transition: all 0.2s;">
+                        <input type="checkbox" class="pos-checkbox" value="{{ pos }}" checked onchange="applyFiltersAndSort()" style="cursor: pointer;">
+                        <span style="font-weight: 600;">{{ pos }}</span>
+                    </label>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
@@ -30,24 +48,64 @@
 
     <table class="players-table" id="playersTable" style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr style="text-align: left; border-bottom: 2px solid #ddd;">
-                <th style="padding: 10px; cursor: pointer;">Name</th>
-                <th style="padding: 10px; cursor: pointer;">Team</th>
-                <th style="padding: 10px; cursor: pointer;">Position</th>
-                <th style="padding: 10px;">Jersey</th>
+            <tr style="text-align: left; border-bottom: 2px solid #ddd; font-size: 0.75em; text-transform: uppercase; color: #7f8c8d;">
+                <th style="padding: 10px; cursor: pointer; color: #2c3e50; user-select: none;" onclick="setSort('name')">Name <span class="sort-icon" id="sort-name"></span></th>
+                <th style="padding: 10px; cursor: pointer; color: #2c3e50; user-select: none;" onclick="setSort('team')">Team <span class="sort-icon" id="sort-team"></span></th>
+                <th style="padding: 10px; cursor: pointer; color: #2c3e50; user-select: none;" onclick="setSort('position')">Pos <span class="sort-icon" id="sort-position"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_att')">Att <span class="sort-icon" id="sort-pass_att"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_comp')">Cmp <span class="sort-icon" id="sort-pass_comp"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_yds')">Yds <span class="sort-icon" id="sort-pass_yds"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_td')">TD <span class="sort-icon" id="sort-pass_td"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('ints')">INT <span class="sort-icon" id="sort-ints"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('rush_att')">Rush <span class="sort-icon" id="sort-rush_att"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('rush_yds')">Yds <span class="sort-icon" id="sort-rush_yds"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('rush_td')">TD <span class="sort-icon" id="sort-rush_td"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('receptions')">Rec <span class="sort-icon" id="sort-receptions"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('rec_yds')">Yds <span class="sort-icon" id="sort-rec_yds"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('rec_td')">TD <span class="sort-icon" id="sort-rec_td"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('fumbles')">FUM <span class="sort-icon" id="sort-fumbles"></span></th>
+                <th style="padding: 10px; cursor: pointer; text-align: right; color: var(--primary-color); user-select: none;" onclick="setSort('points')">FPTS <span class="sort-icon" id="sort-points"></span></th>
             </tr>
         </thead>
         <tbody id="tableBody">
             {% for player in players %}
-                <tr class="player-row">
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                        <a href="{{ url_for('nfl_player', player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                <tr class="player-row" style="font-size: 0.85em; border-bottom: 1px solid #eee;"
+                    data-name="{{ player.name }}"
+                    data-team="{{ player.team }}"
+                    data-position="{{ player.position }}"
+                    data-pass_att="{{ player.pass_att or 0 }}"
+                    data-pass_comp="{{ player.pass_comp or 0 }}"
+                    data-pass_yds="{{ player.pass_yds or 0 }}"
+                    data-pass_td="{{ player.pass_td or 0 }}"
+                    data-ints="{{ player.ints or 0 }}"
+                    data-rush_att="{{ player.rush_att or 0 }}"
+                    data-rush_yds="{{ player.rush_yds or 0 }}"
+                    data-rush_td="{{ player.rush_td or 0 }}"
+                    data-receptions="{{ player.receptions or 0 }}"
+                    data-rec_yds="{{ player.rec_yds or 0 }}"
+                    data-rec_td="{{ player.rec_td or 0 }}"
+                    data-fumbles="{{ player.fumbles or 0 }}"
+                    data-points="{{ player.points or 0.0 }}">
+                    <td style="padding: 10px;">
+                        <a href="{{ url_for('nfl_player', player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold; white-space: nowrap;">
                             {{ player.name }}
                         </a>
                     </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.team }}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.position }}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">#{{ player.jersey }}</td>
+                    <td style="padding: 10px;">{{ player.team }}</td>
+                    <td style="padding: 10px;">{{ player.position }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.pass_att or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.pass_comp or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.pass_yds or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.pass_td or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.ints or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.rush_att or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.rush_yds or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.rush_td or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.receptions or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.rec_yds or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.rec_td or 0 }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ player.fumbles or 0 }}</td>
+                    <td style="padding: 10px; text-align: right; font-weight: bold; color: var(--primary-color);">{{ "%.2f"|format(player.points) }}</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -65,16 +123,17 @@
 </div>
 
 <script>
+let filteredRows = [];
+let currentPage = 1;
+const pageSize = 25;
+let currentSortCol = 'name';
+let currentSortDir = 1;
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
-    const tableBody = document.getElementById('tableBody');
     const allRows = Array.from(document.querySelectorAll('.player-row'));
     
-    let filteredRows = [...allRows];
-    let currentPage = 1;
-    const pageSize = 25;
-
-    function updateDisplay() {
+    window.updateDisplay = function() {
         const totalResults = filteredRows.length;
         const totalPages = Math.ceil(totalResults / pageSize) || 1;
         
@@ -84,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const start = (currentPage - 1) * pageSize;
         const end = start + pageSize;
         
-        // Hide all rows first
+        // Hide all rows
         allRows.forEach(row => row.style.display = 'none');
         
         // Show current page rows
@@ -103,25 +162,70 @@ document.addEventListener('DOMContentLoaded', function() {
             el.innerText = `Page ${currentPage} of ${totalPages}`;
         });
 
-        // Update button states
         document.querySelectorAll('.prev-page').forEach(btn => btn.disabled = currentPage === 1);
         document.querySelectorAll('.next-page').forEach(btn => btn.disabled = currentPage === totalPages || totalResults === 0);
-    }
+    };
 
-    function applyFilters() {
+    window.applyFiltersAndSort = function() {
         const term = searchInput.value.toLowerCase();
         
+        // Get active positions from checkboxes
+        const selectedPos = Array.from(document.querySelectorAll('.pos-checkbox:checked')).map(cb => cb.value);
+        
+        // 1. Filter
         filteredRows = allRows.filter(row => {
-            const text = row.innerText.toLowerCase();
-            return text.includes(term);
+            const matchesSearch = row.innerText.toLowerCase().includes(term);
+            const matchesPos = selectedPos.includes(row.dataset.position);
+            return matchesSearch && matchesPos;
         });
+
+        // 2. Sort
+        filteredRows.sort((a, b) => {
+            let valA = a.dataset[currentSortCol];
+            let valB = b.dataset[currentSortCol];
+
+            if (!isNaN(valA) && !isNaN(valB) && valA !== '' && valB !== '') {
+                return (parseFloat(valA) - parseFloat(valB)) * currentSortDir;
+            }
+            
+            valA = valA.toLowerCase();
+            valB = valB.toLowerCase();
+            return valA < valB ? -currentSortDir : valA > valB ? currentSortDir : 0;
+        });
+
+        // 3. Re-order in DOM
+        const tableBody = document.getElementById('tableBody');
+        filteredRows.forEach(row => tableBody.appendChild(row));
         
         currentPage = 1;
         updateDisplay();
-    }
+    };
 
-    // Event Listeners
-    searchInput.addEventListener('input', applyFilters);
+    window.toggleAllPos = function(checked) {
+        document.querySelectorAll('.pos-checkbox').forEach(cb => {
+            cb.checked = checked;
+        });
+        applyFiltersAndSort();
+    };
+
+    window.setSort = function(col) {
+        if (currentSortCol === col) {
+            currentSortDir *= -1;
+        } else {
+            currentSortCol = col;
+            currentSortDir = 1;
+        }
+        
+        document.querySelectorAll('.sort-icon').forEach(el => {
+            el.classList.remove('sort-asc', 'sort-desc');
+        });
+        const icon = document.getElementById(`sort-${col}`);
+        if (icon) icon.classList.add(currentSortDir === 1 ? 'sort-asc' : 'sort-desc');
+
+        applyFiltersAndSort();
+    };
+
+    searchInput.addEventListener('input', applyFiltersAndSort);
 
     document.querySelectorAll('.prev-page').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -144,8 +248,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initial display
-    applyFilters();
+    applyFiltersAndSort();
 });
 </script>
+
+<style>
+.sort-icon {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-left: 5px;
+    vertical-align: middle;
+    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+}
+.sort-asc {
+    border-bottom: 4px solid #2c3e50;
+    border-top: none;
+}
+.sort-desc {
+    border-top: 4px solid #2c3e50;
+    border-bottom: none;
+}
+</style>
 {% endblock %}

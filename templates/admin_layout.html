@@ -27,6 +27,12 @@
                 <span class="nav-label">Data</span>
             </a>
         </li>
+        <li>
+            <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if active_tab == 'settings' }}">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </a>
+        </li>
     </ul>
 </div>
 {% endblock %}

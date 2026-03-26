@@ -16,6 +16,24 @@
             </a>
         </li>
         <li>
+            <a href="{{ url_for('league_standings', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_standings' }}">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Standings</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('league_matchups', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_matchups' }}">
+                <span class="nav-icon">🤝</span>
+                <span class="nav-label">Matchups</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('league_draft', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_draft' }}">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">Draft</span>
+            </a>
+        </li>
+        <li>
             <a href="{{ url_for('league_players', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_players', 'league_player'] }}">
                 <span class="nav-icon">🏃</span>
                 <span class="nav-label">Players</span>

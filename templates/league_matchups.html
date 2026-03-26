@@ -1,0 +1,96 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div class="league-header" style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1>{{ league.name }} Matchups</h1>
+        <p class="text-muted">Season: {{ league.current_season }} | Week {{ week }}</p>
+    </div>
+    {% if is_admin and not matchups %}
+    <form action="{{ url_for('generate_schedule', league_id=league.id) }}" method="POST">
+        <button type="submit" class="btn btn-primary">Generate 14-Week Schedule</button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Week Selector -->
+<div class="week-selector" style="margin-bottom: 30px; display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    {% for w in range(1, 15) %}
+    <a href="{{ url_for('league_matchups', league_id=league.id, week=w) }}" 
+       class="btn {{ 'btn-primary' if w == week else 'btn-outline' }}" 
+       style="min-width: 40px; padding: 5px 10px;">
+        {{ w }}
+    </a>
+    {% endfor %}
+</div>
+
+<div class="matchups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px;">
+    {% for matchup in matchups %}
+    <div class="matchup-card" style="background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e2e8f0;">
+        <div style="padding: 20px;">
+            <!-- Home Team -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">H</div>
+                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.home_id) }}" style="font-weight: bold; font-size: 1.1em; color: #1e293b; text-decoration: none; hover: underline;">
+                        {{ matchup.home_name }}
+                    </a>
+                </div>
+                <div style="font-size: 1.5em; font-weight: 800; color: {{ 'var(--primary-color)' if matchup.home_score > matchup.away_score else '#1e293b' }};">
+                    {{ matchup.home_score }}
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 5px 0; color: #94a3b8; font-weight: bold; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;">VS</div>
+
+            <!-- Away Team -->
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">A</div>
+                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.away_id) }}" style="font-weight: bold; font-size: 1.1em; color: #1e293b; text-decoration: none;">
+                        {{ matchup.away_name }}
+                    </a>
+                </div>
+                <div style="font-size: 1.5em; font-weight: 800; color: {{ 'var(--primary-color)' if matchup.away_score > matchup.home_score else '#1e293b' }};">
+                    {{ matchup.away_score }}
+                </div>
+            </div>
+        </div>
+        <div style="background: #f8fafc; padding: 10px 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 0.85em; color: #64748b; font-weight: 500;">
+            Matchup ID: {{ matchup.id[:8] }}... | <span style="color: #10b981;">● Live</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not matchups %}
+<div style="text-align: center; padding: 100px 20px; background: #fff; border-radius: 12px; border: 2px dashed #e2e8f0;">
+    <div style="font-size: 3em; margin-bottom: 20px;">📅</div>
+    <h3 style="color: #1e293b;">No schedule generated yet</h3>
+    <p style="color: #64748b; max-width: 400px; margin: 0 auto 25px;">The league schedule needs to be generated before weekly matchups can be viewed.</p>
+    {% if is_admin %}
+    <form action="{{ url_for('generate_schedule', league_id=league.id) }}" method="POST">
+        <button type="submit" class="btn btn-primary" style="padding: 12px 30px;">Generate 14-Week Schedule Now</button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+    .btn-outline {
+        border: 1px solid #cbd5e0;
+        background: transparent;
+        color: #4a5568;
+    }
+    .btn-outline:hover {
+        background: #f7fafc;
+    }
+    .matchup-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12) !0.12;
+        transition: all 0.2s ease;
+    }
+</style>
+{% endblock %}

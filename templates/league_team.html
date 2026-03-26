@@ -15,50 +15,170 @@
                 <p style="margin: 0; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;"><strong>Total Points</strong></p>
                 <p style="margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: var(--primary-color);">{{ "%.2f"|format(total_points) }}</p>
             </div>
+
+            {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid var(--secondary-color);">
+                <p style="margin: 0; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;"><strong>Budget Usage</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 1.4em; font-weight: bold; color: var(--secondary-color);">${{ "{:,.0f}".format(total_salary) }}</p>
+                <p style="margin: 0; font-size: 0.75em; color: #95a5a6;">Cap: ${{ "{:,.0f}".format(league.salary_settings.salary_cap) }}</p>
+                
+                {% set usage_pct = (total_salary / league.salary_settings.salary_cap * 100) if league.salary_settings.salary_cap > 0 else 0 %}
+                <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; margin-top: 8px; overflow: hidden;">
+                    <div style="width: {{ [usage_pct, 100]|min }}%; height: 100%; background: {{ '#e74c3c' if usage_pct > 90 else '#f39c12' if usage_pct > 75 else '#27ae60' }};"></div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block league_content %}
-<div class="roster-container card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
-    {% if roster %}
-        <table class="roster-table" style="width: 100%; border-collapse: collapse;">
+<div class="roster-container" style="display: flex; flex-direction: column; gap: 30px;">
+    
+    <!-- STARTERS SECTION -->
+    <div class="starters-section card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50; border-top: 4px solid var(--primary-color);">
+        <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid #eee; padding-bottom: 10px;">Starting Lineup</h3>
+        <table class="roster-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
-                <tr style="border-bottom: 2px solid #ddd; text-align: left;">
-                    <th style="padding: 10px;">Name</th>
+                <tr style="border-bottom: 2px solid #eee; text-align: left; font-size: 0.85em; color: #7f8c8d; text-transform: uppercase;">
+                    <th style="padding: 10px;">Slot</th>
+                    <th style="padding: 10px;">Player</th>
                     <th style="padding: 10px;">Pos</th>
                     <th style="padding: 10px;">Team</th>
+                    {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+                        <th style="padding: 10px; text-align: right;">Salary</th>
+                    {% endif %}
                     <th style="padding: 10px; text-align: right;">Points</th>
                     {% if session.get('user_id') == manager._id|string %}
-                        <th style="padding: 10px;">Action</th>
+                        <th style="padding: 10px; text-align: center;">Action</th>
                     {% endif %}
                 </tr>
             </thead>
             <tbody>
-                {% for player in roster %}
-                    <tr style="border-bottom: 1px solid #eee;">
+                {% for slot, player in starters.items() %}
+                    <tr style="border-bottom: 1px solid #f9f9f9; height: 60px;">
                         <td style="padding: 10px;">
-                            <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
-                                {{ player.name }}
-                            </a>
+                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; color: #4a5568;">{{ slot }}</span>
                         </td>
-                        <td style="padding: 10px;">{{ player.position }}</td>
-                        <td style="padding: 10px;">{{ player.team }}</td>
-                        <td style="padding: 10px; font-weight: bold; text-align: right;">{{ "%.2f"|format(player.points) }}</td>
+                        <td style="padding: 10px;">
+                            {% if player %}
+                                <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                    {{ player.name }}
+                                </a>
+                            {% else %}
+                                <span style="color: #cbd5e0; font-style: italic;">Empty Slot</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 10px;">{{ player.position if player else '-' }}</td>
+                        <td style="padding: 10px; font-size: 0.9em; color: #7f8c8d;">{{ player.team if player else '-' }}</td>
+                        {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">
+                                {{ "${:,.0f}".format(player.salary) if player else '-' }}
+                            </td>
+                        {% endif %}
+                        <td style="padding: 10px; font-weight: bold; text-align: right; color: var(--primary-color);">
+                            {{ "%.2f"|format(player.points) if player else '-' }}
+                        </td>
                         {% if session.get('user_id') == manager._id|string %}
-                            <td style="padding: 10px;">
-                                <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 0.75em;">Remove</a>
+                            <td style="padding: 10px; text-align: center;">
+                                {% if player %}
+                                    <button class="btn btn-secondary btn-sm" onclick="movePlayer('bench', '{{ player.id }}')" style="padding: 2px 10px; font-size: 0.75em;">Bench</button>
+                                {% endif %}
                             </td>
                         {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p style="text-align: center; padding: 20px;">No players on this roster yet.</p>
-    {% endif %}
+    </div>
+
+    <!-- BENCH SECTION -->
+    <div class="bench-section card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50;">
+        <h3 style="margin-top: 0; color: #7f8c8d; border-bottom: 2px solid #eee; padding-bottom: 10px;">Bench</h3>
+        <table class="roster-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #eee; text-align: left; font-size: 0.85em; color: #7f8c8d; text-transform: uppercase;">
+                    <th style="padding: 10px;">Player</th>
+                    <th style="padding: 10px;">Pos</th>
+                    <th style="padding: 10px;">Team</th>
+                    {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+                        <th style="padding: 10px; text-align: right;">Salary</th>
+                    {% endif %}
+                    <th style="padding: 10px; text-align: right;">Points</th>
+                    {% if session.get('user_id') == manager._id|string %}
+                        <th style="padding: 10px; text-align: center;">Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if bench %}
+                    {% for player in bench %}
+                        <tr style="border-bottom: 1px solid #f9f9f9;">
+                            <td style="padding: 10px;">
+                                <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: #2c3e50; font-weight: bold;">
+                                    {{ player.name }}
+                                </a>
+                            </td>
+                            <td style="padding: 10px;">{{ player.position }}</td>
+                            <td style="padding: 10px; font-size: 0.9em; color: #7f8c8d;">{{ player.team }}</td>
+                            {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+                                <td style="padding: 10px; text-align: right; color: #7f8c8d;">
+                                    {{ "${:,.0f}".format(player.salary) }}
+                                </td>
+                            {% endif %}
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ "%.2f"|format(player.points) }}</td>
+                            {% if session.get('user_id') == manager._id|string %}
+                                <td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
+                                    <select onchange="movePlayer('start', '{{ player.id }}', this.value)" style="padding: 2px; font-size: 0.75em; border-radius: 4px;">
+                                        <option value="">-- Start As --</option>
+                                        {% for slot_name in starters.keys() %}
+                                            <option value="{{ slot_name }}">{{ slot_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 0.75em; display: flex; align-items: center;">Drop</a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="padding: 20px; text-align: center; color: #cbd5e0; font-style: italic;">No players on bench</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<script>
+function movePlayer(action, playerId, slot = '') {
+    if (action === 'start' && !slot) return;
+    
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('player_id', playerId);
+    if (slot) formData.append('slot', slot);
+    
+    fetch("{{ url_for('league_roster_move', league_id=league.id) }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert("Movement Error: " + data.message);
+            window.location.reload(); // Reload to reset dropdowns
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Failed to move player.");
+    });
+}
+</script>
 {% endblock %}
 
 {% block league_sidebar_right %}
@@ -72,6 +192,7 @@
         </div>
     </div>
 {% endif %}
+
 
 <div class="player-search-pane card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; height: 100%; overflow-y: auto;">
     <h3 style="margin-top: 0; font-size: 1.1em; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Player Search</h3>
