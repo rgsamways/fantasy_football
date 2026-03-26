@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFL Fantasy Football</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        // Apply theme before page renders to avoid flash
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
 </head>
 <body>
     <nav>
@@ -23,6 +30,7 @@
                 {% if session.get('is_site_admin') %}
                     <a href="{{ url_for('admin_panel') }}" style="color: #e67e22; font-weight: bold;" class="{{ 'active' if request.endpoint in ['admin_panel', 'manage_users'] }}">Site Admin</a>
                 {% endif %}
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
             </div>
         </div>
     </nav>
@@ -62,24 +70,33 @@
         if (ackBtn) {
             ackBtn.addEventListener('click', function() {
                 const announcementId = this.getAttribute('data-id');
-                
                 fetch(`/announcement/read/${announcementId}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'Content-Type': 'application/json' }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         document.getElementById('globalOverlay').style.display = 'none';
-                        // Optionally reload to check for next announcement if multiple exist
                         window.location.reload();
                     }
                 })
                 .catch(error => console.error('Error:', error));
             });
         }
+
+        // Theme toggle
+        const toggle = document.getElementById('themeToggle');
+        const updateIcon = () => {
+            toggle.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+        };
+        updateIcon();
+        toggle.addEventListener('click', function() {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon();
+        });
     });
     </script>
 </body>

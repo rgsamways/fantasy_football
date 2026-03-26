@@ -8,12 +8,42 @@
     --bg-color: #ffffff;
     --text-color: #2c3e50;
     --card-bg: #f8f9fa;
+    --nav-bg: #f8f9fa;
+    --nav-text: #2c3e50;
+    --border-color: #eee;
+    --input-bg: #ffffff;
+    --input-border: #ddd;
+    --table-header-bg: #f8f9fa;
+    --sub-nav-bg: #ffffff;
+    --footer-bg: #f8f9fa;
+    --actions-bg: #f9f9f9;
+    --actions-border: #ddd;
+    --overlay-bg: #ffffff;
     --danger: #e74c3c;
     --info: #2ecc71;
     --container-max-width: 1200px;
     --container-padding: 2rem;
     --sidebar-left-width: 225px;
     --sidebar-right-width: 250px;
+}
+
+[data-theme="dark"] {
+    --primary-color: #5dade2;
+    --secondary-color: #3498db;
+    --bg-color: #1a1a2e;
+    --text-color: #e0e0e0;
+    --card-bg: #16213e;
+    --nav-bg: #0f0f23;
+    --nav-text: #e0e0e0;
+    --border-color: #2a2a4a;
+    --input-bg: #16213e;
+    --input-border: #2a2a4a;
+    --table-header-bg: #0f0f23;
+    --sub-nav-bg: #16213e;
+    --footer-bg: #0f0f23;
+    --actions-bg: #16213e;
+    --actions-border: #2a2a4a;
+    --overlay-bg: #16213e;
 }
 
 body {
@@ -41,7 +71,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 nav {
-    background-color: #f8f9fa;
+    background-color: var(--nav-bg);
     padding: 1rem 0;
     border-bottom: 2px solid var(--primary-color);
 }
@@ -70,7 +100,7 @@ nav {
 }
 
 .nav-links a {
-    color: #2c3e50;
+    color: var(--nav-text);
     text-decoration: none;
     margin-left: 1.5rem;
     transition: color 0.3s;
@@ -88,8 +118,8 @@ nav {
 }
 
 .sub-nav {
-    background: #fff;
-    border-bottom: 1px solid #ddd;
+    background: var(--sub-nav-bg);
+    border-bottom: 1px solid var(--border-color);
     margin-bottom: 20px;
     width: 100%;
 }
@@ -120,7 +150,7 @@ nav {
 
 .sub-nav a:hover {
     color: var(--primary-color);
-    background: #f8f9fa;
+    background: var(--card-bg);
 }
 
 .sub-nav a.active {
@@ -131,7 +161,7 @@ nav {
 .hero {
     text-align: center;
     padding: 4rem 0;
-    color: #2c3e50;
+    color: var(--text-color);
 }
 
 .btn {
@@ -165,10 +195,10 @@ nav {
 }
 
 .card {
-    background-color: #fff;
+    background-color: var(--card-bg);
     border-radius: 10px;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .features {
@@ -179,24 +209,24 @@ nav {
 }
 
 .feature-card {
-    background-color: #fff;
+    background-color: var(--card-bg);
     padding: 2rem;
     border-radius: 10px;
     text-align: center;
-    border: 1px solid #eee;
+    border: 1px solid var(--border-color);
     border-top: 4px solid var(--primary-color);
-    color: #2c3e50;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    color: var(--text-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .form-container {
     max-width: 400px;
     margin: 2rem auto;
-    background-color: #fff;
+    background-color: var(--card-bg);
     padding: 2rem;
     border-radius: 10px;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .form-group {
@@ -206,17 +236,17 @@ nav {
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #2c3e50;
+    color: var(--text-color);
     font-weight: 600;
 }
 
-.form-group input, .form-group select {
+.form-group input, .form-group select, .form-control {
     width: 100%;
     padding: 0.8rem;
     border-radius: 5px;
-    border: 1px solid #ddd;
-    background-color: #fff;
-    color: #333;
+    border: 1px solid var(--input-border);
+    background-color: var(--input-bg);
+    color: var(--text-color);
     box-sizing: border-box;
 }
 
@@ -224,22 +254,22 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 2rem;
-    background-color: #fff;
+    background-color: var(--card-bg);
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 th, td {
     padding: 1rem;
     text-align: left;
-    border-bottom: 1px solid #eee;
-    color: #2c3e50;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
 }
 
 th {
-    background-color: #f8f9fa;
+    background-color: var(--table-header-bg);
     color: var(--secondary-color);
     font-weight: bold;
 }
@@ -276,10 +306,10 @@ th {
 footer {
     text-align: center;
     padding: 2rem 0;
-    background-color: #f8f9fa;
+    background-color: var(--footer-bg);
     color: #7f8c8d;
     margin-top: auto;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-color);
 }
 
 /* Size all buttons in Action sections equally */
@@ -303,10 +333,10 @@ div[class*='actions'] form {
 div[class*='actions'] {
     padding: 15px !important;
     margin-bottom: 20px !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid var(--actions-border) !important;
     border-radius: 8px !important;
-    background-color: #f9f9f9 !important;
-    color: #2c3e50 !important;
+    background-color: var(--actions-bg) !important;
+    color: var(--text-color) !important;
 }
 
 div[class*='actions'] h3 {
@@ -340,7 +370,7 @@ div[class*='actions'] > div {
     width: 350px;
     min-height: 200px;
     height: auto;
-    background: #ffffff;
+    background: var(--overlay-bg);
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 30px;
@@ -348,4 +378,24 @@ div[class*='actions'] > div {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+/* Dark mode toggle button */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--nav-text);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-left: 1.5rem;
+    transition: all 0.2s;
+    line-height: 1.4;
+}
+
+.theme-toggle:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
 }
