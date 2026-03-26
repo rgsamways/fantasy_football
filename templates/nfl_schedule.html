@@ -4,9 +4,9 @@
 
 {% block nfl_content %}
 <div class="season-selector" style="text-align: center; margin-bottom: 25px;">
-    <form action="{{ url_for('nfl_schedule') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: #fff; padding: 10px 25px; border-radius: 30px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <label for="season" style="font-weight: bold; color: #7f8c8d; font-size: 0.9em;">Select Season:</label>
-        <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary-color); outline: none; cursor: pointer; font-weight: bold; color: var(--primary-color); background: #fff;">
+    <form action="{{ url_for('nfl_schedule') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: var(--card-bg); padding: 10px 25px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <label for="season" style="font-weight: bold; color: var(--muted-color); font-size: 0.9em;">Select Season:</label>
+        <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary-color); outline: none; cursor: pointer; font-weight: bold; color: var(--primary-color); background: var(--card-bg);">
             {% for season in available_seasons %}
                 <option value="{{ season }}" {{ 'selected' if selected_season == season }}>{{ season }}</option>
             {% endfor %}
@@ -18,11 +18,11 @@
     <div class="schedule-container" style="padding: 5px;">
         {% if weeks %}
             {% for wk_num, data in weeks.items() %}
-                <div class="week-section" style="margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
+                <div class="week-section" style="margin-bottom: 40px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #013369; padding-bottom: 5px; margin-top: 20px; margin-bottom: 15px;">
                         <h4 style="color: #013369; margin: 0;">Week {{ wk_num }}</h4>
                         {% if data.byes %}
-                            <span style="font-size: 0.85em; color: #7f8c8d;">
+                            <span style="font-size: 0.85em; color: var(--muted-color);">
                                 <strong>Byes:</strong> {{ data.byes|join(', ') }}
                             </span>
                         {% endif %}
@@ -30,19 +30,19 @@
                     
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
                         <thead>
-                            <tr style="background: #f8f9fa; border-bottom: 2px solid #eee; text-align: left;">
+                            <tr style="background: var(--table-header-bg); border-bottom: 2px solid var(--border-color); text-align: left;">
                                 <th style="padding: 10px;">Matchup</th>
                                 <th style="padding: 10px; text-align: right;">Result / Box Score</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for game in data.games %}
-                                <tr style="border-bottom: 1px solid #f9f9f9;">
+                                <tr style="border-bottom: 1px solid var(--border-color);">
                                     <td style="padding: 10px;">
                                         <a href="{{ url_for('nfl_team', team_alias=game.away.alias) }}" style="text-decoration: none; color: inherit;">
                                             {{ game.away.name }}
                                         </a> 
-                                        <span style="color: #7f8c8d; margin: 0 5px;">@</span>
+                                        <span style="color: var(--muted-color); margin: 0 5px;">@</span>
                                         <a href="{{ url_for('nfl_team', team_alias=game.home.alias) }}" style="text-decoration: none; color: inherit;">
                                             <strong>{{ game.home.name }}</strong>
                                         </a>
@@ -59,10 +59,11 @@
                 </div>
             {% endfor %}
         {% else %}
-            <div style="text-align: center; padding: 40px; color: #7f8c8d;">
+            <div style="text-align: center; padding: 40px; color: var(--muted-color);">
                 <p>No schedule data available at this time.</p>
             </div>
         {% endif %}
     </div>
 </div>
 {% endblock %}
+

@@ -33,7 +33,7 @@
             </thead>
             <tbody>
                 {% for game in games %}
-                    <tr style="border-bottom: 1px solid #f9f9f9;">
+                    <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 10px;">{{ game.summary.away.name }}</td>
                         <td style="padding: 10px; color: var(--muted-color);">@</td>
                         <td style="padding: 10px;">{{ game.summary.home.name }}</td>
@@ -50,3 +50,4 @@
     </div>
 {% endfor %}
 {% endblock %}
+

@@ -32,7 +32,7 @@
 
             <!-- PASSING -->
             <div class="category-group" style="margin-bottom: 30px;">
-                <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Passing</h3>
+                <h3 style="background: var(--table-header-bg); padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Passing</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <thead>
                         <tr style="text-align: left; font-size: 0.85em; color: var(--muted-color); border-bottom: 1px solid var(--border-color);">
@@ -47,7 +47,7 @@
                     </thead>
                     <tbody>
                         {% for p in game.statistics[side].passing.players %}
-                            <tr style="border-bottom: 1px solid #f9f9f9;">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td style="padding: 10px; font-weight: bold;">{{ p.name }}</td>
                                 <td style="padding: 10px;">
                                     <div class="inc-input">
@@ -99,7 +99,7 @@
 
             <!-- RUSHING -->
             <div class="category-group" style="margin-bottom: 30px;">
-                <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Rushing</h3>
+                <h3 style="background: var(--table-header-bg); padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Rushing</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <thead>
                         <tr style="text-align: left; font-size: 0.85em; color: var(--muted-color); border-bottom: 1px solid var(--border-color);">
@@ -112,7 +112,7 @@
                     </thead>
                     <tbody>
                         {% for p in game.statistics[side].rushing.players %}
-                            <tr style="border-bottom: 1px solid #f9f9f9;">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td style="padding: 10px; font-weight: bold;">{{ p.name }}</td>
                                 <td style="padding: 10px;">
                                     <div class="inc-input">
@@ -150,7 +150,7 @@
 
             <!-- RECEIVING -->
             <div class="category-group">
-                <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Receiving</h3>
+                <h3 style="background: var(--table-header-bg); padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Receiving</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <thead>
                         <tr style="text-align: left; font-size: 0.85em; color: var(--muted-color); border-bottom: 1px solid var(--border-color);">
@@ -163,7 +163,7 @@
                     </thead>
                     <tbody>
                         {% for p in game.statistics[side].receiving.players %}
-                            <tr style="border-bottom: 1px solid #f9f9f9;">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td style="padding: 10px; font-weight: bold;">{{ p.name }}</td>
                                 <td style="padding: 10px;">
                                     <div class="inc-input">
@@ -273,3 +273,4 @@ function addPlayerToGame(side) {
 }
 </script>
 {% endblock %}
+

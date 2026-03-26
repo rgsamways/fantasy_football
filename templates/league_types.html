@@ -12,7 +12,7 @@
     <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; color: var(--primary-color);">Core League Types</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
         {% for type in league_types %}
-            <div class="card" id="{{ type.name|replace(' ', '-') }}" style="padding: 25px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; display: flex; flex-direction: column;">
+            <div class="card" id="{{ type.name|replace(' ', '-') }}" style="padding: 25px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color); display: flex; flex-direction: column;">
                 <h4 style="margin-top: 0; color: var(--secondary-color); font-size: 1.3em;">{{ type.name }}</h4>
                 <p style="line-height: 1.6; margin-bottom: 20px; flex-grow: 1;">{{ type.description }}</p>
                 <div style="display: flex; gap: 10px; margin-top: auto;">
@@ -23,7 +23,7 @@
     </div>
 </div>
 
-<div class="custom-options card" style="padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f0f4f8; color: #2c3e50;">
+<div class="custom-options card" style="padding: 30px; border: 1px solid var(--border-color); border-radius: 8px; background-color: #f0f4f8; color: var(--text-color);">
     <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 1px solid #ccc; padding-bottom: 15px;">Configurable Formats</h3>
     <p style="margin-bottom: 25px;">When creating any of the league types above, you can further customize the experience with these settings:</p>
     
@@ -59,3 +59,4 @@
     <p style="margin: 0; color: #01579b; font-weight: bold;">New formats and customization options are added regularly! Check back soon for more ways to compete.</p>
 </div>
 {% endblock %}
+

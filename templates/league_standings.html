@@ -17,7 +17,7 @@
     <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
-                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                <tr style="background: var(--table-header-bg); border-bottom: 2px solid var(--border-color); text-align: left;">
                     <th style="padding: 12px 20px; width: 60px;">Rank</th>
                     <th style="padding: 12px 20px;">Team</th>
                     <th style="padding: 12px 20px; text-align: center;">W-L-T</th>
@@ -34,7 +34,7 @@
                             <a href="{{ url_for('league_team', league_id=league.id, user_id=team.user_id) }}" style="font-weight: bold; color: var(--primary-color); text-decoration: none;">
                                 {{ team.team_name }}
                             </a>
-                            <span style="font-size: 0.85em; color: #95a5a6;">(@{{ team.username }})</span>
+                            <span style="font-size: 0.85em; color: var(--muted-color);">(@{{ team.username }})</span>
                         </div>
                     </td>
                     <td style="padding: 12px 20px; text-align: center;">{{ team.wins }}-{{ team.losses }}-{{ team.ties }}</td>
@@ -63,3 +63,4 @@
     }
 </style>
 {% endblock %}
+

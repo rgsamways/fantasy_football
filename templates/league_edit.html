@@ -102,7 +102,7 @@
         });
         </script>
         
-        <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+        <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--border-color);">
             <h3 style="margin-bottom: 20px; color: var(--secondary-color);">Salary & Budget Settings</h3>
             
             {% set ss = league.salary_settings if league.salary_settings else {} %}
@@ -146,3 +146,4 @@
     </form>
 </div>
 {% endblock %}
+

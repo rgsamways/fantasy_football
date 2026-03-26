@@ -19,11 +19,11 @@
                             <span style="font-size: 1.2rem;">👤</span>
                             <h4 style="margin: 0; color: var(--text-color); font-size: 1em;">
                                 {{ member.username }}
-                                <span style="font-weight: normal; color: #7f8c8d; font-size: 0.85em; margin-left: 5px;">[{{ member.team_name }}]</span>
+                                <span style="font-weight: normal; color: var(--muted-color); font-size: 0.85em; margin-left: 5px;">[{{ member.team_name }}]</span>
                             </h4>
                         </div>
                     </td>
-                    <td style="padding: 12px; color: #7f8c8d; font-weight: bold;">
+                    <td style="padding: 12px; color: var(--muted-color); font-weight: bold;">
                         {{ member.roster_count }} players
                     </td>
                     <td style="padding: 12px;">
@@ -72,7 +72,7 @@
         {% if league.play_format == 'Head-2-Head' and league.has_divisions %}
             <p style="margin-bottom: 8px;"><strong>Divisions:</strong> {{ league.num_divisions if league.num_divisions else 2 }}</p>
         {% endif %}
-        <p style="margin-bottom: 8px; color: #7f8c8d; font-size: 0.9em; word-break: break-all;"><strong>ID:</strong> {{ league.id }}</p>
+        <p style="margin-bottom: 8px; color: var(--muted-color); font-size: 0.9em; word-break: break-all;"><strong>ID:</strong> {{ league.id }}</p>
         <p style="margin-bottom: 8px;"><strong>Created by:</strong><br>{{ members[0].username if members else 'Unknown' }}</p>
         <p style="margin-bottom: 0;"><strong>Total Members:</strong> {{ members | length }}</p>
     </div>
@@ -96,8 +96,8 @@
             <a href="{{ url_for('league_scoring', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #8e44ad;">Scoring Settings</a>
             <a href="{{ url_for('league_roster_settings', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #27ae60;">Roster Settings</a>
             {% if league.play_format == 'Head-2-Head' and league.has_divisions %}
-                <a href="{{ url_for('league_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #34495e;">Division Names</a>
-                <a href="{{ url_for('league_assign_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: #7f8c8d;">Assign Divisions</a>
+                <a href="{{ url_for('league_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: var(--text-color);">Division Names</a>
+                <a href="{{ url_for('league_assign_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%; background-color: var(--muted-color);">Assign Divisions</a>
             {% endif %}
 
             <!-- INVITE SECTION -->
@@ -117,7 +117,7 @@
                         {% for invite in pending_invites %}
                             <div class="inner-card" style="font-size: 0.8em;">
                                 <div style="font-weight: bold; overflow: hidden; text-overflow: ellipsis;">{{ invite.email }}</div>
-                                <div style="color: #7f8c8d; font-size: 0.9em; margin-bottom: 5px;">Sent: {{ invite.created_at.strftime('%b %d') }}</div>
+                                <div style="color: var(--muted-color); font-size: 0.9em; margin-bottom: 5px;">Sent: {{ invite.created_at.strftime('%b %d') }}</div>
                                 <button class="btn btn-secondary btn-sm" style="width: 100%; font-size: 0.85em; padding: 2px 0;" 
                                         onclick="copyInviteLink('{{ url_for('join_by_token', token=invite.token, _external=True) }}')">
                                     Copy Link
@@ -142,7 +142,7 @@
         {% for member in members %}
             <li style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 2px;">
                 <span style="font-weight: bold; color: var(--secondary-color);">{{ member.username }}</span>
-                <span class="last-visited" data-utc="{{ member.last_visited }}" style="color: #7f8c8d; font-size: 0.9em;">
+                <span class="last-visited" data-utc="{{ member.last_visited }}" style="color: var(--muted-color); font-size: 0.9em;">
                     Visited: {{ 'Never' if not member.last_visited else 'Loading...' }}
                 </span>
             </li>
@@ -173,3 +173,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

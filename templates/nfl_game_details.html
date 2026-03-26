@@ -3,14 +3,14 @@
 {% block layout_class %}no-sidebars{% endblock %}
 
 {% block nfl_header %}
-<div class="nfl-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+<div class="nfl-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <div class="team-header" style="text-align: center; flex: 1;">
         <h2 style="margin: 0; color: var(--primary-color);">{{ game.summary.away.name }}</h2>
         <div style="font-size: 2.5rem; font-weight: bold;">{{ game.summary.away.points }}</div>
     </div>
     
     <div class="game-meta" style="text-align: center; flex: 1;">
-        <div style="font-weight: bold; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;">Final</div>
+        <div style="font-weight: bold; color: var(--muted-color); text-transform: uppercase; letter-spacing: 1px;">Final</div>
         <div style="margin: 10px 0; font-size: 1.2rem;">@</div>
         <div>Week {{ game.summary.week.sequence }}, {{ game.summary.season.year }}</div>
     </div>
@@ -33,10 +33,10 @@
             {% set players = game.statistics.away[category].players %}
             {% if players %}
                 <div class="stat-category" style="margin-bottom: 30px;">
-                    <h4 style="text-transform: capitalize; color: #34495e; background: #f8f9fa; padding: 8px;">{{ category }}</h4>
+                    <h4 style="text-transform: capitalize; color: var(--text-color); background: var(--table-header-bg); padding: 8px;">{{ category }}</h4>
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
                         <thead>
-                            <tr style="border-bottom: 1px solid #ddd; text-align: left;">
+                            <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
                                 <th style="padding: 8px;">Player</th>
                                 {% if category == 'passing' %}
                                     <th>C/A</th><th>Yds</th><th>TD</th><th>INT</th>
@@ -49,7 +49,7 @@
                         </thead>
                         <tbody>
                             {% for p in players %}
-                                <tr style="border-bottom: 1px solid #eee;">
+                                <tr style="border-bottom: 1px solid var(--border-color);">
                                     <td style="padding: 8px;"><strong>{{ p.name }}</strong></td>
                                     {% if category == 'passing' %}
                                         <td>{{ p.completions }}/{{ p.attempts }}</td>
@@ -84,10 +84,10 @@
             {% set players = game.statistics.home[category].players %}
             {% if players %}
                 <div class="stat-category" style="margin-bottom: 30px;">
-                    <h4 style="text-transform: capitalize; color: #34495e; background: #f8f9fa; padding: 8px;">{{ category }}</h4>
+                    <h4 style="text-transform: capitalize; color: var(--text-color); background: var(--table-header-bg); padding: 8px;">{{ category }}</h4>
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
                         <thead>
-                            <tr style="border-bottom: 1px solid #ddd; text-align: left;">
+                            <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
                                 <th style="padding: 8px;">Player</th>
                                 {% if category == 'passing' %}
                                     <th>C/A</th><th>Yds</th><th>TD</th><th>INT</th>
@@ -100,7 +100,7 @@
                         </thead>
                         <tbody>
                             {% for p in players %}
-                                <tr style="border-bottom: 1px solid #eee;">
+                                <tr style="border-bottom: 1px solid var(--border-color);">
                                     <td style="padding: 8px;"><strong>{{ p.name }}</strong></td>
                                     {% if category == 'passing' %}
                                         <td>{{ p.completions }}/{{ p.attempts }}</td>
@@ -132,3 +132,4 @@
     <a href="{{ url_for('nfl_schedule') }}" class="btn btn-secondary">Back to Schedule</a>
 </div>
 {% endblock %}
+

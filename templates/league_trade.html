@@ -10,7 +10,7 @@
 
 <div class="trade-container" style="display: flex; flex-direction: column; gap: 30px;">
     <!-- Team Selection -->
-    <div class="card" style="padding: 20px; background: #f8f9fa;">
+    <div class="card" style="padding: 20px; background: var(--table-header-bg);">
         <form action="{{ url_for('league_trade', league_id=league.id) }}" method="GET" style="display: flex; align-items: center; gap: 15px; justify-content: center;">
             <label for="target_user_id" style="font-weight: bold;">Select Team to Trade With:</label>
             <select name="target_user_id" id="target_user_id" class="form-control" style="width: auto; min-width: 250px; padding: 8px;" onchange="this.form.submit()">
@@ -74,7 +74,7 @@
                             </thead>
                             <tbody>
                                 {% for pick in my_draft_picks %}
-                                    <tr style="border-bottom: 1px solid #f5f5f5;">
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
                                         <td style="padding: 5px;"><input type="checkbox" name="my_assets" value="pick_{{ pick.team_id }}_{{ pick.year }}_{{ pick.round }}_{{ pick.pick }}"></td>
                                         <td style="padding: 5px;">{{ pick.year }}</td>
                                         <td style="padding: 5px;">Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})</td>
@@ -138,7 +138,7 @@
                                 </thead>
                                 <tbody>
                                     {% for pick in target_draft_picks %}
-                                        <tr style="border-bottom: 1px solid #f5f5f5;">
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
                                             <td style="padding: 5px;"><input type="checkbox" name="target_assets" value="pick_{{ pick.team_id }}_{{ pick.year }}_{{ pick.round }}_{{ pick.pick }}"></td>
                                             <td style="padding: 5px;">{{ pick.year }}</td>
                                             <td style="padding: 5px;">Round {{ pick.round }}{% if pick.pick != 0 %}, Pick {{ pick.pick }}{% endif %} ({{ team_acronyms.get(pick.team_id, 'UNK') }})</td>
@@ -169,3 +169,4 @@
     </form>
 </div>
 {% endblock %}
+

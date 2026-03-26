@@ -28,13 +28,13 @@
 
 <div class="matchups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px;">
     {% for matchup in matchups %}
-    <div class="matchup-card" style="background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e2e8f0;">
+    <div class="matchup-card" style="background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid var(--border-color);">
         <div style="padding: 20px;">
             <!-- Home Team -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">H</div>
-                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.home_id) }}" style="font-weight: bold; font-size: 1.1em; color: #1e293b; text-decoration: none; hover: underline;">
+                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--muted-color);">H</div>
+                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.home_id) }}" style="font-weight: bold; font-size: 1.1em; color: var(--text-color); text-decoration: none; hover: underline;">
                         {{ matchup.home_name }}
                     </a>
                 </div>
@@ -43,13 +43,13 @@
                 </div>
             </div>
 
-            <div style="text-align: center; margin: 5px 0; color: #94a3b8; font-weight: bold; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;">VS</div>
+            <div style="text-align: center; margin: 5px 0; color: var(--muted-color); font-weight: bold; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;">VS</div>
 
             <!-- Away Team -->
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">A</div>
-                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.away_id) }}" style="font-weight: bold; font-size: 1.1em; color: #1e293b; text-decoration: none;">
+                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--muted-color);">A</div>
+                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.away_id) }}" style="font-weight: bold; font-size: 1.1em; color: var(--text-color); text-decoration: none;">
                         {{ matchup.away_name }}
                     </a>
                 </div>
@@ -58,7 +58,7 @@
                 </div>
             </div>
         </div>
-        <div style="background: #f8fafc; padding: 10px 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 0.85em; color: #64748b; font-weight: 500;">
+        <div style="background: var(--table-header-bg); padding: 10px 20px; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85em; color: var(--muted-color); font-weight: 500;">
             Matchup ID: {{ matchup.id[:8] }}... | <span style="color: #10b981;">● Live</span>
         </div>
     </div>
@@ -66,10 +66,10 @@
 </div>
 
 {% if not matchups %}
-<div style="text-align: center; padding: 100px 20px; background: var(--card-bg); border-radius: 12px; border: 2px dashed #e2e8f0;">
+<div style="text-align: center; padding: 100px 20px; background: var(--card-bg); border-radius: 12px; border: 2px dashed var(--border-color);">
     <div style="font-size: 3em; margin-bottom: 20px;">📅</div>
-    <h3 style="color: #1e293b;">No schedule generated yet</h3>
-    <p style="color: #64748b; max-width: 400px; margin: 0 auto 25px;">The league schedule needs to be generated before weekly matchups can be viewed.</p>
+    <h3 style="color: var(--text-color);">No schedule generated yet</h3>
+    <p style="color: var(--muted-color); max-width: 400px; margin: 0 auto 25px;">The league schedule needs to be generated before weekly matchups can be viewed.</p>
     {% if is_admin %}
     <form action="{{ url_for('generate_schedule', league_id=league.id) }}" method="POST">
         <button type="submit" class="btn btn-primary" style="padding: 12px 30px;">Generate 14-Week Schedule Now</button>
@@ -80,9 +80,9 @@
 
 <style>
     .btn-outline {
-        border: 1px solid #cbd5e0;
+        border: 1px solid var(--border-color);
         background: transparent;
-        color: #4a5568;
+        color: var(--text-color);
     }
     .btn-outline:hover {
         background: #f7fafc;
@@ -94,3 +94,4 @@
     }
 </style>
 {% endblock %}
+

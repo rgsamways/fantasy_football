@@ -4,9 +4,9 @@
 
 {% block nfl_content %}
 <div class="season-selector" style="text-align: center; margin-bottom: 25px;">
-    <form action="{{ url_for('nfl_standings') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: #fff; padding: 10px 25px; border-radius: 30px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-        <label for="season" style="font-weight: bold; color: #7f8c8d; font-size: 0.9em;">Select Season:</label>
-        <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary-color); outline: none; cursor: pointer; font-weight: bold; color: var(--primary-color); background: #fff;">
+    <form action="{{ url_for('nfl_standings') }}" method="GET" style="display: inline-flex; align-items: center; gap: 10px; background: var(--card-bg); padding: 10px 25px; border-radius: 30px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <label for="season" style="font-weight: bold; color: var(--muted-color); font-size: 0.9em;">Select Season:</label>
+        <select name="season" id="season" onchange="this.form.submit()" style="padding: 5px 15px; border-radius: 20px; border: 1px solid var(--primary-color); outline: none; cursor: pointer; font-weight: bold; color: var(--primary-color); background: var(--card-bg);">
             {% for season in available_seasons %}
                 <option value="{{ season }}" {{ 'selected' if selected_season == season }}>{{ season }}</option>
             {% endfor %}
@@ -17,19 +17,19 @@
 <div class="standings-container" style="display: grid; gap: 40px;">
     {% for conf_name, divisions in conferences.items() %}
         <div class="conference-section">
-            <h2 style="color: #2c3e50; border-bottom: 4px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 25px;">
+            <h2 style="color: var(--text-color); border-bottom: 4px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 25px;">
                 {{ conf_name }} Conference
             </h2>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 25px;">
                 {% for div_name, teams in divisions.items() %}
-                    <div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #fff;">
-                        <h3 style="margin-top: 0; font-size: 1.1em; color: var(--primary-color); border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    <div class="card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg);">
+                        <h3 style="margin-top: 0; font-size: 1.1em; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                             {{ div_name }}
                         </h3>
                         <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em;">
                             <thead>
-                                <tr style="text-align: left; border-bottom: 2px solid #eee; color: #7f8c8d; text-transform: uppercase; font-size: 0.75em;">
+                                <tr style="text-align: left; border-bottom: 2px solid var(--border-color); color: var(--muted-color); text-transform: uppercase; font-size: 0.75em;">
                                     <th style="padding: 8px;">Team</th>
                                     <th style="padding: 8px; text-align: center;">W</th>
                                     <th style="padding: 8px; text-align: center;">L</th>
@@ -42,7 +42,7 @@
                             </thead>
                             <tbody>
                                 {% for team in teams %}
-                                    <tr style="border-bottom: 1px solid #f9f9f9; {{ 'background: #f0f7ff; font-weight: bold;' if loop.index == 1 else '' }}">
+                                    <tr style="border-bottom: 1px solid var(--border-color); {{ 'background: #f0f7ff; font-weight: bold;' if loop.index == 1 else '' }}">
                                         <td style="padding: 8px;">
                                             <a href="{{ url_for('nfl_team', team_alias=team.alias) }}" style="text-decoration: none; color: inherit;">
                                                 {{ team.name }}
@@ -52,8 +52,8 @@
                                         <td style="padding: 8px; text-align: center;">{{ team.losses }}</td>
                                         <td style="padding: 8px; text-align: center;">{{ team.ties }}</td>
                                         <td style="padding: 8px; text-align: center;">{{ "%.3f"|format(team.pct) }}</td>
-                                        <td style="padding: 8px; text-align: center; color: #7f8c8d;">{{ team.pts_for }}</td>
-                                        <td style="padding: 8px; text-align: center; color: #7f8c8d;">{{ team.pts_against }}</td>
+                                        <td style="padding: 8px; text-align: center; color: var(--muted-color);">{{ team.pts_for }}</td>
+                                        <td style="padding: 8px; text-align: center; color: var(--muted-color);">{{ team.pts_against }}</td>
                                         <td style="padding: 8px; text-align: center; font-weight: bold; color: {{ '#27ae60' if team.diff > 0 else '#e74c3c' if team.diff < 0 else '#2c3e50' }}">
                                             {{ '%+d'|format(team.diff) }}
                                         </td>
@@ -68,3 +68,4 @@
     {% endfor %}
 </div>
 {% endblock %}
+

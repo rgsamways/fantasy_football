@@ -76,7 +76,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p style="text-align: center; color: var(--muted-color); background: var(--card-bg); padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
+            <p style="text-align: center; color: var(--muted-color); background: var(--card-bg); padding: 30px; border-radius: 8px; border: 1px dashed var(--border-color);">
                 No trade offers currently pending your response.
             </p>
         {% endif %}
@@ -143,7 +143,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p style="text-align: center; color: var(--muted-color); background: var(--card-bg); padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
+            <p style="text-align: center; color: var(--muted-color); background: var(--card-bg); padding: 30px; border-radius: 8px; border: 1px dashed var(--border-color);">
                 You haven't sent any trade proposals yet. 
                 <br><a href="{{ url_for('league_trade', league_id=league.id) }}" style="color: var(--primary-color);">Go to Trade Center</a>
             </p>
@@ -169,3 +169,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+
