@@ -6,10 +6,10 @@
     <p>View and manage all registered users on the platform.</p>
 </div>
 
-<div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+<div class="card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg);">
     <table style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
                 <th style="padding: 12px;">Username</th>
                 <th style="padding: 12px;">Email</th>
                 <th style="padding: 12px;">Last Visited</th>
@@ -19,7 +19,7 @@
         </thead>
         <tbody>
             {% for user in users %}
-                <tr style="border-bottom: 1px solid #eee;">
+                <tr style="border-bottom: 1px solid var(--border-color);">
                     <td style="padding: 12px; font-weight: bold;">{{ user.username }}</td>
                     <td style="padding: 12px;">{{ user.email }}</td>
                     <td style="padding: 12px;">

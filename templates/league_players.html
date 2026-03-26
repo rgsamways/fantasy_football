@@ -3,16 +3,16 @@
 {% block layout_class %}no-sidebars{% endblock %}
 
 {% block league_content %}
-<div class="player-list card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+<div class="player-list card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color);">
     <div class="controls-container" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;">
         <div class="name-filter" style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 5px;">
-            <span style="font-weight: bold; color: #2c3e50;">Search Players:</span>
-            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc;">
+            <span style="font-weight: bold; color: var(--text-color);">Search Players:</span>
+            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid var(--input-border);">
         </div>
         
         <div class="ownership-filter" style="display: flex; flex-direction: column; gap: 5px;">
-            <span style="font-weight: bold; color: #2c3e50;">League Filter:</span>
-            <select id="ownershipFilter" class="form-control" style="padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; min-width: 200px;">
+            <span style="font-weight: bold; color: var(--text-color);">League Filter:</span>
+            <select id="ownershipFilter" class="form-control" style="padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid var(--input-border); min-width: 200px;">
                 <option value="all">All Players</option>
                 <option value="in_league">On Teams in League</option>
                 <option value="available">Not on Teams (Available)</option>
@@ -21,8 +21,8 @@
         </div>
 
         <div class="position-filter" style="display: flex; flex-direction: column; gap: 5px; width: 100%;">
-            <span style="font-weight: bold; color: #2c3e50;">Position Filter:</span>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; background: white; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <span style="font-weight: bold; color: var(--text-color);">Position Filter:</span>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; background: var(--card-bg); padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 {% for pos in ['QB', 'RB', 'FB', 'WR', 'TE', 'K'] %}
                     <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none;">
                         <input type="checkbox" class="pos-checkbox" value="{{ pos }}" checked> {{ pos }}
@@ -44,7 +44,7 @@
 
     <table class="players-table" id="playersTable" style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
                 <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('name')">Name <span class="sort-icon" id="sort-name"></span></th>
                 <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('position')">Pos <span class="sort-icon" id="sort-position"></span></th>
                 <th style="padding: 10px; cursor: pointer; user-select: none;" onclick="setSort('team')">NFL Team <span class="sort-icon" id="sort-team"></span></th>
@@ -63,24 +63,24 @@
                     data-position="{{ player.position }}"
                     data-points="{{ player.points }}"
                     data-owner="{{ player.owned_by if player.owned_by else 'Available' }}">
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color);">
                         <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
                             {{ player.name }}
                         </a>
                     </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.position }}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ player.team }}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; text-align: right;">{{ "%.2f"|format(player.points) }}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color);">{{ player.position }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color);">{{ player.team }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color); font-weight: bold; text-align: right;">{{ "%.2f"|format(player.points) }}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color);">
                         {% if player.in_league %}
-                            <span class="badge" style="background-color: #eee; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
+                            <span class="badge" style="background-color: var(--table-header-bg); padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">
                                 {{ player.owned_by }}
                             </span>
                         {% else %}
                             <span style="color: #2ecc71; font-size: 0.85em; font-weight: bold;">Available</span>
                         {% endif %}
                     </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color);">
                         {% if player.is_mine %}
                             <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 0.8em;">Drop</a>
                         {% elif not player.in_league %}

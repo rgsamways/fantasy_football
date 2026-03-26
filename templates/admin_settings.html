@@ -6,28 +6,28 @@
     <p>Configure default parameters for the entire application.</p>
 </div>
 
-<div class="card" style="max-width: 600px; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; border-top: 4px solid var(--primary-color);">
+<div class="card" style="max-width: 600px; padding: 30px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); border-top: 4px solid var(--primary-color);">
     <form action="{{ url_for('admin_settings') }}" method="POST">
         <div class="form-group" style="margin-bottom: 25px;">
-            <label for="current_season" style="display: block; font-weight: bold; margin-bottom: 10px; color: #2c3e50;">Global Current Season</label>
+            <label for="current_season" style="display: block; font-weight: bold; margin-bottom: 10px; color: var(--text-color);">Global Current Season</label>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="number" id="current_season" name="current_season" 
                        value="{{ settings.current_season }}" 
-                       style="width: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1.1em; font-weight: bold; color: var(--primary-color);">
-                <span style="color: #7f8c8d; font-size: 0.9em; font-style: italic;">
+                       style="width: 120px; padding: 10px; border: 1px solid var(--input-border); border-radius: 4px; font-size: 1.1em; font-weight: bold; color: var(--primary-color);">
+                <span style="color: var(--muted-color); font-size: 0.9em; font-style: italic;">
                     (This year will be used as the default for all views and logic.)
                 </span>
             </div>
         </div>
 
-        <div style="border-top: 1px solid #eee; padding-top: 20px; display: flex; gap: 15px;">
+        <div style="border-top: 1px solid var(--border-color); padding-top: 20px; display: flex; gap: 15px;">
             <button type="submit" class="btn" style="flex: 1;">Save All Site Settings</button>
             <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">Cancel</a>
         </div>
     </form>
 </div>
 
-<div class="info-section" style="margin-top: 40px; color: #7f8c8d; font-size: 0.9em;">
+<div class="info-section" style="margin-top: 40px; color: var(--muted-color); font-size: 0.9em;">
     <h4>Admin Notes:</h4>
     <ul>
         <li>Changing the current season will immediately update the default view on the NFL Schedule and Player Directory pages.</li>

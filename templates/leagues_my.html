@@ -11,12 +11,12 @@
 
 {% block leagues_content %}
 <div class="leagues-list-container">
-    <div class="card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+    <div class="card panel">
         <h3 style="margin-top: 0;">Joined Leagues</h3>
         {% if leagues %}
             <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
                 <thead>
-                    <tr style="border-bottom: 2px solid #ddd; text-align: left;">
+                    <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
                         <th style="padding: 10px;">Name</th>
                         <th style="padding: 10px;">Type</th>
                         <th style="padding: 10px;">Scoring</th>
@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
                     {% for league in leagues %}
-                        <tr style="border-bottom: 1px solid #eee;">
+                        <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 10px;">
                                 <a href="{{ url_for('league_home', league_id=league.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
                                     {{ league.name }}

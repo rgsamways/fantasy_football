@@ -3,7 +3,7 @@
 {% block layout_class %}no-sidebars{% endblock %}
 
 {% block league_content %}
-<div class="rules-container card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+<div class="rules-container card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color);">
     <h3>League Type: {{ league.league_type }}</h3>
     
     <div style="margin-top: 20px;">
@@ -31,27 +31,27 @@
 
         <h4 style="color: var(--secondary-color); margin-top: 20px;">Salary Models</h4>
         <div class="salary-models" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-            <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <strong style="color: var(--primary-color);">1. Points-Based</strong>
                 <p style="font-size: 0.9em; margin: 5px 0 0 0;">Salaries are directly tied to performance. Total Points * Multiplier (e.g. $1,000 per point).</p>
             </div>
-            <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <strong style="color: var(--primary-color);">2. Touchdown-Based</strong>
                 <p style="font-size: 0.9em; margin: 5px 0 0 0;">High stakes model. Total Touchdowns * $100,000. Kickers are capped at $100,000 maximum.</p>
             </div>
-            <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <strong style="color: var(--primary-color);">3. Performance Floor</strong>
                 <p style="font-size: 0.9em; margin: 5px 0 0 0;">Base minimum salary plus a bonus for every point scored above the league average.</p>
             </div>
-            <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <strong style="color: var(--primary-color);">4. Auction Value</strong>
                 <p style="font-size: 0.9em; margin: 5px 0 0 0;">Salary is the winning bid from the draft, with a fixed annual inflation for retained players.</p>
             </div>
-            <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <strong style="color: var(--primary-color);">5. NFL Cap Mirror</strong>
                 <p style="font-size: 0.9em; margin: 5px 0 0 0;">General Manager realism. Salaries are scaled mirrors of the player's actual NFL contract cap hit.</p>
             </div>
-            <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <strong style="color: var(--primary-color);">6. Tiered Positional</strong>
                 <p style="font-size: 0.9em; margin: 5px 0 0 0;">Fixed prices based on positional rank (e.g. Top 5 QBs all share the same elite price tag).</p>
             </div>
@@ -59,8 +59,8 @@
     </div>
 
     {% if is_admin %}
-        <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
-            <p style="font-style: italic; color: #7f8c8d;">As an administrator, you will be able to customize these rules in a future update.</p>
+        <div style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <p style="font-style: italic; color: var(--muted-color);">As an administrator, you will be able to customize these rules in a future update.</p>
         </div>
     {% endif %}
 </div>

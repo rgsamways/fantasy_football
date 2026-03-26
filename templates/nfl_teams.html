@@ -12,7 +12,7 @@
 {% block nfl_content %}
 <div class="conferences-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
     {% for conf_name, divisions in conferences.items() %}
-        <div class="conference-box card" style="background: #fff; padding: 20px; border-radius: 8px; border-top: 4px solid var(--secondary-color);">
+        <div class="conference-box card" style="background: var(--card-bg); padding: 20px; border-radius: 8px; border-top: 4px solid var(--secondary-color);">
             <h3 style="color: var(--secondary-color); border-bottom: 2px solid var(--secondary-color); padding-bottom: 10px; margin-top: 0;">{{ conf_name }}</h3>
             
             {% for div_name, teams in divisions.items() %}
@@ -25,7 +25,7 @@
                                     <a href="{{ url_for('nfl_team', team_alias=team.alias) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
                                         {{ team.market }} {{ team.name }}
                                     </a> 
-                                    <span style="color: #7f8c8d; font-size: 0.85em; margin-left: 5px;">({{ team.alias }})</span>
+                                    <span style="color: var(--muted-color); font-size: 0.85em; margin-left: 5px;">({{ team.alias }})</span>
                                 </span>
                                 <a href="{{ url_for('nfl_team', team_alias=team.alias) }}" class="btn btn-sm btn-secondary" style="font-size: 0.7em; padding: 2px 8px;">Roster</a>
                             </li>

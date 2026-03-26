@@ -24,8 +24,8 @@
                             <div>
                                 <h4 style="margin: 0;">Trade from: {{ trade.offering_team_name }}</h4>
                                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                                    <span style="background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">{{ trade.status }}</span>
-                                    <small class="localize-time" data-utc="{{ trade.status_modified.isoformat() + 'Z' if trade.status_modified else '' }}" style="color: #7f8c8d; font-size: 0.75em;">
+                                    <span style="background: var(--table-header-bg); padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">{{ trade.status }}</span>
+                                    <small class="localize-time" data-utc="{{ trade.status_modified.isoformat() + 'Z' if trade.status_modified else '' }}" style="color: var(--muted-color); font-size: 0.75em;">
                                         {{ trade.status_modified }}
                                     </small>
                                 </div>
@@ -42,9 +42,9 @@
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
                             <div>
-                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU RECEIVE:</p>
+                                <p style="font-weight: bold; font-size: 0.85em; color: var(--muted-color); margin-bottom: 8px;">YOU RECEIVE:</p>
                                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
                                     {% for p in trade.offering_players %}
                                         <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
@@ -58,7 +58,7 @@
                                 </ul>
                             </div>
                             <div style="border-left: 1px solid #eee; padding-left: 20px;">
-                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU GIVE:</p>
+                                <p style="font-weight: bold; font-size: 0.85em; color: var(--muted-color); margin-bottom: 8px;">YOU GIVE:</p>
                                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
                                     {% for p in trade.responding_players %}
                                         <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
@@ -76,7 +76,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p style="text-align: center; color: #7f8c8d; background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
+            <p style="text-align: center; color: var(--muted-color); background: var(--card-bg); padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
                 No trade offers currently pending your response.
             </p>
         {% endif %}
@@ -96,8 +96,8 @@
                             <div>
                                 <h4 style="margin: 0;">Proposal to: {{ trade.responding_team_name }}</h4>
                                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                                    <span style="background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">{{ trade.status }}</span>
-                                    <small class="localize-time" data-utc="{{ trade.status_modified.isoformat() + 'Z' if trade.status_modified else '' }}" style="color: #7f8c8d; font-size: 0.75em;">
+                                    <span style="background: var(--table-header-bg); padding: 2px 8px; border-radius: 10px; font-size: 0.8em; font-weight: bold;">{{ trade.status }}</span>
+                                    <small class="localize-time" data-utc="{{ trade.status_modified.isoformat() + 'Z' if trade.status_modified else '' }}" style="color: var(--muted-color); font-size: 0.75em;">
                                         {{ trade.status_modified }}
                                     </small>
                                 </div>
@@ -109,9 +109,9 @@
                             {% endif %}
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: white; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color);">
                             <div>
-                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU GIVE:</p>
+                                <p style="font-weight: bold; font-size: 0.85em; color: var(--muted-color); margin-bottom: 8px;">YOU GIVE:</p>
                                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
                                     {% for p in trade.offering_players %}
                                         <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
@@ -125,7 +125,7 @@
                                 </ul>
                             </div>
                             <div style="border-left: 1px solid #eee; padding-left: 20px;">
-                                <p style="font-weight: bold; font-size: 0.85em; color: #7f8c8d; margin-bottom: 8px;">YOU RECEIVE:</p>
+                                <p style="font-weight: bold; font-size: 0.85em; color: var(--muted-color); margin-bottom: 8px;">YOU RECEIVE:</p>
                                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
                                     {% for p in trade.responding_players %}
                                         <li><strong>{{ p.position }}</strong> {{ p.name }} <small>({{ p.team }})</small></li>
@@ -143,7 +143,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p style="text-align: center; color: #7f8c8d; background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
+            <p style="text-align: center; color: var(--muted-color); background: var(--card-bg); padding: 30px; border-radius: 8px; border: 1px dashed #ccc;">
                 You haven't sent any trade proposals yet. 
                 <br><a href="{{ url_for('league_trade', league_id=league.id) }}" style="color: var(--primary-color);">Go to Trade Center</a>
             </p>

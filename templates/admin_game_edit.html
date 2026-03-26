@@ -11,7 +11,7 @@
 <form action="{{ url_for('admin_game_edit', game_id=game.id) }}" method="POST">
     
     {% for side in ['home', 'away'] %}
-        <div class="team-stats-section card" style="margin-bottom: 40px; padding: 25px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff;">
+        <div class="team-stats-section card" style="margin-bottom: 40px; padding: 25px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg);">
             <h2 style="color: var(--primary-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                 {{ game.summary[side].name }} Statistics
                 <div style="font-size: 0.5em; display: flex; gap: 10px;">
@@ -35,7 +35,7 @@
                 <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Passing</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <thead>
-                        <tr style="text-align: left; font-size: 0.85em; color: #7f8c8d; border-bottom: 1px solid #eee;">
+                        <tr style="text-align: left; font-size: 0.85em; color: var(--muted-color); border-bottom: 1px solid var(--border-color);">
                             <th style="padding: 10px;">Player</th>
                             <th style="padding: 10px;">Att</th>
                             <th style="padding: 10px;">Comp</th>
@@ -102,7 +102,7 @@
                 <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Rushing</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <thead>
-                        <tr style="text-align: left; font-size: 0.85em; color: #7f8c8d; border-bottom: 1px solid #eee;">
+                        <tr style="text-align: left; font-size: 0.85em; color: var(--muted-color); border-bottom: 1px solid var(--border-color);">
                             <th style="padding: 10px;">Player</th>
                             <th style="padding: 10px;">Att</th>
                             <th style="padding: 10px;">Yds</th>
@@ -153,7 +153,7 @@
                 <h3 style="background: #f1f1f1; padding: 8px 15px; border-radius: 4px; font-size: 1.1em;">Receiving</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <thead>
-                        <tr style="text-align: left; font-size: 0.85em; color: #7f8c8d; border-bottom: 1px solid #eee;">
+                        <tr style="text-align: left; font-size: 0.85em; color: var(--muted-color); border-bottom: 1px solid var(--border-color);">
                             <th style="padding: 10px;">Player</th>
                             <th style="padding: 10px;">Rec</th>
                             <th style="padding: 10px;">Yds</th>
@@ -201,7 +201,7 @@
         </div>
     {% endfor %}
 
-    <div style="position: sticky; bottom: 20px; background: white; padding: 20px; border: 2px solid var(--primary-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; z-index: 100;">
+    <div style="position: sticky; bottom: 20px; background: var(--card-bg); padding: 20px; border: 2px solid var(--primary-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; z-index: 100;">
         <button type="submit" class="btn" style="flex: 2;">Save All Changes</button>
         <button type="submit" name="continue" value="true" class="btn btn-secondary" style="flex: 1;">Save & Continue</button>
         <a href="{{ url_for('admin_data') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">Cancel</a>
@@ -218,13 +218,13 @@
         width: 40px;
         text-align: center;
         padding: 4px;
-        border: 1px solid #ccc;
+        border: 1px solid var(--input-border);
         border-radius: 4px;
     }
     .inc-input button {
         padding: 4px 8px;
-        background: #eee;
-        border: 1px solid #ccc;
+        background: var(--table-header-bg);
+        border: 1px solid var(--input-border);
         border-radius: 4px;
         cursor: pointer;
         font-size: 0.8em;

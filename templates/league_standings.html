@@ -9,7 +9,7 @@
 </div>
 
 {% for division in grouped_standings %}
-<div class="division-section" style="margin-bottom: 40px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden;">
+<div class="division-section" style="margin-bottom: 40px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden;">
     <div style="background: var(--primary-color); color: white; padding: 12px 20px; font-weight: bold; font-size: 1.1em;">
         {{ division.name }}
     </div>
@@ -27,8 +27,8 @@
             </thead>
             <tbody>
                 {% for team in division.teams %}
-                <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#fcfcfc'" onmouseout="this.style.background='white'">
-                    <td style="padding: 12px 20px; font-weight: bold; color: #7f8c8d;">{{ loop.index }}</td>
+                <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.2s;" onmouseover="this.style.background='#fcfcfc'" onmouseout="this.style.background='white'">
+                    <td style="padding: 12px 20px; font-weight: bold; color: var(--muted-color);">{{ loop.index }}</td>
                     <td style="padding: 12px 20px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <a href="{{ url_for('league_team', league_id=league.id, user_id=team.user_id) }}" style="font-weight: bold; color: var(--primary-color); text-decoration: none;">
@@ -59,7 +59,7 @@
         font-size: 0.85em;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #7f8c8d;
+        color: var(--muted-color);
     }
 </style>
 {% endblock %}

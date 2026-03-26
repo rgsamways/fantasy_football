@@ -3,7 +3,7 @@
 {% block nfl_header %}
 <div class="team-header" style="margin-bottom: 30px; text-align: center;">
     <h2 style="color: var(--primary-color); margin-bottom: 5px;">{{ team.market }} {{ team.name }}</h2>
-    <p style="color: #7f8c8d; font-weight: bold;">{{ team.conference }} {{ team.division }} | Alias: {{ team.alias }}</p>
+    <p style="color: var(--muted-color); font-weight: bold;">{{ team.conference }} {{ team.division }} | Alias: {{ team.alias }}</p>
     
     <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; font-size: 0.9em;">
         <span><strong>Founded:</strong> {{ team.founded }}</span>
@@ -14,12 +14,12 @@
 {% endblock %}
 
 {% block nfl_content %}
-<div class="team-roster card" style="padding: 20px; background: #fff; border-radius: 8px;">
+<div class="team-roster card" style="padding: 20px; background: var(--card-bg); border-radius: 8px;">
     <h3 style="margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Official Roster</h3>
     {% if players %}
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
-                <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+                <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
                     <th style="padding: 10px;">Name</th>
                     <th style="padding: 10px;">Position</th>
                     <th style="padding: 10px;">Jersey</th>
@@ -28,7 +28,7 @@
             </thead>
             <tbody>
                 {% for player in players %}
-                    <tr style="border-bottom: 1px solid #eee;">
+                    <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 10px;">
                             <a href="{{ url_for('nfl_player', player_id=player.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
                                 {{ player.name }}
@@ -42,7 +42,7 @@
             </tbody>
         </table>
     {% else %}
-        <p style="padding: 20px; text-align: center; color: #7f8c8d; font-style: italic;">No players found for this team in the database.</p>
+        <p style="padding: 20px; text-align: center; color: var(--muted-color); font-style: italic;">No players found for this team in the database.</p>
     {% endif %}
     
     <div style="margin-top: 30px; text-align: center;">

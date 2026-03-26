@@ -10,16 +10,16 @@
 {% endblock %}
 
 {% block nfl_content %}
-<div class="player-list card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50;">
+<div class="player-list card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color);">
     <div class="controls-container" style="margin-bottom: 25px; display: flex; flex-direction: column; gap: 15px;">
         <div class="name-filter" style="display: flex; flex-direction: column; gap: 5px;">
-            <span style="font-weight: bold; color: #2c3e50; font-size: 0.9em;">Search Players:</span>
-            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; max-width: 450px; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+            <span style="font-weight: bold; color: var(--text-color); font-size: 0.9em;">Search Players:</span>
+            <input type="text" id="searchInput" placeholder="Search by name, team, or position..." class="form-control" style="width: 100%; max-width: 450px; padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid var(--input-border); box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
         </div>
         
-        <div class="position-filter" style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #eee; padding-top: 15px;">
+        <div class="position-filter" style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; max-width: 450px;">
-                <span style="font-weight: bold; color: #2c3e50; font-size: 0.9em;">Filter by Position:</span>
+                <span style="font-weight: bold; color: var(--text-color); font-size: 0.9em;">Filter by Position:</span>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllPos(true)" style="padding: 2px 8px; font-size: 0.7em;">All</button>
                     <button class="btn btn-secondary btn-sm" onclick="toggleAllPos(false)" style="padding: 2px 8px; font-size: 0.7em;">None</button>
@@ -27,7 +27,7 @@
             </div>
             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                 {% for pos in ['QB', 'RB', 'FB', 'WR', 'TE', 'K'] %}
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9em; background: #fff; padding: 5px 10px; border-radius: 20px; border: 1px solid #ddd; transition: all 0.2s;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.9em; background: var(--card-bg); padding: 5px 10px; border-radius: 20px; border: 1px solid var(--border-color); transition: all 0.2s;">
                         <input type="checkbox" class="pos-checkbox" value="{{ pos }}" checked onchange="applyFiltersAndSort()" style="cursor: pointer;">
                         <span style="font-weight: 600;">{{ pos }}</span>
                     </label>
@@ -48,10 +48,10 @@
 
     <table class="players-table" id="playersTable" style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr style="text-align: left; border-bottom: 2px solid #ddd; font-size: 0.75em; text-transform: uppercase; color: #7f8c8d;">
-                <th style="padding: 10px; cursor: pointer; color: #2c3e50; user-select: none;" onclick="setSort('name')">Name <span class="sort-icon" id="sort-name"></span></th>
-                <th style="padding: 10px; cursor: pointer; color: #2c3e50; user-select: none;" onclick="setSort('team')">Team <span class="sort-icon" id="sort-team"></span></th>
-                <th style="padding: 10px; cursor: pointer; color: #2c3e50; user-select: none;" onclick="setSort('position')">Pos <span class="sort-icon" id="sort-position"></span></th>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-color); font-size: 0.75em; text-transform: uppercase; color: var(--muted-color);">
+                <th style="padding: 10px; cursor: pointer; color: var(--text-color); user-select: none;" onclick="setSort('name')">Name <span class="sort-icon" id="sort-name"></span></th>
+                <th style="padding: 10px; cursor: pointer; color: var(--text-color); user-select: none;" onclick="setSort('team')">Team <span class="sort-icon" id="sort-team"></span></th>
+                <th style="padding: 10px; cursor: pointer; color: var(--text-color); user-select: none;" onclick="setSort('position')">Pos <span class="sort-icon" id="sort-position"></span></th>
                 <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_att')">Att <span class="sort-icon" id="sort-pass_att"></span></th>
                 <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_comp')">Cmp <span class="sort-icon" id="sort-pass_comp"></span></th>
                 <th style="padding: 10px; cursor: pointer; text-align: right; user-select: none;" onclick="setSort('pass_yds')">Yds <span class="sort-icon" id="sort-pass_yds"></span></th>
@@ -69,7 +69,7 @@
         </thead>
         <tbody id="tableBody">
             {% for player in players %}
-                <tr class="player-row" style="font-size: 0.85em; border-bottom: 1px solid #eee;"
+                <tr class="player-row" style="font-size: 0.85em; border-bottom: 1px solid var(--border-color);"
                     data-name="{{ player.name }}"
                     data-team="{{ player.team }}"
                     data-position="{{ player.position }}"

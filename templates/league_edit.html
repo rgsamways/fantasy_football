@@ -8,16 +8,16 @@
     <p>Update your league's settings and configurations.</p>
 </div>
 
-<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; border-top: 4px solid var(--primary-color);">
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color); border-top: 4px solid var(--primary-color);">
     <form action="{{ url_for('edit_league', league_id=league.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
         <div class="form-group">
             <label for="league_name" style="font-weight: bold; display: block; margin-bottom: 8px;">League Name:</label>
-            <input type="text" id="league_name" name="league_name" value="{{ league.name }}" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <input type="text" id="league_name" name="league_name" value="{{ league.name }}" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
         </div>
         
         <div class="form-group">
             <label for="league_type" style="font-weight: bold; display: block; margin-bottom: 8px;">League Type:</label>
-            <select id="league_type" name="league_type" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <select id="league_type" name="league_type" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 <option value="Redraft" {{ 'selected' if league.league_type == 'Redraft' }}>Redraft</option>
                 <option value="Keeper" {{ 'selected' if league.league_type == 'Keeper' }}>Keeper</option>
                 <option value="Dynasty" {{ 'selected' if league.league_type == 'Dynasty' }}>Dynasty</option>
@@ -29,7 +29,7 @@
 
         <div class="form-group">
             <label for="scoring_format" style="font-weight: bold; display: block; margin-bottom: 8px;">Scoring Format:</label>
-            <select id="scoring_format" name="scoring_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <select id="scoring_format" name="scoring_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 <option value="PPR" {{ 'selected' if league.scoring_format == 'PPR' }}>PPR</option>
                 <option value="Half-PPR" {{ 'selected' if league.scoring_format == 'Half-PPR' }}>Half-PPR</option>
                 <option value="Standard" {{ 'selected' if league.scoring_format == 'Standard' }}>Standard</option>
@@ -38,7 +38,7 @@
 
         <div class="form-group">
             <label for="positional_format" style="font-weight: bold; display: block; margin-bottom: 8px;">Positional Format:</label>
-            <select id="positional_format" name="positional_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <select id="positional_format" name="positional_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 <option value="Standard" {{ 'selected' if league.positional_format == 'Standard' }}>Standard (QB, 2RB, 2WR, TE, FLEX, K, DST)</option>
                 <option value="SuperFlex" {{ 'selected' if league.positional_format == 'SuperFlex' }}>SuperFlex (Standard + QB/RB/WR/TE Flex)</option>
             </select>
@@ -46,7 +46,7 @@
 
         <div class="form-group">
             <label for="play_format" style="font-weight: bold; display: block; margin-bottom: 8px;">Play Format:</label>
-            <select id="play_format" name="play_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            <select id="play_format" name="play_format" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 <option value="Head-2-Head" {{ 'selected' if league.play_format == 'Head-2-Head' }}>Head-2-Head</option>
                 <option value="Season-long" {{ 'selected' if league.play_format == 'Season-long' }}>Season-long</option>
             </select>
@@ -60,14 +60,14 @@
 
             <div id="num_divisions_container" class="form-group" style="display: {{ 'block' if league.has_divisions else 'none' }}; margin-left: 30px;">
                 <label for="num_divisions" style="font-weight: bold; display: block; margin-bottom: 8px;">Number of Divisions:</label>
-                <input type="number" id="num_divisions" name="num_divisions" value="{{ league.num_divisions if league.num_divisions else 2 }}" min="2" max="8" class="form-control" style="width: 100%; max-width: 150px; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <input type="number" id="num_divisions" name="num_divisions" value="{{ league.num_divisions if league.num_divisions else 2 }}" min="2" max="8" class="form-control" style="width: 100%; max-width: 150px; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
             </div>
         </div>
 
         <div class="form-group">
             <label for="max_teams" style="font-weight: bold; display: block; margin-bottom: 8px;">Number of Teams:</label>
-            <input type="number" id="max_teams" name="max_teams" value="{{ league.max_teams if league.max_teams else 12 }}" min="2" max="32" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
-            <small style="color: #7f8c8d;">Standard is 12. Maximum is 32.</small>
+            <input type="number" id="max_teams" name="max_teams" value="{{ league.max_teams if league.max_teams else 12 }}" min="2" max="32" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
+            <small style="color: var(--muted-color);">Standard is 12. Maximum is 32.</small>
         </div>
 
         <script>
@@ -108,7 +108,7 @@
             {% set ss = league.salary_settings if league.salary_settings else {} %}
             <div style="margin-bottom: 15px;">
                 <label for="active_model" style="font-weight: bold; display: block; margin-bottom: 8px;">Active Salary Model:</label>
-                <select id="active_model" name="active_model" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                <select id="active_model" name="active_model" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                     <option value="none" {{ 'selected' if ss.active_model == 'none' or not ss.active_model }}>None (Disabled)</option>
                     <option value="points" {{ 'selected' if ss.active_model == 'points' }}>Points-Based</option>
                     <option value="touchdowns" {{ 'selected' if ss.active_model == 'touchdowns' }}>Touchdown-Based</option>
@@ -121,25 +121,25 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="form-group">
                     <label for="salary_cap" style="font-weight: bold; display: block; margin-bottom: 8px;">Total Salary Cap ($):</label>
-                    <input type="number" id="salary_cap" name="salary_cap" value="{{ ss.salary_cap if ss.salary_cap is defined else 100000000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <input type="number" id="salary_cap" name="salary_cap" value="{{ ss.salary_cap if ss.salary_cap is defined else 100000000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 </div>
                 <div class="form-group">
                     <label for="base_salary" style="font-weight: bold; display: block; margin-bottom: 8px;">Base Minimum Salary ($):</label>
-                    <input type="number" id="base_salary" name="base_salary" value="{{ ss.base_salary if ss.base_salary is defined else 500000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <input type="number" id="base_salary" name="base_salary" value="{{ ss.base_salary if ss.base_salary is defined else 500000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 </div>
                 <div class="form-group">
                     <label for="point_multiplier" style="font-weight: bold; display: block; margin-bottom: 8px;">Point Multiplier ($):</label>
-                    <input type="number" id="point_multiplier" name="point_multiplier" value="{{ ss.point_multiplier if ss.point_multiplier is defined else 100000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <input type="number" id="point_multiplier" name="point_multiplier" value="{{ ss.point_multiplier if ss.point_multiplier is defined else 100000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 </div>
                 <div class="form-group">
                     <label for="td_value" style="font-weight: bold; display: block; margin-bottom: 8px;">Value Per Touchdown ($):</label>
-                    <input type="number" id="td_value" name="td_value" value="{{ ss.td_value if ss.td_value is defined else 100000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <input type="number" id="td_value" name="td_value" value="{{ ss.td_value if ss.td_value is defined else 100000 }}" class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
                 </div>
             </div>
-            <p style="font-size: 0.85em; color: #7f8c8d; margin-top: 10px; font-style: italic;">Note: Changes to these settings will update all player salaries across the league instantly.</p>
+            <p style="font-size: 0.85em; color: var(--muted-color); margin-top: 10px; font-style: italic;">Note: Changes to these settings will update all player salaries across the league instantly.</p>
         </div>
 
-        <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 20px;">
+        <div style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 20px;">
             <button type="submit" class="btn" style="width: 100%;">Save Changes</button>
             <a href="{{ url_for('league_home', league_id=league.id) }}" class="btn btn-secondary" style="width: 100%; margin-top: 10px; text-align: center;">Cancel</a>
         </div>

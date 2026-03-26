@@ -1,29 +1,28 @@
 {% extends "league_layout.html" %}
 
 {% block league_sidebar_left %}
-<div class="team-info card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; margin-bottom: 20px;">
+<div class="team-info card panel-sm" style="margin-bottom: 20px;">
     <div style="margin-top: 10px;">
         <h4 style="margin: 0; color: var(--primary-color);">
             {{ team_info.name if team_info and team_info.name else 'Unnamed Team' }}
         </h4>
-        <div style="font-size: 0.85em; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
-            <p style="color: #7f8c8d; margin-bottom: 8px;"><strong>Manager:</strong> {{ manager.username }}</p>
+        <div class="divider" style="font-size: 0.85em;">
+            <p class="muted" style="margin-bottom: 8px;"><strong>Manager:</strong> {{ manager.username }}</p>
             {% if team_info and team_info.acronym %}
                 <p style="font-size: 0.85em; margin-bottom: 8px;"><strong>Acronym:</strong> {{ team_info.acronym }}</p>
             {% endif %}
             <div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid var(--primary-color);">
-                <p style="margin: 0; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;"><strong>Total Points</strong></p>
+                <p class="muted" style="margin: 0; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;"><strong>Total Points</strong></p>
                 <p style="margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: var(--primary-color);">{{ "%.2f"|format(total_points) }}</p>
             </div>
 
             {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
             <div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid var(--secondary-color);">
-                <p style="margin: 0; font-size: 0.9em; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px;"><strong>Budget Usage</strong></p>
+                <p class="muted" style="margin: 0; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;"><strong>Budget Usage</strong></p>
                 <p style="margin: 5px 0 0 0; font-size: 1.4em; font-weight: bold; color: var(--secondary-color);">${{ "{:,.0f}".format(total_salary) }}</p>
-                <p style="margin: 0; font-size: 0.75em; color: #95a5a6;">Cap: ${{ "{:,.0f}".format(league.salary_settings.salary_cap) }}</p>
-                
+                <p class="muted" style="margin: 0; font-size: 0.75em;">Cap: ${{ "{:,.0f}".format(league.salary_settings.salary_cap) }}</p>
                 {% set usage_pct = (total_salary / league.salary_settings.salary_cap * 100) if league.salary_settings.salary_cap > 0 else 0 %}
-                <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; margin-top: 8px; overflow: hidden;">
+                <div style="width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; margin-top: 8px; overflow: hidden;">
                     <div style="width: {{ [usage_pct, 100]|min }}%; height: 100%; background: {{ '#e74c3c' if usage_pct > 90 else '#f39c12' if usage_pct > 75 else '#27ae60' }};"></div>
                 </div>
             </div>
@@ -35,13 +34,13 @@
 
 {% block league_content %}
 <div class="roster-container" style="display: flex; flex-direction: column; gap: 30px;">
-    
+
     <!-- STARTERS SECTION -->
-    <div class="starters-section card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50; border-top: 4px solid var(--primary-color);">
-        <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid #eee; padding-bottom: 10px;">Starting Lineup</h3>
+    <div class="starters-section card panel" style="border-top: 4px solid var(--primary-color);">
+        <h3 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Starting Lineup</h3>
         <table class="roster-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
-                <tr style="border-bottom: 2px solid #eee; text-align: left; font-size: 0.85em; color: #7f8c8d; text-transform: uppercase;">
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left; font-size: 0.85em; color: var(--text-color); text-transform: uppercase;">
                     <th style="padding: 10px;">Slot</th>
                     <th style="padding: 10px;">Player</th>
                     <th style="padding: 10px;">Pos</th>
@@ -57,9 +56,9 @@
             </thead>
             <tbody>
                 {% for slot, player in starters.items() %}
-                    <tr style="border-bottom: 1px solid #f9f9f9; height: 60px;">
+                    <tr style="border-bottom: 1px solid var(--border-color); height: 60px;">
                         <td style="padding: 10px;">
-                            <span style="background: #edf2f7; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; color: #4a5568;">{{ slot }}</span>
+                            <span class="slot-badge">{{ slot }}</span>
                         </td>
                         <td style="padding: 10px;">
                             {% if player %}
@@ -67,13 +66,13 @@
                                     {{ player.name }}
                                 </a>
                             {% else %}
-                                <span style="color: #cbd5e0; font-style: italic;">Empty Slot</span>
+                                <span class="muted" style="font-style: italic;">Empty Slot</span>
                             {% endif %}
                         </td>
                         <td style="padding: 10px;">{{ player.position if player else '-' }}</td>
-                        <td style="padding: 10px; font-size: 0.9em; color: #7f8c8d;">{{ player.team if player else '-' }}</td>
+                        <td class="muted" style="padding: 10px; font-size: 0.9em;">{{ player.team if player else '-' }}</td>
                         {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
-                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">
+                            <td class="muted" style="padding: 10px; text-align: right;">
                                 {{ "${:,.0f}".format(player.salary) if player else '-' }}
                             </td>
                         {% endif %}
@@ -94,11 +93,11 @@
     </div>
 
     <!-- BENCH SECTION -->
-    <div class="bench-section card" style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: #2c3e50;">
-        <h3 style="margin-top: 0; color: #7f8c8d; border-bottom: 2px solid #eee; padding-bottom: 10px;">Bench</h3>
+    <div class="bench-section card panel">
+        <h3 class="muted" style="margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Bench</h3>
         <table class="roster-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
-                <tr style="border-bottom: 2px solid #eee; text-align: left; font-size: 0.85em; color: #7f8c8d; text-transform: uppercase;">
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left; font-size: 0.85em; color: var(--text-color); text-transform: uppercase;">
                     <th style="padding: 10px;">Player</th>
                     <th style="padding: 10px;">Pos</th>
                     <th style="padding: 10px;">Team</th>
@@ -114,23 +113,23 @@
             <tbody>
                 {% if bench %}
                     {% for player in bench %}
-                        <tr style="border-bottom: 1px solid #f9f9f9;">
+                        <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 10px;">
-                                <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: #2c3e50; font-weight: bold;">
+                                <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: var(--text-color); font-weight: bold;">
                                     {{ player.name }}
                                 </a>
                             </td>
                             <td style="padding: 10px;">{{ player.position }}</td>
-                            <td style="padding: 10px; font-size: 0.9em; color: #7f8c8d;">{{ player.team }}</td>
+                            <td class="muted" style="padding: 10px; font-size: 0.9em;">{{ player.team }}</td>
                             {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
-                                <td style="padding: 10px; text-align: right; color: #7f8c8d;">
+                                <td class="muted" style="padding: 10px; text-align: right;">
                                     {{ "${:,.0f}".format(player.salary) }}
                                 </td>
                             {% endif %}
-                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ "%.2f"|format(player.points) }}</td>
+                            <td class="muted" style="padding: 10px; text-align: right;">{{ "%.2f"|format(player.points) }}</td>
                             {% if session.get('user_id') == manager._id|string %}
                                 <td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
-                                    <select onchange="movePlayer('start', '{{ player.id }}', this.value)" style="padding: 2px; font-size: 0.75em; border-radius: 4px;">
+                                    <select onchange="movePlayer('start', '{{ player.id }}', this.value)" style="padding: 2px; font-size: 0.75em; border-radius: 4px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border);">
                                         <option value="">-- Start As --</option>
                                         {% for slot_name in starters.keys() %}
                                             <option value="{{ slot_name }}">{{ slot_name }}</option>
@@ -143,7 +142,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="5" style="padding: 20px; text-align: center; color: #cbd5e0; font-style: italic;">No players on bench</td>
+                        <td colspan="5" class="muted" style="padding: 20px; text-align: center; font-style: italic;">No players on bench</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -154,12 +153,10 @@
 <script>
 function movePlayer(action, playerId, slot = '') {
     if (action === 'start' && !slot) return;
-    
     const formData = new FormData();
     formData.append('action', action);
     formData.append('player_id', playerId);
     if (slot) formData.append('slot', slot);
-    
     fetch("{{ url_for('league_roster_move', league_id=league.id) }}", {
         method: 'POST',
         body: formData
@@ -170,7 +167,7 @@ function movePlayer(action, playerId, slot = '') {
             window.location.reload();
         } else {
             alert("Movement Error: " + data.message);
-            window.location.reload(); // Reload to reset dropdowns
+            window.location.reload();
         }
     })
     .catch(error => {
@@ -183,7 +180,7 @@ function movePlayer(action, playerId, slot = '') {
 
 {% block league_sidebar_right %}
 {% if session.get('user_id') == manager._id|string %}
-    <div class="actions card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; margin-bottom: 20px;">
+    <div class="actions card panel-sm" style="margin-bottom: 20px;">
         <h3 style="font-size: 1.1em; margin-top: 0;">Actions</h3>
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <a href="{{ url_for('league_team_edit', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Edit Team</a>
@@ -193,17 +190,15 @@ function movePlayer(action, playerId, slot = '') {
     </div>
 {% endif %}
 
+<div class="player-search-pane card panel-sm" style="height: 100%; overflow-y: auto;">
+    <h3 style="margin-top: 0; font-size: 1.1em; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Player Search</h3>
 
-<div class="player-search-pane card" style="padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; color: #2c3e50; height: 100%; overflow-y: auto;">
-    <h3 style="margin-top: 0; font-size: 1.1em; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Player Search</h3>
-    
     {% if available_players %}
         <div class="filters" style="margin-bottom: 15px;">
-            <input type="text" id="sidebarSearch" placeholder="Search players..." style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc;">
-            
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+            <input type="text" id="sidebarSearch" placeholder="Search players..." style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color);">
+            <div class="pos-filter-bar">
                 {% for pos in ['QB', 'RB', 'WR', 'TE', 'K'] %}
-                    <label style="font-size: 0.75em; display: flex; align-items: center; gap: 3px; background: #fff; padding: 2px 6px; border: 1px solid #eee; border-radius: 4px; cursor: pointer;">
+                    <label>
                         <input type="checkbox" class="pos-filter" value="{{ pos }}"> {{ pos }}
                     </label>
                 {% endfor %}
@@ -213,7 +208,7 @@ function movePlayer(action, playerId, slot = '') {
         <div style="max-height: 600px; overflow-y: auto;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;" id="sidebarPlayersTable">
                 <thead>
-                    <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                    <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
                         <th style="padding: 5px; cursor: pointer;" onclick="sortSidebar(0)">Name</th>
                         <th style="padding: 5px; cursor: pointer;" onclick="sortSidebar(1)">Pos</th>
                         <th style="padding: 5px;">Action</th>
@@ -224,7 +219,7 @@ function movePlayer(action, playerId, slot = '') {
                         <tr class="player-row">
                             <td style="padding: 8px 5px;">
                                 <strong>{{ player.name }}</strong><br>
-                                <small style="color: #7f8c8d;">{{ player.team }}</small>
+                                <small class="muted">{{ player.team }}</small>
                             </td>
                             <td style="padding: 8px 5px;">{{ player.position }}</td>
                             <td style="padding: 8px 5px;">
@@ -236,7 +231,7 @@ function movePlayer(action, playerId, slot = '') {
             </table>
         </div>
     {% else %}
-        <p style="font-size: 0.9em; color: #7f8c8d; text-align: center;">You cannot draft players for this manager.</p>
+        <p class="muted" style="font-size: 0.9em; text-align: center;">You cannot draft players for this manager.</p>
     {% endif %}
 </div>
 
@@ -247,17 +242,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const rows = Array.from(document.querySelectorAll('.player-row'));
 
     function applyFilters() {
-        const term = searchInput.value.toLowerCase();
+        const term = searchInput ? searchInput.value.toLowerCase() : '';
         const selectedPos = Array.from(posFilters).filter(i => i.checked).map(i => i.value);
-
         rows.forEach(row => {
             const name = row.cells[0].innerText.toLowerCase();
             const pos = row.cells[1].innerText.trim();
-            
-            const matchesSearch = name.includes(term);
-            const matchesPos = selectedPos.length === 0 || selectedPos.includes(pos);
-
-            row.style.display = (matchesSearch && matchesPos) ? "" : "none";
+            row.style.display = (name.includes(term) && (selectedPos.length === 0 || selectedPos.includes(pos))) ? '' : 'none';
         });
     }
 
@@ -270,14 +260,12 @@ function sortSidebar(col) {
     const tbody = document.getElementById('sidebarTableBody');
     const rows = Array.from(tbody.querySelectorAll('.player-row'));
     sidebarSortDir *= -1;
-
     rows.sort((a, b) => {
         const valA = a.cells[col].innerText.toLowerCase();
         const valB = b.cells[col].innerText.toLowerCase();
         return valA < valB ? -sidebarSortDir : valA > valB ? sidebarSortDir : 0;
     });
-
-    rows.forEach(r => tbody.appendChild(row));
+    rows.forEach(r => tbody.appendChild(r));
 }
 </script>
 {% endblock %}

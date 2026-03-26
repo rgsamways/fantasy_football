@@ -21,7 +21,7 @@
     --overlay-bg: #ffffff;
     --danger: #e74c3c;
     --info: #2ecc71;
-    --container-max-width: 1200px;
+    --muted-color: #95a5a6;: 1200px;
     --container-padding: 2rem;
     --sidebar-left-width: 225px;
     --sidebar-right-width: 250px;
@@ -378,6 +378,79 @@ div[class*='actions'] > div {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+/* =====================
+   Utility / Panel Classes
+   ===================== */
+
+.panel {
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.panel-sm {
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.muted {
+    color: var(--muted-color);
+}
+
+.divider {
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+    margin-top: 5px;
+}
+
+.inner-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.badge {
+    background-color: var(--table-header-bg);
+    color: var(--text-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.slot-badge {
+    background: var(--table-header-bg);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.8em;
+    color: var(--text-color);
+}
+
+.pos-filter-bar {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.pos-filter-bar label {
+    font-size: 0.75em;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--card-bg);
+    padding: 2px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-color);
 }
 
 /* Dark mode toggle button */
