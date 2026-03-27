@@ -2,11 +2,6 @@
     box-sizing: border-box;
 }
 
-/* Prevent the page itself from ever scrolling horizontally */
-html {
-    overflow-x: hidden;
-    max-width: 100%;
-}
 
 :root {
     --primary-color: #3498db;
@@ -942,15 +937,29 @@ div[class*='actions'] > div {
         padding-bottom: 68px;
     }
 
+    /* Ensure all flex children in the layout chain stay within bounds */
+    .page-body,
+    .page-main,
+    .container {
+        min-width: 0;
+        max-width: 100%;
+    }
+
     /* Stack pool/league layouts into a single column */
     .pool-layout,
     .league-layout,
     .layout-with-sidebar {
         flex-direction: column;
+        min-width: 0;
     }
 
+    .pool-main-content,
+    .league-main-content,
+    .main-content,
     .sidebar-left,
     .sidebar-right {
+        min-width: 0;
+        max-width: 100%;
         width: 100%;
     }
 
@@ -974,18 +983,6 @@ div[class*='actions'] > div {
     .pick7-team-grid,
     .pick7-slots-grid {
         grid-template-columns: 1fr;
-    }
-
-    /* Clamp the main content area to viewport width */
-    .page-main {
-        max-width: 100vw;
-        overflow-x: hidden;
-    }
-
-    /* Cards and panels never exceed their container */
-    .card, .panel, .panel-sm, .inner-card {
-        max-width: 100%;
-        box-sizing: border-box;
     }
 
     /* Scrollable table wrapper — injected by JS */
