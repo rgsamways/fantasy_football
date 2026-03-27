@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" id="flatpickrDarkTheme" disabled>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         // Apply theme before page renders to avoid flash
         (function() {
@@ -43,18 +44,25 @@
 
     <!-- Team Color Picker moved to Profile Details page -->
 
-    {% block full_width %}{% endblock %}
+    <div class="page-body">
+        <nav class="vertical-nav">
+            {% block vertical_nav %}{% endblock %}
+        </nav>
+        <div class="page-main">
+            {% block full_width %}{% endblock %}
 
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+            <div class="container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
 
-        {% block content %}{% endblock %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
     </div>
 
     <footer>
@@ -113,6 +121,15 @@
             const next = themes[(themes.indexOf(current) + 1) % themes.length];
             document.documentElement.setAttribute('data-theme', next);
             localStorage.setItem('theme', next);
+            // Award achievements
+            if (next === 'dark' && !localStorage.getItem('ach_shades')) {
+                fetch('/api/award_achievement', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({achievement_id:'pull_the_shades_down'})});
+                localStorage.setItem('ach_shades', '1');
+            }
+            if ((next === 'home' || next === 'away') && !localStorage.getItem('ach_team_spirit')) {
+                fetch('/api/award_achievement', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({achievement_id:'team_spirit'})});
+                localStorage.setItem('ach_team_spirit', '1');
+            }
             window.updateToggleIcon();
         });
 
@@ -125,6 +142,9 @@
             allowInput: true,
             disableMobile: false
         });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
     });
     </script>
 </body>

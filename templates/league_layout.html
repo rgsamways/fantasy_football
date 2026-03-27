@@ -5,54 +5,65 @@
     <ul>
         <li>
             <a href="{{ url_for('league_home', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_home' }}">
-                <span class="nav-icon">🏠</span>
+                <i data-lucide="home"></i>
                 <span class="nav-label">{{ league.name }} Home</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_teams', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_teams', 'league_team'] }}">
-                <span class="nav-icon">🏈</span>
+                <i data-lucide="users"></i>
                 <span class="nav-label">Teams</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_standings', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_standings' }}">
-                <span class="nav-icon">📊</span>
+                <i data-lucide="bar-chart-2"></i>
                 <span class="nav-label">Standings</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_matchups', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_matchups' }}">
-                <span class="nav-icon">🤝</span>
+                <i data-lucide="swords"></i>
                 <span class="nav-label">Matchups</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_draft', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_draft' }}">
-                <span class="nav-icon">🎯</span>
+                <i data-lucide="clipboard-list"></i>
                 <span class="nav-label">Draft</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_players', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_players', 'league_player'] }}">
-                <span class="nav-icon">🏃</span>
+                <i data-lucide="user-search"></i>
                 <span class="nav-label">Players</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_rules', league_id=league.id) }}" class="{{ 'active' if request.endpoint == 'league_rules' }}">
-                <span class="nav-icon">📜</span>
+                <i data-lucide="scroll-text"></i>
                 <span class="nav-label">Rules</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('league_board', league_id=league.id) }}" class="{{ 'active' if request.endpoint in ['league_board', 'league_board_thread', 'league_board_new_thread'] }}">
-                <span class="nav-icon">💬</span>
+                <i data-lucide="message-square"></i>
                 <span class="nav-label">Board</span>
             </a>
         </li>
     </ul>
 </div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('league_home', league_id=league.id) }}" data-label="{{ league.name }} Home" class="{{ 'active' if request.endpoint == 'league_home' }}"><i data-lucide="home"></i></a>
+<a href="{{ url_for('league_teams', league_id=league.id) }}" data-label="Teams" class="{{ 'active' if request.endpoint in ['league_teams', 'league_team'] }}"><i data-lucide="users"></i></a>
+<a href="{{ url_for('league_standings', league_id=league.id) }}" data-label="Standings" class="{{ 'active' if request.endpoint == 'league_standings' }}"><i data-lucide="bar-chart-2"></i></a>
+<a href="{{ url_for('league_matchups', league_id=league.id) }}" data-label="Matchups" class="{{ 'active' if request.endpoint == 'league_matchups' }}"><i data-lucide="swords"></i></a>
+<a href="{{ url_for('league_draft', league_id=league.id) }}" data-label="Draft" class="{{ 'active' if request.endpoint == 'league_draft' }}"><i data-lucide="clipboard-list"></i></a>
+<a href="{{ url_for('league_players', league_id=league.id) }}" data-label="Players" class="{{ 'active' if request.endpoint in ['league_players', 'league_player'] }}"><i data-lucide="user-search"></i></a>
+<a href="{{ url_for('league_rules', league_id=league.id) }}" data-label="Rules" class="{{ 'active' if request.endpoint == 'league_rules' }}"><i data-lucide="scroll-text"></i></a>
+<a href="{{ url_for('league_board', league_id=league.id) }}" data-label="Board" class="{{ 'active' if request.endpoint in ['league_board', 'league_board_thread', 'league_board_new_thread'] }}"><i data-lucide="message-square"></i></a>
 {% endblock %}
 
 {% block content %}
@@ -70,5 +81,3 @@
     </aside>
 </div>
 {% endblock %}
-
-

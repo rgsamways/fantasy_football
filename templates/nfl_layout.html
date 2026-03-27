@@ -1,46 +1,55 @@
 {% extends "layout.html" %}
 
 {% block full_width %}
-<div class="sub-nav gray-bg">
+<div class="sub-nav">
     <ul>
         <li>
             <a href="{{ url_for('nfl_home') }}" class="{{ 'active' if active_tab == 'home' }}">
-                <span class="nav-icon">🏠</span>
+                <i data-lucide="home"></i>
                 <span class="nav-label">Home</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('nfl_teams') }}" class="{{ 'active' if active_tab == 'teams' }}">
-                <span class="nav-icon">🏈</span>
+                <i data-lucide="shield"></i>
                 <span class="nav-label">Teams</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('nfl_players') }}" class="{{ 'active' if active_tab == 'players' }}">
-                <span class="nav-icon">👤</span>
+                <i data-lucide="user"></i>
                 <span class="nav-label">Players</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('nfl_standings') }}" class="{{ 'active' if active_tab == 'standings' }}">
-                <span class="nav-icon">📊</span>
+                <i data-lucide="bar-chart-2"></i>
                 <span class="nav-label">Standings</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('nfl_schedule') }}" class="{{ 'active' if active_tab == 'schedule' }}">
-                <span class="nav-icon">📅</span>
+                <i data-lucide="calendar"></i>
                 <span class="nav-label">Schedule</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('nfl_rumors') }}" class="{{ 'active' if active_tab == 'rumors' }}">
-                <span class="nav-icon">🗣️</span>
+                <i data-lucide="radio"></i>
                 <span class="nav-label">Rumors</span>
             </a>
         </li>
     </ul>
 </div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('nfl_home') }}" data-label="Home" class="{{ 'active' if active_tab == 'home' }}"><i data-lucide="home"></i></a>
+<a href="{{ url_for('nfl_teams') }}" data-label="Teams" class="{{ 'active' if active_tab == 'teams' }}"><i data-lucide="shield"></i></a>
+<a href="{{ url_for('nfl_players') }}" data-label="Players" class="{{ 'active' if active_tab == 'players' }}"><i data-lucide="user"></i></a>
+<a href="{{ url_for('nfl_standings') }}" data-label="Standings" class="{{ 'active' if active_tab == 'standings' }}"><i data-lucide="bar-chart-2"></i></a>
+<a href="{{ url_for('nfl_schedule') }}" data-label="Schedule" class="{{ 'active' if active_tab == 'schedule' }}"><i data-lucide="calendar"></i></a>
+<a href="{{ url_for('nfl_rumors') }}" data-label="Rumors" class="{{ 'active' if active_tab == 'rumors' }}"><i data-lucide="radio"></i></a>
 {% endblock %}
 
 {% block content %}
@@ -62,5 +71,3 @@
     </aside>
 </div>
 {% endblock %}
-
-

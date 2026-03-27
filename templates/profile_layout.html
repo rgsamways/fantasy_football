@@ -5,24 +5,30 @@
     <ul>
         <li>
             <a href="{{ url_for('profile') }}" class="{{ 'active' if active_tab == 'details' }}">
-                <span class="nav-icon">👤</span>
+                <i data-lucide="user-circle"></i>
                 <span class="nav-label">Details</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('profile_achievements') }}" class="{{ 'active' if active_tab == 'achievements' }}">
-                <span class="nav-icon">🏆</span>
+                <i data-lucide="trophy"></i>
                 <span class="nav-label">Achievements</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('profile_actions') }}" class="{{ 'active' if active_tab == 'actions' }}">
-                <span class="nav-icon">⚙️</span>
+                <i data-lucide="settings"></i>
                 <span class="nav-label">Actions</span>
             </a>
         </li>
     </ul>
 </div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('profile') }}" data-label="Details" class="{{ 'active' if active_tab == 'details' }}"><i data-lucide="user-circle"></i></a>
+<a href="{{ url_for('profile_achievements') }}" data-label="Achievements" class="{{ 'active' if active_tab == 'achievements' }}"><i data-lucide="trophy"></i></a>
+<a href="{{ url_for('profile_actions') }}" data-label="Actions" class="{{ 'active' if active_tab == 'actions' }}"><i data-lucide="settings"></i></a>
 {% endblock %}
 
 {% block content %}
@@ -40,5 +46,3 @@
     </aside>
 </div>
 {% endblock %}
-
-

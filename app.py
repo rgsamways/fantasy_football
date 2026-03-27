@@ -441,6 +441,20 @@ def get_league_roster_slots(league):
     return slots
 # --- End of functions to be moved ---
 
+@app.route('/api/award_achievement', methods=['POST'])
+def api_award_achievement():
+    if 'user_id' not in session:
+        return {"success": False}, 401
+    achievement_id = request.json.get('achievement_id')
+    if not achievement_id:
+        return {"success": False}, 400
+    # Only allow client-side awardable achievements
+    allowed = {'pull_the_shades_down', 'team_spirit'}
+    if achievement_id not in allowed:
+        return {"success": False, "message": "Not allowed"}, 403
+    db.award_achievement(session['user_id'], achievement_id)
+    return {"success": True}
+
 @app.route('/api/team_colors')
 def api_team_colors():
     teams = list(db.nfl_teams.find({"team_colors": {"$exists": True, "$ne": []}}, {"alias": 1, "market": 1, "name": 1, "team_colors": 1}))

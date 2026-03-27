@@ -138,6 +138,20 @@ def seed_achievements():
             "category": "General"
         },
         {
+            "id": "pull_the_shades_down",
+            "name": "Pull The Shades Down",
+            "description": "Switch to dark mode for the first time.",
+            "icon": "🌙",
+            "category": "General"
+        },
+        {
+            "id": "team_spirit",
+            "name": "Team Spirit",
+            "description": "Apply an NFL team's colors to the app for the first time.",
+            "icon": "🏈",
+            "category": "General"
+        },
+        {
             "id": "roster_filler",
             "name": "Full House",
             "description": "Have a player in every starting roster slot.",

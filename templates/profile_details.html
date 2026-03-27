@@ -62,9 +62,16 @@
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
-    // sync the nav toggle icon if it exists
     if (window.updateToggleIcon) window.updateToggleIcon();
     highlightActiveThemeBtn(theme);
+    if (theme === 'dark' && !localStorage.getItem('ach_shades')) {
+        fetch('/api/award_achievement', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({achievement_id:'pull_the_shades_down'})});
+        localStorage.setItem('ach_shades', '1');
+    }
+    if ((theme === 'home' || theme === 'away') && !localStorage.getItem('ach_team_spirit')) {
+        fetch('/api/award_achievement', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({achievement_id:'team_spirit'})});
+        localStorage.setItem('ach_team_spirit', '1');
+    }
 }
 
 function highlightActiveThemeBtn(theme) {

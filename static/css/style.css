@@ -115,21 +115,22 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .container {
-    max-width: var(--container-max-width);
+    max-width: 100%;
     margin: 0 auto;
     padding: 2rem var(--container-padding);
     flex: 1;
     width: 100%;
+    box-sizing: border-box;
 }
 
 nav {
     background-color: var(--nav-bg);
     padding: 1rem 0;
-    border-bottom: 2px solid var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .nav-container {
-    max-width: var(--container-max-width);
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
@@ -200,7 +201,7 @@ nav {
     padding: 0 var(--container-padding);
     margin: 0 auto;
     display: flex;
-    max-width: var(--container-max-width);
+    max-width: 100%;
 }
 
 .sub-nav li {
@@ -522,6 +523,113 @@ div[class*='actions'] > div {
     border-radius: 4px;
     cursor: pointer;
     color: var(--text-color);
+}
+
+/* =====================
+   Vertical Icon Sidebar
+   ===================== */
+
+.page-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.vertical-nav {
+    width: 52px;
+    flex-shrink: 0;
+    background: var(--nav-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.vertical-nav a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1.2rem;
+    color: var(--nav-text);
+    transition: background 0.15s;
+    opacity: 0.65;
+}
+
+.vertical-nav a svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--nav-text);
+    stroke-width: 1.75;
+    flex-shrink: 0;
+}
+
+.sub-nav a svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    flex-shrink: 0;
+}
+
+.vertical-nav a:hover {
+    background: rgba(128,128,128,0.15);
+    opacity: 1;
+}
+
+.vertical-nav a.active {
+    background: rgba(128,128,128,0.2);
+    opacity: 1;
+    outline: 2px solid var(--primary-color);
+}
+
+/* Tooltip */
+.vertical-nav a::after {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text-color);
+    color: var(--bg-color);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 9999;
+}
+
+.vertical-nav a:hover::after {
+    opacity: 1;
+}
+
+.vertical-nav .vnav-divider {
+    width: 28px;
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+.page-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Dark mode toggle button */

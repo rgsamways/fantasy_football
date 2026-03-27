@@ -5,31 +5,44 @@
     <ul>
         <li>
             <a href="{{ url_for('leagues_my') }}" class="{{ 'active' if active_tab == 'my' }}">
-                <span>🛡️ My Leagues</span>
+                <i data-lucide="shield"></i>
+                <span class="nav-label">My Leagues</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('leagues_public') }}" class="{{ 'active' if active_tab == 'public' }}">
-                <span>🌍 Public Leagues</span>
+                <i data-lucide="globe"></i>
+                <span class="nav-label">Public Leagues</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('leagues_find') }}" class="{{ 'active' if active_tab == 'find' }}">
-                <span>🔍 Find a League</span>
+                <i data-lucide="search"></i>
+                <span class="nav-label">Find a League</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('leagues_types') }}" class="{{ 'active' if active_tab == 'types' }}">
-                <span>📋 League Types</span>
+                <i data-lucide="list"></i>
+                <span class="nav-label">League Types</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('create_league') }}" class="{{ 'active' if active_tab == 'create' }}">
-                <span>➕ Create</span>
+                <i data-lucide="plus-circle"></i>
+                <span class="nav-label">Create</span>
             </a>
         </li>
     </ul>
 </div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('leagues_my') }}" data-label="My Leagues" class="{{ 'active' if active_tab == 'my' }}"><i data-lucide="shield"></i></a>
+<a href="{{ url_for('leagues_public') }}" data-label="Public Leagues" class="{{ 'active' if active_tab == 'public' }}"><i data-lucide="globe"></i></a>
+<a href="{{ url_for('leagues_find') }}" data-label="Find a League" class="{{ 'active' if active_tab == 'find' }}"><i data-lucide="search"></i></a>
+<a href="{{ url_for('leagues_types') }}" data-label="League Types" class="{{ 'active' if active_tab == 'types' }}"><i data-lucide="list"></i></a>
+<a href="{{ url_for('create_league') }}" data-label="Create League" class="{{ 'active' if active_tab == 'create' }}"><i data-lucide="plus-circle"></i></a>
 {% endblock %}
 
 {% block content %}
@@ -47,5 +60,3 @@
     </aside>
 </div>
 {% endblock %}
-
-

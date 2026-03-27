@@ -5,36 +5,44 @@
     <ul>
         <li>
             <a href="{{ url_for('admin_panel') }}" class="{{ 'active' if active_tab == 'dashboard' }}">
-                <span class="nav-icon">🏠</span>
+                <i data-lucide="layout-dashboard"></i>
                 <span class="nav-label">Dashboard</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('manage_users') }}" class="{{ 'active' if active_tab == 'users' }}">
-                <span class="nav-icon">👥</span>
+                <i data-lucide="users"></i>
                 <span class="nav-label">Users</span>
             </a>
         </li>
         <li>
             <a href="#" class="{{ 'active' if active_tab == 'leagues' }}">
-                <span class="nav-icon">🏆</span>
+                <i data-lucide="trophy"></i>
                 <span class="nav-label">Leagues</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('admin_data') }}" class="{{ 'active' if active_tab == 'data' }}">
-                <span class="nav-icon">📊</span>
+                <i data-lucide="database"></i>
                 <span class="nav-label">Data</span>
             </a>
         </li>
         <li>
             <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if active_tab == 'settings' }}">
-                <span class="nav-icon">⚙️</span>
+                <i data-lucide="settings-2"></i>
                 <span class="nav-label">Settings</span>
             </a>
         </li>
     </ul>
 </div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('admin_panel') }}" data-label="Dashboard" class="{{ 'active' if active_tab == 'dashboard' }}"><i data-lucide="layout-dashboard"></i></a>
+<a href="{{ url_for('manage_users') }}" data-label="Users" class="{{ 'active' if active_tab == 'users' }}"><i data-lucide="users"></i></a>
+<a href="#" data-label="Leagues" class="{{ 'active' if active_tab == 'leagues' }}"><i data-lucide="trophy"></i></a>
+<a href="{{ url_for('admin_data') }}" data-label="Data" class="{{ 'active' if active_tab == 'data' }}"><i data-lucide="database"></i></a>
+<a href="{{ url_for('admin_settings') }}" data-label="Settings" class="{{ 'active' if active_tab == 'settings' }}"><i data-lucide="settings-2"></i></a>
 {% endblock %}
 
 {% block content %}
@@ -52,5 +60,3 @@
     </aside>
 </div>
 {% endblock %}
-
-
