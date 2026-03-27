@@ -198,10 +198,12 @@
         const vertNavEl = document.querySelector('.vertical-nav');
         if (topNavEl && vertNavEl) {
             const setVertNavHeight = () => {
-                const offset = topNavEl.offsetHeight;
-                vertNavEl.style.height = `calc(100vh - ${offset}px)`;
-                const panel = document.getElementById('actionsPanel');
-                if (panel) panel.style.bottom = '0';
+                if (window.innerWidth <= 768) {
+                    // Mobile: CSS handles the fixed bottom bar — don't touch height
+                    vertNavEl.style.height = '';
+                } else {
+                    vertNavEl.style.height = `calc(100vh - ${topNavEl.offsetHeight}px)`;
+                }
             };
             setVertNavHeight();
             window.addEventListener('resize', setVertNavHeight);
