@@ -365,6 +365,21 @@ class Database:
             {"$unset": {f"starters.{slot}": ""}}
         )
 
+    def set_ir(self, user_id, league_id, player_id, slot):
+        """Places a player on an IR slot."""
+        return self.rosters.update_one(
+            {"user_id": user_id, "league_id": league_id},
+            {"$set": {f"ir.{slot}": player_id}},
+            upsert=True
+        )
+
+    def remove_ir(self, user_id, league_id, slot):
+        """Removes a player from an IR slot (activates them back to bench)."""
+        return self.rosters.update_one(
+            {"user_id": user_id, "league_id": league_id},
+            {"$unset": {f"ir.{slot}": ""}}
+        )
+
     def get_watchlist(self, user_id, league_id):
         """Returns the watchlist player_ids for a user in a league."""
         roster = self.rosters.find_one({"user_id": user_id, "league_id": league_id})
@@ -450,6 +465,52 @@ class Database:
             priority.remove(user_id)
             priority.append(user_id)
         self.set_waiver_priority(league_id, priority)
+
+    # --- Drops ---
+
+    def log_drop(self, league_id, user_id, player_id):
+        now = datetime.now(timezone.utc)
+        self.db.drops.insert_one({
+            "id": str(uuid.uuid4()),
+            "league_id": league_id,
+            "user_id": user_id,
+            "player_id": player_id,
+            "dropped_at": now,
+        })
+
+    def get_league_drops(self, league_id):
+        return list(self.db.drops.find({"league_id": league_id}).sort("dropped_at", -1))
+
+    def log_ir_move(self, league_id, user_id, player_id, ir_slot, direction):
+        """direction: 'to_ir' or 'from_ir'"""
+        now = datetime.now(timezone.utc)
+        self.db.ir_moves.insert_one({
+            "id": str(uuid.uuid4()),
+            "league_id": league_id,
+            "user_id": user_id,
+            "player_id": player_id,
+            "ir_slot": ir_slot,
+            "direction": direction,
+            "moved_at": now,
+        })
+
+    def get_league_ir_moves(self, league_id):
+        return list(self.db.ir_moves.find({"league_id": league_id}).sort("moved_at", -1))
+
+    def archive_league(self, league_id, season, archive_data):
+        """Stores a full season snapshot for a league."""
+        now = datetime.now(timezone.utc)
+        self.db.league_archives.update_one(
+            {"league_id": league_id, "season": season},
+            {"$set": {**archive_data, "archived_at": now}},
+            upsert=True
+        )
+
+    def get_league_archive(self, league_id, season):
+        return self.db.league_archives.find_one({"league_id": league_id, "season": season})
+
+    def get_all_archives(self):
+        return list(self.db.league_archives.find().sort("archived_at", -1))
 
     def add_draft_pick_to_roster(self, user_id, league_id, team_id, year, round_num, pick_num):
         pick = {

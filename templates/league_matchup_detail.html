@@ -1,0 +1,133 @@
+{% extends "league_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block league_content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="{{ url_for('league_matchups', league_id=league.id, week=week) }}" style="font-size: 0.88em; color: var(--primary-color);">← Week {{ week }} Matchups</a>
+    <span id="refresh-countdown" style="font-size: 0.8em; color: var(--muted-color);"></span>
+</div>
+
+<!-- Score banner -->
+<div class="card panel" style="margin-bottom: 14px; padding: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px;">
+        <div style="text-align: center;">
+            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 6px;">{{ home.team_name }}</div>
+            <div style="font-size: 2.8em; font-weight: 900; color: {{ 'var(--primary-color)' if home.total > away.total else 'var(--text-color)' }};">
+                {{ "%.2f"|format(home.total) }}
+            </div>
+        </div>
+        <div style="text-align: center; color: var(--muted-color); font-weight: bold; font-size: 0.9em;">
+            Week {{ week }}<br>VS
+        </div>
+        <div style="text-align: center;">
+            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 6px;">{{ away.team_name }}</div>
+            <div style="font-size: 2.8em; font-weight: 900; color: {{ 'var(--primary-color)' if away.total > home.total else 'var(--text-color)' }};">
+                {{ "%.2f"|format(away.total) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Side-by-side lineups -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+
+    <!-- Home lineup -->
+    <div class="card panel">
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; font-size: 1em;">
+            {{ home.team_name }}
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                    <th style="padding: 6px 8px; text-align: left;">Slot</th>
+                    <th style="padding: 6px 8px; text-align: left;">Player</th>
+                    <th style="padding: 6px 8px; text-align: right;">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in home.lineup %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 6px 8px;"><span class="slot-badge">{{ row.slot }}</span></td>
+                    <td style="padding: 6px 8px; font-weight: bold;">
+                        {% if row.player %}
+                            <a href="{{ url_for('league_player', league_id=league.id, player_id=row.player.id) }}"
+                               style="color: var(--text-color); text-decoration: none;">{{ row.player.name }}</a>
+                            <span style="color: var(--muted-color); font-size: 0.82em; font-weight: normal;"> {{ row.player.position }} · {{ row.player.team }}</span>
+                        {% else %}
+                            <span style="color: var(--muted-color); font-style: italic;">Empty</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 6px 8px; text-align: right; font-weight: bold; color: var(--primary-color);">
+                        {{ "%.2f"|format(row.player.points) if row.player else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr style="border-top: 2px solid var(--border-color); font-weight: bold;">
+                    <td colspan="2" style="padding: 8px; text-align: right; color: var(--muted-color);">Total</td>
+                    <td style="padding: 8px; text-align: right; color: var(--primary-color);">{{ "%.2f"|format(home.total) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Away lineup -->
+    <div class="card panel">
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; font-size: 1em;">
+            {{ away.team_name }}
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                    <th style="padding: 6px 8px; text-align: left;">Slot</th>
+                    <th style="padding: 6px 8px; text-align: left;">Player</th>
+                    <th style="padding: 6px 8px; text-align: right;">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in away.lineup %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 6px 8px;"><span class="slot-badge">{{ row.slot }}</span></td>
+                    <td style="padding: 6px 8px; font-weight: bold;">
+                        {% if row.player %}
+                            <a href="{{ url_for('league_player', league_id=league.id, player_id=row.player.id) }}"
+                               style="color: var(--text-color); text-decoration: none;">{{ row.player.name }}</a>
+                            <span style="color: var(--muted-color); font-size: 0.82em; font-weight: normal;"> {{ row.player.position }} · {{ row.player.team }}</span>
+                        {% else %}
+                            <span style="color: var(--muted-color); font-style: italic;">Empty</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 6px 8px; text-align: right; font-weight: bold; color: var(--primary-color);">
+                        {{ "%.2f"|format(row.player.points) if row.player else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr style="border-top: 2px solid var(--border-color); font-weight: bold;">
+                    <td colspan="2" style="padding: 8px; text-align: right; color: var(--muted-color);">Total</td>
+                    <td style="padding: 8px; text-align: right; color: var(--primary-color);">{{ "%.2f"|format(away.total) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    const INTERVAL = 60; // seconds
+    let remaining = INTERVAL;
+    const el = document.getElementById('refresh-countdown');
+
+    function tick() {
+        el.textContent = `Auto-refreshing in ${remaining}s`;
+        if (remaining <= 0) {
+            window.location.reload();
+        }
+        remaining--;
+    }
+
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+{% endblock %}

@@ -47,8 +47,11 @@
             <p style="font-size: 0.8em; color: var(--muted-color); margin-bottom: 10px;">Trigger manual updates from SportRadar.</p>
             <button class="btn btn-sm btn-secondary" disabled style="width: 100%;">Sync Data</button>
         </div>
+        <div style="background: var(--card-bg); padding: 12px; border-radius: 6px; border: 1px solid #8e44ad; border-top: 3px solid #8e44ad;">
+            <h4 style="margin-top: 0; font-size: 1em; color: #8e44ad;">League Archives</h4>
+            <p style="font-size: 0.8em; color: var(--muted-color); margin-bottom: 10px;">Snapshot league seasons for historical records.</p>
+            <a href="{{ url_for('admin_leagues') }}" class="btn btn-sm" style="width: 100%; text-align: center; background-color: #8e44ad; color: white;">Manage Leagues</a>
+        </div>
     </div>
 </div>
 {% endblock %}
-
-

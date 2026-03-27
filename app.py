@@ -236,7 +236,7 @@ def get_all_player_stats():
 
     return stats_lookup
 
-def get_all_player_data(league_id=None, season=None):
+def get_all_player_data(league_id=None, season=None, week=None):
     """Ultra-Optimized: Aggregates stats AND calculates points for ALL players in ONE pass."""
     # 1. Determine the season to calculate for (ALWAYS use global site season)
     if not season:
@@ -252,8 +252,19 @@ def get_all_player_data(league_id=None, season=None):
     # Single lookup table for everything
     player_data = {} # { player_id: { stats..., points } }
 
-    # Fetch ALL games exactly once for the TARGET season
-    all_games = list(db.db.nfl_games.find({"summary.season.year": season}, {"statistics": 1}))
+    # Fetch games for the TARGET season, optionally filtered to a specific week
+    game_query = {"summary.season.year": season}
+    if week is not None:
+        game_query["summary.week.sequence"] = int(week)
+    all_games = list(db.db.nfl_games.find(game_query, {"statistics": 1}))
+
+    # If no games found for target season, fall back to the most recent season with data
+    if not all_games:
+        available = db.db.nfl_games.distinct("summary.season.year")
+        if available:
+            fallback = max(available)
+            game_query["summary.season.year"] = fallback
+            all_games = list(db.db.nfl_games.find(game_query, {"statistics": 1}))
     
     for game in all_games:
         stats = game.get('statistics', {})
@@ -675,17 +686,125 @@ def admin_panel():
     if not session.get('is_site_admin'):
         flash("Unauthorized access.", "error")
         return redirect(url_for('index'))
-    
-    # Fetch some basic stats for the admin page
+
     user_count = db.users.count_documents({})
     league_count = db.leagues.count_documents({})
     player_count = db.players.count_documents({})
-    
-    return render_template('admin_dashboard.html', 
-                           user_count=user_count, 
-                           league_count=league_count, 
+
+    return render_template('admin_dashboard.html',
+                           user_count=user_count,
+                           league_count=league_count,
                            player_count=player_count,
                            active_tab='dashboard')
+
+@app.route('/admin/leagues')
+def admin_leagues():
+    if not session.get('is_site_admin'):
+        flash("Unauthorized.", "error")
+        return redirect(url_for('index'))
+    all_leagues = list(db.leagues.find())
+    archives = db.get_all_archives()
+    archived_keys = [(a['league_id'], a['season']) for a in archives]
+    return render_template('admin_leagues.html', all_leagues=all_leagues,
+                           archives=archives, archived_keys=archived_keys,
+                           active_tab='leagues')
+
+@app.route('/admin/archive_league/<league_id>', methods=['POST'])
+def admin_archive_league(league_id):
+    if not session.get('is_site_admin'):
+        flash("Unauthorized.", "error")
+        return redirect(url_for('index'))
+
+    league = db.get_league(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('admin_panel'))
+
+    season = league.get('current_season', 2026)
+    all_points = get_all_player_data(league_id)
+    slots = get_league_roster_slots(league)
+    all_matchups = db.get_all_league_matchups(league_id, season)
+
+    standings = {}
+    for u_id in league.get('user_ids', []):
+        from bson import ObjectId
+        user = db.users.find_one({"_id": ObjectId(u_id)})
+        roster = db.get_roster(u_id, league_id)
+        team_name = (roster.get('team', {}).get('name') if roster else None) or (user['username'] if user else 'Unknown')
+        standings[u_id] = {'user_id': u_id, 'username': user['username'] if user else 'Unknown',
+                           'team_name': team_name, 'wins': 0, 'losses': 0, 'ties': 0, 'points_for': 0.0}
+
+    def _score(u_id, week=None):
+        r = db.get_roster(u_id, league_id)
+        if not r: return 0.0
+        s_ids = r.get('starters', {})
+        pts = get_all_player_data(league_id, week=week) if week else all_points
+        return round(sum(pts.get(s_ids.get(sl), {}).get('points', 0.0) for sl in slots), 2)
+
+    for m in all_matchups:
+        h, a = m['home_id'], m['away_id']
+        wk = m['week_number']
+        hs, as_ = _score(h, wk), _score(a, wk)
+        for uid, ms, os in [(h, hs, as_), (a, as_, hs)]:
+            if uid in standings:
+                standings[uid]['points_for'] += ms
+                if ms > os: standings[uid]['wins'] += 1
+                elif os > ms: standings[uid]['losses'] += 1
+                else: standings[uid]['ties'] += 1
+    for s in standings.values():
+        s['points_for'] = round(s['points_for'], 2)
+
+    final_rosters = []
+    for u_id in league.get('user_ids', []):
+        from bson import ObjectId
+        user = db.users.find_one({"_id": ObjectId(u_id)})
+        roster = db.get_roster(u_id, league_id)
+        players = []
+        for p_id in (roster.get('player_ids', []) if roster else []):
+            p = db.get_player_by_id(p_id)
+            if p:
+                pd = all_points.get(p_id, {})
+                players.append({'id': p_id, 'name': p.get('name'), 'position': p.get('position'),
+                                 'team': p.get('team'), 'points': round(pd.get('points', 0.0), 2)})
+        final_rosters.append({
+            'user_id': u_id,
+            'username': user['username'] if user else 'Unknown',
+            'team_name': standings.get(u_id, {}).get('team_name', 'Unknown'),
+            'players': players
+        })
+
+    schedule = [{'week': m['week_number'], 'home_id': m['home_id'], 'away_id': m['away_id'],
+                 'home_score': _score(m['home_id'], m['week_number']), 'away_score': _score(m['away_id'], m['week_number'])}
+                for m in sorted(all_matchups, key=lambda x: x['week_number'])]
+
+    all_trades = db.get_league_trades(league_id)
+    player_cache = {}
+    def _pname(pid):
+        if pid not in player_cache:
+            p = db.get_player_by_id(pid)
+            player_cache[pid] = p.get('name', 'Unknown') if p else 'Unknown'
+        return player_cache[pid]
+
+    trades = [{'date': (t.get('status_modified') or t['_id'].generation_time).isoformat(),
+               'offering_team': standings.get(t['team_offering']['team_id'], {}).get('team_name', 'Unknown'),
+               'responding_team': standings.get(t['team_responding']['team_id'], {}).get('team_name', 'Unknown'),
+               'offering_players': [_pname(p) for p in t['team_offering'].get('player_ids', [])],
+               'responding_players': [_pname(p) for p in t['team_responding'].get('player_ids', [])]}
+              for t in all_trades if t['status'] == 'Finalized']
+
+    db.archive_league(league_id, season, {
+        "id": str(uuid.uuid4()),
+        "league_id": league_id,
+        "league_name": league['name'],
+        "season": season,
+        "standings": sorted(standings.values(), key=lambda x: (x['wins'], x['points_for']), reverse=True),
+        "final_rosters": final_rosters,
+        "schedule": schedule,
+        "trades": trades,
+        "waiver_claims": [c for c in db.get_waiver_claims(league_id) if c['status'] == 'Awarded'],
+    })
+    flash(f"League '{league['name']}' ({season}) archived.", "success")
+    return redirect(url_for('admin_leagues'))
 
 @app.route('/admin/users')
 def manage_users():
@@ -800,6 +919,49 @@ def admin_game_edit(game_id):
                     p['fumbles_lost'] = int(request.form.get(f"{side}_{p_id}_fumbles", 0))
 
         db.db.nfl_games.update_one({"id": game_id}, {"$set": {"statistics": updated_stats}})
+
+        # Recompute NFL game score from statistics
+        # Passing TDs == Receiving TDs (same play), so only count rushing + receiving
+        nfl_scores = {}
+        for side in ['home', 'away']:
+            side_stats = updated_stats.get(side, {})
+            rush_tds = sum(p.get('touchdowns', 0) for p in side_stats.get('rushing', {}).get('players', []))
+            rec_tds = sum(p.get('touchdowns', 0) for p in side_stats.get('receiving', {}).get('players', []))
+            nfl_scores[f'summary.{side}.points'] = (rush_tds + rec_tds) * 6
+        db.db.nfl_games.update_one({"id": game_id}, {"$set": nfl_scores})
+
+        # Sync scores to nfl_schedule
+        db.nfl_schedule.update_one(
+            {"id": game_id},
+            {"$set": {
+                "scoring.home_points": nfl_scores["summary.home.points"],
+                "scoring.away_points": nfl_scores["summary.away.points"],
+                "status": "closed"
+            }}
+        )
+
+        # Recompute and store scores on all affected fantasy matchups
+        season = game.get('summary', {}).get('season', {}).get('year')
+        week = game.get('summary', {}).get('week', {}).get('sequence')
+        if season and week:
+            all_leagues = list(db.leagues.find())
+            for league in all_leagues:
+                league_id = league['id']
+                all_points = get_all_player_data(league_id, season=season, week=week)
+                slots = get_league_roster_slots(league)
+                # Fantasy matchups use the league's current_season, not the NFL game season
+                fantasy_season = league.get('current_season', season)
+                matchups = db.get_league_matchups(league_id, week, fantasy_season)
+                for m in matchups:
+                    for side, uid in [('home', m['home_id']), ('away', m['away_id'])]:
+                        roster = db.get_roster(uid, league_id)
+                        starter_ids = roster.get('starters', {}) if roster else {}
+                        score = round(sum(all_points.get(starter_ids.get(sl), {}).get('points', 0.0) for sl in slots), 2)
+                        db.fantasy_matchups.update_one(
+                            {"id": m['id']},
+                            {"$set": {f"{side}_score": score}}
+                        )
+
         flash("Game statistics updated successfully!", "success")
         
         if request.form.get('continue') == 'true':
@@ -1649,6 +1811,55 @@ def waiver_search(league_id):
     return jsonify(results)
 
 
+@app.route('/league/<league_id>/archives')
+def league_archives(league_id):
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+
+    # Fetch all archives for this league, sorted by season desc
+    archives = list(db.db.league_archives.find({"league_id": league_id}).sort("season", -1))
+
+    # Resolve user_id -> team_name for schedule display
+    user_cache = {}
+    def _team(uid, roster_list):
+        if uid in user_cache:
+            return user_cache[uid]
+        for r in roster_list:
+            if r['user_id'] == uid:
+                user_cache[uid] = r['team_name']
+                return r['team_name']
+        user_cache[uid] = uid
+        return uid
+
+    for a in archives:
+        rosters = a.get('final_rosters', [])
+        # Resolve player IDs in waiver claims to names
+        p_cache = {}
+        def _pname(pid):
+            if not pid: return None
+            if pid not in p_cache:
+                p = db.get_player_by_id(pid)
+                p_cache[pid] = p.get('name', pid) if p else pid
+            return p_cache[pid]
+        for c in a.get('waiver_claims', []):
+            c['player_name'] = _pname(c.get('player_id'))
+            c['drop_name'] = _pname(c.get('drop_player_id'))
+        for m in a.get('schedule', []):
+            m['home_name'] = _team(m['home_id'], rosters)
+            m['away_name'] = _team(m['away_id'], rosters)
+        user_cache.clear()
+
+    selected_season = request.args.get('season', archives[0]['season'] if archives else None)
+    if selected_season:
+        selected_season = int(selected_season)
+    archive = next((a for a in archives if a['season'] == selected_season), None)
+
+    return render_template('league_archives.html', league=league, is_admin=is_admin,
+                           archives=archives, archive=archive, selected_season=selected_season)
+
+
 @app.route('/league/<league_id>/transactions')
 def league_transactions(league_id):
     league, is_admin = get_league_context(league_id)
@@ -1716,10 +1927,38 @@ def league_transactions(league_id):
             'player_dropped': get_player_name(c['drop_player_id']) if c.get('drop_player_id') else None,
         })
 
+    # Drops
+    all_drops = db.get_league_drops(league_id)
+    decorated_drops = []
+    for d in all_drops:
+        u = db.get_user_by_id(d['user_id'])
+        r = db.get_roster(d['user_id'], league_id)
+        team_name = (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+        decorated_drops.append({
+            'date': d['dropped_at'],
+            'team_name': team_name,
+            'player_name': get_player_name(d['player_id']),
+        })
+
+    # IR Moves
+    all_ir = db.get_league_ir_moves(league_id)
+    decorated_ir = []
+    for m in all_ir:
+        u = db.get_user_by_id(m['user_id'])
+        r = db.get_roster(m['user_id'], league_id)
+        team_name = (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+        decorated_ir.append({
+            'date': m['moved_at'],
+            'team_name': team_name,
+            'player_name': get_player_name(m['player_id']),
+            'ir_slot': m['ir_slot'],
+            'direction': m['direction'],
+        })
+
     active_tab = request.args.get('tab', 'trades')
     return render_template('league_transactions.html', league=league, is_admin=is_admin,
                            completed_trades=decorated, awarded_waivers=decorated_waivers,
-                           active_tab=active_tab)
+                           drops=decorated_drops, ir_moves=decorated_ir, active_tab=active_tab)
 
 @app.route('/league/<league_id>/watchlist')
 def league_watchlist(league_id):
@@ -1996,20 +2235,29 @@ def league_home(league_id):
         my_roster = db.get_roster(current_user_id, league_id)
         if my_roster:
             starter_ids = set(my_roster.get('starters', {}).values())
+            ir_ids = set(my_roster.get('ir', {}).values())
             for p_id in my_roster.get('player_ids', []):
                 p = db.get_player_by_id(p_id)
                 if p:
+                    if p_id in ir_ids:
+                        status = 'ir'
+                    elif p_id in starter_ids:
+                        status = 'starter'
+                    else:
+                        status = 'bench'
                     my_roster_players.append({
                         'name': p.get('name', 'Unknown'),
                         'position': p.get('position', '?'),
                         'team': p.get('team', '?'),
-                        'is_starter': p_id in starter_ids,
+                        'is_starter': status == 'starter',
+                        'status': status,
                     })
-            my_roster_players.sort(key=lambda x: (0 if x['is_starter'] else 1, x['position'], x['name']))
+            my_roster_players.sort(key=lambda x: ({'starter': 0, 'bench': 1, 'ir': 2}[x['status']], x['position'], x['name']))
 
     # Build current week matchups for sidebar
     current_week = league.get('current_week', 1)
     week_matchups = db.get_league_matchups(league_id, current_week, season)
+    week_points_data = get_all_player_data(league_id, week=current_week)
     for m in week_matchups:
         for side in ['home', 'away']:
             u_id = m[f'{side}_id']
@@ -2018,7 +2266,7 @@ def league_home(league_id):
             roster = db.get_roster(u_id, league_id)
             m[f'{side}_name'] = (roster.get('team', {}).get('name') if roster else None) or (user['username'] if user else 'Unknown')
             starter_ids = roster.get('starters', {}) if roster else {}
-            m[f'{side}_score'] = round(sum(all_points_data.get(starter_ids.get(sl), {}).get('points', 0.0) for sl in slots), 2)
+            m[f'{side}_score'] = round(sum(week_points_data.get(starter_ids.get(sl), {}).get('points', 0.0) for sl in slots), 2)
 
     # Build message board preview
     board_threads = db.get_threads(league_id)
@@ -2399,7 +2647,7 @@ def league_matchups(league_id):
     season = league.get('current_season', 2026)
     week = int(request.args.get('week', 1))
     matchups = db.get_league_matchups(league_id, week, season)
-    all_points = get_all_player_data(league_id)
+    all_points = get_all_player_data(league_id, week=week)
     slots = get_league_roster_slots(league)
     for m in matchups:
         for side in ['home', 'away']:
@@ -2411,6 +2659,54 @@ def league_matchups(league_id):
             starter_ids = roster.get('starters', {}) if roster else {}
             m[f'{side}_score'] = round(sum(all_points.get(starter_ids.get(slot), {}).get('points', 0.0) for slot in slots), 2)
     return render_template('league_matchups.html', league=league, is_admin=is_admin, matchups=matchups, week=week)
+
+@app.route('/league/<league_id>/matchup/<matchup_id>')
+def league_matchup_detail(league_id, matchup_id):
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+
+    from bson import ObjectId
+    m = db.fantasy_matchups.find_one({"id": matchup_id, "league_id": league_id})
+    if not m:
+        flash("Matchup not found.", "error")
+        return redirect(url_for('league_matchups', league_id=league_id))
+
+    season = league.get('current_season', 2026)
+    week = m['week_number']
+    all_points = get_all_player_data(league_id, week=week)
+    slots = get_league_roster_slots(league)
+    salary_settings = league.get('salary_settings', {})
+
+    def build_side(uid):
+        user = db.users.find_one({"_id": ObjectId(uid)})
+        roster = db.get_roster(uid, league_id)
+        team_name = (roster.get('team', {}).get('name') if roster else None) or (user['username'] if user else 'Unknown')
+        starter_ids = roster.get('starters', {}) if roster else {}
+        players_map = {}
+        for p_id in (roster.get('player_ids', []) if roster else []):
+            p = db.get_player_by_id(p_id)
+            if p:
+                pd = all_points.get(p_id, {})
+                p['points'] = round(pd.get('points', 0.0), 2)
+                p['salary'] = calculate_salary(pd, salary_settings, p.get('position', 'QB'))
+                players_map[p_id] = p
+        lineup = []
+        for slot in slots:
+            p_id = starter_ids.get(slot)
+            lineup.append({'slot': slot, 'player': players_map.get(p_id) if p_id else None})
+        total = round(sum(row['player']['points'] for row in lineup if row['player']), 2)
+        return {'team_name': team_name, 'user_id': uid, 'lineup': lineup, 'total': total}
+
+    home = build_side(m['home_id'])
+    away = build_side(m['away_id'])
+
+    return render_template('league_matchup_detail.html',
+        league=league, is_admin=is_admin,
+        matchup=m, week=week,
+        home=home, away=away)
+
 
 @app.route('/league/<league_id>/draft')
 def league_draft(league_id):
@@ -3025,10 +3321,26 @@ def league_team(league_id, user_id):
         if p_id and p_id in players_map:
             roster_starters[slot] = players_map[p_id]
 
-    # Assign Bench
+    # Assign IR
+    ir_slots_count = league.get('rules', {}).get('roster', {}).get('ir_slots', 1)
+    ir_slot_names = [f"IR{i+1}" if ir_slots_count > 1 else "IR" for i in range(ir_slots_count)]
+    ir_ids_map = roster_data.get('ir', {}) if roster_data else {}
+    ir_assigned_ids = set(ir_ids_map.values())
+    roster_ir = {}
+    for ir_slot in ir_slot_names:
+        p_id = ir_ids_map.get(ir_slot)
+        roster_ir[ir_slot] = players_map.get(p_id) if p_id else None
+
+    # Assign Bench (exclude IR players)
     for p_id, p in players_map.items():
-        if p_id not in assigned_player_ids:
+        if p_id not in assigned_player_ids and p_id not in ir_assigned_ids:
             bench_players.append(p)
+
+    # Recalculate salary excluding IR players
+    total_roster_salary = sum(
+        p['salary'] for p_id, p in players_map.items()
+        if p_id not in ir_assigned_ids
+    )
 
     # Sort bench by position
     pos_order = {"QB": 0, "RB": 1, "FB": 2, "WR": 3, "TE": 4, "K": 5}
@@ -3058,6 +3370,8 @@ def league_team(league_id, user_id):
                            manager=manager, 
                            starters=roster_starters,
                            bench=bench_players,
+                           ir=roster_ir,
+                           ir_slot_names=ir_slot_names,
                            total_points=total_roster_points,
                            total_salary=total_roster_salary,
                            available_players=available_players,
@@ -3165,6 +3479,31 @@ def league_roster_move(league_id):
         
         if target_slot:
             db.bench_player(session['user_id'], league_id, target_slot)
+
+    elif action == 'ir':
+        # Move player to IR slot
+        ir_slot = request.form.get('slot')
+        if not ir_slot:
+            return {"success": False, "message": "No IR slot specified"}, 400
+        ir_slots_count = league.get('rules', {}).get('roster', {}).get('ir_slots', 1)
+        valid_ir = [f"IR{i+1}" if ir_slots_count > 1 else "IR" for i in range(ir_slots_count)]
+        if ir_slot not in valid_ir:
+            return {"success": False, "message": "Invalid IR slot"}, 400
+        # Remove from starters if currently starting
+        starter_map = roster.get('starters', {})
+        for s, pid in starter_map.items():
+            if pid == player_id:
+                db.bench_player(session['user_id'], league_id, s)
+                break
+        db.set_ir(session['user_id'], league_id, player_id, ir_slot)
+        db.log_ir_move(league_id, session['user_id'], player_id, ir_slot, 'to_ir')
+
+    elif action == 'activate':
+        # Move player off IR back to bench
+        ir_slot = request.form.get('slot')
+        if ir_slot:
+            db.remove_ir(session['user_id'], league_id, ir_slot)
+            db.log_ir_move(league_id, session['user_id'], player_id, ir_slot, 'from_ir')
 
     return {"success": True}
 
@@ -3713,6 +4052,8 @@ def remove_player(player_id, league_id=None):
         if player_id in player_ids:
             player_ids.remove(player_id)
             db.update_roster(user_id, league_id, player_ids)
+            if league_id:
+                db.log_drop(league_id, user_id, player_id)
             flash("Player removed from roster.", "success")
 
     if league_id:

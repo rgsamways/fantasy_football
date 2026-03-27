@@ -1,0 +1,77 @@
+{% extends "admin_layout.html" %}
+
+{% block admin_content %}
+<div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- LEAGUE LIST -->
+    <div class="card" style="padding: 20px;">
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">All Leagues</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                    <th style="padding: 8px 12px; text-align: left;">League</th>
+                    <th style="padding: 8px 12px; text-align: left;">Season</th>
+                    <th style="padding: 8px 12px; text-align: center;">Members</th>
+                    <th style="padding: 8px 12px; text-align: center;">Archived</th>
+                    <th style="padding: 8px 12px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in all_leagues %}
+                {% set is_archived = (l.id, l.get('current_season', 2026)) in archived_keys %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 8px 12px; font-weight: bold;">{{ l.name }}</td>
+                    <td style="padding: 8px 12px; color: var(--muted-color);">{{ l.get('current_season', 2026) }}</td>
+                    <td style="padding: 8px 12px; text-align: center; color: var(--muted-color);">{{ l.get('user_ids', []) | length }}</td>
+                    <td style="padding: 8px 12px; text-align: center;">
+                        {% if is_archived %}
+                            <span style="color: #27ae60; font-weight: bold; font-size: 0.85em;">✓ Yes</span>
+                        {% else %}
+                            <span style="color: var(--muted-color); font-size: 0.85em;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 8px 12px;">
+                        <form action="{{ url_for('admin_archive_league', league_id=l.id) }}" method="POST"
+                              onsubmit="return confirm('Archive {{ l.name }} ({{ l.get('current_season', 2026) }})? This snapshots current standings, rosters, schedule, and trades.');">
+                            <button type="submit" class="btn btn-sm">
+                                {{ 'Re-Archive' if is_archived else 'Archive' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ARCHIVE HISTORY -->
+    {% if archives %}
+    <div class="card" style="padding: 20px;">
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">Archive History</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                    <th style="padding: 8px 12px; text-align: left;">League</th>
+                    <th style="padding: 8px 12px; text-align: left;">Season</th>
+                    <th style="padding: 8px 12px; text-align: left;">Archived</th>
+                    <th style="padding: 8px 12px; text-align: center;">Teams</th>
+                    <th style="padding: 8px 12px; text-align: center;">Trades</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in archives %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 8px 12px; font-weight: bold;">{{ a.league_name }}</td>
+                    <td style="padding: 8px 12px; color: var(--muted-color);">{{ a.season }}</td>
+                    <td style="padding: 8px 12px; color: var(--muted-color); font-size: 0.85em;">{{ a.archived_at.strftime('%b %d, %Y %H:%M') }}</td>
+                    <td style="padding: 8px 12px; text-align: center; color: var(--muted-color);">{{ a.get('final_rosters', []) | length }}</td>
+                    <td style="padding: 8px 12px; text-align: center; color: var(--muted-color);">{{ a.get('trades', []) | length }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -22,6 +22,20 @@
                   margin-bottom: -2px;">
             Waivers
         </a>
+        <a href="{{ url_for('league_transactions', league_id=league.id, tab='drops') }}"
+           style="padding: 8px 18px; font-size: 0.88em; font-weight: bold; text-decoration: none;
+                  color: {{ 'var(--primary-color)' if active_tab == 'drops' else 'var(--muted-color)' }};
+                  border-bottom: 2px solid {{ 'var(--primary-color)' if active_tab == 'drops' else 'transparent' }};
+                  margin-bottom: -2px;">
+            Drops
+        </a>
+        <a href="{{ url_for('league_transactions', league_id=league.id, tab='ir') }}"
+           style="padding: 8px 18px; font-size: 0.88em; font-weight: bold; text-decoration: none;
+                  color: {{ 'var(--primary-color)' if active_tab == 'ir' else 'var(--muted-color)' }};
+                  border-bottom: 2px solid {{ 'var(--primary-color)' if active_tab == 'ir' else 'transparent' }};
+                  margin-bottom: -2px;">
+            IR
+        </a>
     </div>
 
     {% if active_tab == 'trades' %}
@@ -85,6 +99,64 @@
     </table>
     {% else %}
     <p style="color: var(--muted-color); font-size: 0.9em;">No processed waiver claims yet.</p>
+    {% endif %}
+
+    {% elif active_tab == 'drops' %}
+    {% if drops %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 8px 12px; text-align: left;">Date</th>
+                <th style="padding: 8px 12px; text-align: left;">Team</th>
+                <th style="padding: 8px 12px; text-align: left;">Dropped</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in drops %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 12px; color: var(--muted-color); font-size: 0.85em;">{{ d.date.strftime('%b %d, %Y') }}</td>
+                <td style="padding: 8px 12px; font-weight: bold;">{{ d.team_name }}</td>
+                <td style="padding: 8px 12px; color: #e74c3c;">− {{ d.player_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No drops recorded yet.</p>
+    {% endif %}
+
+    {% elif active_tab == 'ir' %}
+    {% if ir_moves %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 8px 12px; text-align: left;">Date</th>
+                <th style="padding: 8px 12px; text-align: left;">Team</th>
+                <th style="padding: 8px 12px; text-align: left;">Player</th>
+                <th style="padding: 8px 12px; text-align: left;">Slot</th>
+                <th style="padding: 8px 12px; text-align: left;">Move</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in ir_moves %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 12px; color: var(--muted-color); font-size: 0.85em;">{{ m.date.strftime('%b %d, %Y') }}</td>
+                <td style="padding: 8px 12px; font-weight: bold;">{{ m.team_name }}</td>
+                <td style="padding: 8px 12px;">{{ m.player_name }}</td>
+                <td style="padding: 8px 12px; color: var(--muted-color);">{{ m.ir_slot }}</td>
+                <td style="padding: 8px 12px;">
+                    {% if m.direction == 'to_ir' %}
+                        <span style="color: #8e44ad; font-weight: bold; font-size: 0.85em;">→ IR</span>
+                    {% else %}
+                        <span style="color: #27ae60; font-weight: bold; font-size: 0.85em;">← Activated</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No IR moves recorded yet.</p>
     {% endif %}
     {% endif %}
 </div>

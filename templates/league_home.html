@@ -154,8 +154,10 @@
                 <td style="padding: 8px 12px; color: var(--muted-color);">{{ p.position }}</td>
                 <td style="padding: 8px 12px; color: var(--muted-color);">{{ p.team }}</td>
                 <td style="padding: 8px 12px;">
-                    {% if p.is_starter %}
+                    {% if p.status == 'starter' %}
                         <span style="font-size: 0.78em; font-weight: bold; color: var(--primary-color);">Starter</span>
+                    {% elif p.status == 'ir' %}
+                        <span style="font-size: 0.78em; font-weight: bold; color: #8e44ad;">IR</span>
                     {% else %}
                         <span style="font-size: 0.78em; color: var(--muted-color);">Bench</span>
                     {% endif %}

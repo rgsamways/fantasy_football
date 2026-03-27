@@ -112,6 +112,67 @@
         </table>
     </div>
 
+    <!-- IR SECTION -->
+    {% if ir_slot_names %}
+    <div class="ir-section card panel" style="border-top: 4px solid #8e44ad;">
+        <h3 style="margin-top: 0; color: #8e44ad; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Injured Reserve</h3>
+        <table class="roster-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left; font-size: 0.85em; color: var(--text-color); text-transform: uppercase;">
+                    <th style="padding: 10px;">Slot</th>
+                    <th style="padding: 10px;">Player</th>
+                    <th style="padding: 10px;">Pos</th>
+                    <th style="padding: 10px;">Team</th>
+                    {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+                        <th style="padding: 10px; text-align: right;">Salary</th>
+                    {% endif %}
+                    <th style="padding: 10px; text-align: right;">Points</th>
+                    {% if session.get('user_id') == manager._id|string %}
+                        <th style="padding: 10px; text-align: center;">Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for ir_slot in ir_slot_names %}
+                {% set player = ir.get(ir_slot) %}
+                <tr style="border-bottom: 1px solid var(--border-color); height: 60px; background: rgba(142,68,173,0.05);">
+                    <td style="padding: 10px;">
+                        <span class="slot-badge" style="background: #8e44ad; color: white;">{{ ir_slot }}</span>
+                    </td>
+                    <td style="padding: 10px;">
+                        {% if player %}
+                            <a href="{{ url_for('league_player', league_id=league.id, player_id=player.id) }}" style="text-decoration: none; color: #8e44ad; font-weight: bold;">
+                                {{ player.name }}
+                            </a>
+                        {% else %}
+                            <span class="muted" style="font-style: italic;">Empty IR Slot</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px;">{{ player.position if player else '-' }}</td>
+                    <td class="muted" style="padding: 10px; font-size: 0.9em;">{{ player.team if player else '-' }}</td>
+                    {% if league.salary_settings and league.salary_settings.active_model != 'none' %}
+                        <td class="muted" style="padding: 10px; text-align: right;">
+                            {% if player %}
+                                <span style="text-decoration: line-through; color: var(--muted-color);">{{ "${:,.0f}".format(player.salary) }}</span>
+                                <span style="font-size: 0.8em; color: #27ae60; margin-left: 4px;">$0</span>
+                            {% else %}-{% endif %}
+                        </td>
+                    {% endif %}
+                    <td class="muted" style="padding: 10px; text-align: right;">{{ "%.2f"|format(player.points) if player else '-' }}</td>
+                    {% if session.get('user_id') == manager._id|string %}
+                        <td style="padding: 10px; text-align: center;">
+                            {% if player %}
+                                <button class="btn btn-sm" onclick="movePlayer('activate', '{{ player.id }}', '{{ ir_slot }}')" style="font-size: 0.75em; padding: 2px 10px;">Activate</button>
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
     <!-- BENCH SECTION -->
     <div class="bench-section card panel">
         <h3 class="muted" style="margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">Bench</h3>
@@ -155,6 +216,14 @@
                                             <option value="{{ slot_name }}">{{ slot_name }}</option>
                                         {% endfor %}
                                     </select>
+                                    {% if ir_slot_names %}
+                                    <select onchange="movePlayer('ir', '{{ player.id }}', this.value)" style="padding: 2px; font-size: 0.75em; border-radius: 4px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border);">
+                                        <option value="">-- IR --</option>
+                                        {% for ir_slot in ir_slot_names %}
+                                            <option value="{{ ir_slot }}">{{ ir_slot }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% endif %}
                                     <a href="{{ url_for('remove_player', player_id=player.id, league_id=league.id) }}" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 0.75em; display: flex; align-items: center;">Drop</a>
                                 </td>
                             {% endif %}

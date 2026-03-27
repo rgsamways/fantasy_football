@@ -40,7 +40,7 @@
 {% block vertical_nav %}
 <a href="{{ url_for('admin_panel') }}" data-label="Dashboard" class="{{ 'active' if active_tab == 'dashboard' }}"><i data-lucide="layout-dashboard"></i> Dashboard</a>
 <a href="{{ url_for('manage_users') }}" data-label="Users" class="{{ 'active' if active_tab == 'users' }}"><i data-lucide="users"></i> Users</a>
-<a href="#" data-label="Leagues" class="{{ 'active' if active_tab == 'leagues' }}"><i data-lucide="trophy"></i> Leagues</a>
+<a href="{{ url_for('admin_leagues') }}" data-label="Leagues" class="{{ 'active' if active_tab == 'leagues' }}"><i data-lucide="trophy"></i> Leagues</a>
 <a href="{{ url_for('admin_data') }}" data-label="Data" class="{{ 'active' if active_tab == 'data' }}"><i data-lucide="database"></i> Data</a>
 <a href="{{ url_for('admin_settings') }}" data-label="Settings" class="{{ 'active' if active_tab == 'settings' }}"><i data-lucide="settings-2"></i> Settings</a>
 {% endblock %}

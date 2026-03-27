@@ -28,40 +28,39 @@
 
 <div class="matchups-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px;">
     {% for matchup in matchups %}
-    <div class="matchup-card" style="background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid var(--border-color);">
-        <div style="padding: 20px;">
-            <!-- Home Team -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--muted-color);">H</div>
-                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.home_id) }}" style="font-weight: bold; font-size: 1.1em; color: var(--text-color); text-decoration: none; hover: underline;">
-                        {{ matchup.home_name }}
-                    </a>
+    <a href="{{ url_for('league_matchup_detail', league_id=league.id, matchup_id=matchup.id) }}"
+       style="text-decoration: none; color: inherit; display: block;">
+        <div class="matchup-card" style="background: var(--card-bg); box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; height: 100%;">
+            <div style="padding: 20px;">
+                <!-- Home Team -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: var(--table-header-bg); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--muted-color);">H</div>
+                        <span style="font-weight: bold; font-size: 1.1em;">{{ matchup.home_name }}</span>
+                    </div>
+                    <div style="font-size: 1.5em; font-weight: 800; color: {{ 'var(--primary-color)' if matchup.home_score > matchup.away_score else 'var(--text-color)' }};">
+                        {{ matchup.home_score }}
+                    </div>
                 </div>
-                <div style="font-size: 1.5em; font-weight: 800; color: {{ 'var(--primary-color)' if matchup.home_score > matchup.away_score else '#1e293b' }};">
-                    {{ matchup.home_score }}
+
+                <div style="text-align: center; margin: 5px 0; color: var(--muted-color); font-weight: bold; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;">VS</div>
+
+                <!-- Away Team -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; background: var(--table-header-bg); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--muted-color);">A</div>
+                        <span style="font-weight: bold; font-size: 1.1em;">{{ matchup.away_name }}</span>
+                    </div>
+                    <div style="font-size: 1.5em; font-weight: 800; color: {{ 'var(--primary-color)' if matchup.away_score > matchup.home_score else 'var(--text-color)' }};">
+                        {{ matchup.away_score }}
+                    </div>
                 </div>
             </div>
-
-            <div style="text-align: center; margin: 5px 0; color: var(--muted-color); font-weight: bold; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;">VS</div>
-
-            <!-- Away Team -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--muted-color);">A</div>
-                    <a href="{{ url_for('league_team', league_id=league.id, user_id=matchup.away_id) }}" style="font-weight: bold; font-size: 1.1em; color: var(--text-color); text-decoration: none;">
-                        {{ matchup.away_name }}
-                    </a>
-                </div>
-                <div style="font-size: 1.5em; font-weight: 800; color: {{ 'var(--primary-color)' if matchup.away_score > matchup.home_score else '#1e293b' }};">
-                    {{ matchup.away_score }}
-                </div>
+            <div style="background: var(--table-header-bg); padding: 10px 20px; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85em; color: var(--muted-color); font-weight: 500;">
+                <span style="color: #10b981;">● Live</span> — click to view rosters
             </div>
         </div>
-        <div style="background: var(--table-header-bg); padding: 10px 20px; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85em; color: var(--muted-color); font-weight: 500;">
-            Matchup ID: {{ matchup.id[:8] }}... | <span style="color: #10b981;">● Live</span>
-        </div>
-    </div>
+    </a>
     {% endfor %}
 </div>
 
