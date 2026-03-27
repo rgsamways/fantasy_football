@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block full_width %}
+<div class="sub-nav">
+    <ul>
+        <li>
+            <a href="{{ url_for('pool_home', pool_id=pool.id) }}" class="{{ 'active' if request.endpoint == 'pool_home' }}">
+                <i data-lucide="home"></i>
+                <span class="nav-label">{{ pool.name }} Home</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="{{ 'active' if request.endpoint == 'pool_picks' }}">
+                <i data-lucide="check-square"></i>
+                <span class="nav-label">My Pick</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pool_members', pool_id=pool.id) }}" class="{{ 'active' if request.endpoint in ['pool_members', 'pool_member'] }}">
+                <i data-lucide="users"></i>
+                <span class="nav-label">Members</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="{{ 'active' if request.endpoint == 'pool_standings' }}">
+                <i data-lucide="bar-chart-2"></i>
+                <span class="nav-label">Standings</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pool_rules', pool_id=pool.id) }}" class="{{ 'active' if request.endpoint == 'pool_rules' }}">
+                <i data-lucide="scroll-text"></i>
+                <span class="nav-label">Rules</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pool_board', pool_id=pool.id) }}" class="{{ 'active' if request.endpoint in ['pool_board', 'pool_board_thread', 'pool_board_new_thread'] }}">
+                <i data-lucide="message-square"></i>
+                <span class="nav-label">Board</span>
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('pool_home', pool_id=pool.id) }}" data-label="{{ pool.name }} Home" class="{{ 'active' if request.endpoint == 'pool_home' }}"><i data-lucide="home"></i> {{ pool.name }} Home</a>
+<a href="{{ url_for('pool_picks', pool_id=pool.id) }}" data-label="My Pick" class="{{ 'active' if request.endpoint == 'pool_picks' }}"><i data-lucide="check-square"></i> My Pick</a>
+<a href="{{ url_for('pool_members', pool_id=pool.id) }}" data-label="Members" class="{{ 'active' if request.endpoint in ['pool_members', 'pool_member'] }}"><i data-lucide="users"></i> Members</a>
+<a href="{{ url_for('pool_standings', pool_id=pool.id) }}" data-label="Standings" class="{{ 'active' if request.endpoint == 'pool_standings' }}"><i data-lucide="bar-chart-2"></i> Standings</a>
+<a href="{{ url_for('pool_rules', pool_id=pool.id) }}" data-label="Rules" class="{{ 'active' if request.endpoint == 'pool_rules' }}"><i data-lucide="scroll-text"></i> Rules</a>
+<a href="{{ url_for('pool_board', pool_id=pool.id) }}" data-label="Board" class="{{ 'active' if request.endpoint in ['pool_board', 'pool_board_thread', 'pool_board_new_thread'] }}"><i data-lucide="message-square"></i> Board</a>
+<a href="{{ url_for('pool_invites', pool_id=pool.id) }}" data-label="Invites" class="{{ 'active' if request.endpoint == 'pool_invites' }}"><i data-lucide="mail-plus"></i> Invites</a>
+<a href="{{ url_for('pool_archives', pool_id=pool.id) }}" data-label="Archives" class="{{ 'active' if request.endpoint == 'pool_archives' }}"><i data-lucide="archive"></i> Archives</a>
+{% if pool.get('administrators') and session.get('user_id') in pool.administrators %}
+<a href="{{ url_for('pool_admin', pool_id=pool.id) }}" data-label="Admin" class="{{ 'active' if request.endpoint == 'pool_admin' }}"><i data-lucide="settings"></i> Admin</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="pool-layout {% block layout_class %}{% endblock %}">
+    <aside class="sidebar-left">
+        {% block pool_sidebar_left %}{% endblock %}
+    </aside>
+
+    <main class="pool-main-content">
+        {% block pool_content %}{% endblock %}
+    </main>
+
+    <aside class="sidebar-right">
+        {% block pool_sidebar_right %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div class="card panel" style="max-width: 700px; margin: 0 auto;">
+    <h2 style="margin-top: 0; color: var(--primary-color);">{{ pool.name }} — Rules</h2>
+    <p style="color: var(--muted-color); font-size: 0.9em; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 20px;">
+        Pool Type: {{ pool.pool_type }} &nbsp;·&nbsp; Season {{ pool.get('current_season', 2026) }}
+    </p>
+
+    {% if pool.pool_type == "Pick 'Em" %}
+    <h3 style="color: var(--secondary-color); margin-top: 0;">Pick 'Em — How to Play</h3>
+    <ol style="line-height: 1.9; padding-left: 20px;">
+        <li>Each week, pick <strong>one NFL team</strong>.</li>
+        <li>You earn the <strong>points that team scores</strong> in their game that week.</li>
+        <li>You can only use each team <strong>once per season</strong> — choose wisely.</li>
+        <li>The player with the <strong>most total points</strong> at the end of the regular season wins.</li>
+        <li>Picks lock once the admin processes results for that week.</li>
+        <li>You may change your pick for the current week at any time before it locks.</li>
+        <li>Other members' picks are hidden until the week is processed.</li>
+    </ol>
+
+    <h3 style="color: var(--secondary-color);">Weekly Winner</h3>
+    <ul style="line-height: 1.9; padding-left: 20px;">
+        <li>The player who earns the most points in a single week is highlighted in the standings.</li>
+        <li>If multiple players tie for the week's high score, all are credited.</li>
+    </ul>
+
+    <h3 style="color: var(--secondary-color);">Tiebreakers</h3>
+    <ul style="line-height: 1.9; padding-left: 20px;">
+        <li>If two or more players finish with identical season totals, the player with more weekly wins takes precedence.</li>
+        <li>If still tied, the pool is shared.</li>
+    </ul>
+
+    {% else %}
+    <h3 style="color: var(--secondary-color); margin-top: 0;">Survivor — How to Play</h3>
+    <ol style="line-height: 1.9; padding-left: 20px;">
+        <li>Each week, pick <strong>one NFL team</strong> to win their game.</li>
+        <li>If your team wins, you advance to the next week. If they lose or tie, you're <strong>eliminated</strong>.</li>
+        <li>You can only use each team <strong>once per season</strong> — choose wisely.</li>
+        <li>The last player (or players) still alive at the end of the season wins.</li>
+        <li>Picks lock once the admin processes results for that week.</li>
+        <li>You may change your pick for the current week at any time before it locks.</li>
+    </ol>
+
+    <h3 style="color: var(--secondary-color);">Tiebreakers</h3>
+    <ul style="line-height: 1.9; padding-left: 20px;">
+        <li>If multiple players survive the entire season, the pool is shared.</li>
+        <li>If all remaining players are eliminated in the same week, those players share the pool.</li>
+    </ul>
+
+    <h3 style="color: var(--secondary-color);">Ties in NFL Games</h3>
+    <ul style="line-height: 1.9; padding-left: 20px;">
+        <li>An NFL game that ends in a tie counts as a <strong>loss</strong> for whoever picked either team.</li>
+    </ul>
+    {% endif %}
+
+    {% if is_admin %}
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 0.85em; color: var(--muted-color); margin: 0;">
+            As an admin you can override picks, advance the week, and process results from the
+            <a href="{{ url_for('pool_admin', pool_id=pool.id) }}">Admin Panel</a>.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

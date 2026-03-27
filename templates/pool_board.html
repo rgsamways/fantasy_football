@@ -1,0 +1,47 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div style="display: flex; flex-direction: column; gap: 7px;">
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <h2 style="margin: 0; color: var(--primary-color);">Message Board</h2>
+    {% if session.get('user_id') %}
+    <a href="{{ url_for('pool_board_new_thread', pool_id=pool.id) }}" class="btn btn-sm">New Thread</a>
+    {% endif %}
+</div>
+
+{% if threads %}
+<div class="card panel">
+    <div style="display: flex; flex-direction: column; gap: 0;">
+        {% for thread in threads %}
+        <div style="padding: 12px 0; border-bottom: 1px solid var(--border-color); {% if loop.last %}border-bottom: none;{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px;">
+                <a href="{{ url_for('pool_board_thread', pool_id=pool.id, thread_id=thread.id) }}"
+                   style="font-weight: bold; color: var(--text-color); text-decoration: none;">
+                    {% if thread.pinned %}📌 {% endif %}{{ thread.title }}
+                </a>
+                <span style="font-size: 0.78em; color: var(--muted-color); white-space: nowrap;">
+                    {{ thread.author_name }} &nbsp;·&nbsp; {{ thread.created_at.strftime('%b %d, %Y') }}
+                    &nbsp;·&nbsp; {{ thread.post_count }} post{{ 's' if thread.post_count != 1 }}
+                </span>
+            </div>
+            <div style="font-size: 0.83em; color: var(--muted-color); margin-top: 4px;">
+                {{ thread.posts[0].content | truncate(150) }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card panel" style="text-align: center; color: var(--muted-color); padding: 40px;">
+    <p>No threads yet. Be the first to post!</p>
+    {% if session.get('user_id') %}
+    <a href="{{ url_for('pool_board_new_thread', pool_id=pool.id) }}" class="btn btn-sm" style="margin-top: 10px;">Start a Thread</a>
+    {% endif %}
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

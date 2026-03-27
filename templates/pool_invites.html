@@ -1,0 +1,48 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div class="card panel" style="max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-top: 0; color: var(--primary-color);">Invites</h2>
+
+    {% if is_admin %}
+    <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 1em; margin-top: 0;">Share Pool Link</h3>
+        <p style="font-size: 0.9em; color: var(--muted-color);">Anyone with this link can view the pool. Use the Public Pools page to make your pool discoverable.</p>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="poolLink" readonly value="{{ request.host_url }}pool/{{ pool.id }}"
+                   style="flex: 1; padding: 8px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-color); font-size: 0.85em; min-width: 0;">
+            <button onclick="navigator.clipboard.writeText(document.getElementById('poolLink').value); this.innerText='Copied!';" class="btn btn-sm">Copy Link</button>
+        </div>
+    </div>
+
+    {% if pending_invites %}
+    <div>
+        <h3 style="font-size: 1em; margin-top: 0; border-top: 1px solid var(--border-color); padding-top: 16px;">Pending Invites ({{ pending_invites | length }})</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--muted-color);">
+                    <th style="padding: 6px 8px; text-align: left;">Invitee</th>
+                    <th style="padding: 6px 8px; text-align: left;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invite in pending_invites %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 8px;">{{ invite.get('invitee_id', '—') }}</td>
+                    <td style="padding: 8px; color: #f39c12;">{{ invite.get('status', 'pending') | capitalize }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No pending invites.</p>
+    {% endif %}
+
+    {% else %}
+    <p style="color: var(--muted-color);">Invite management is available to pool admins only.</p>
+    {% endif %}
+</div>
+{% endblock %}

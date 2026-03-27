@@ -1,0 +1,25 @@
+{% extends "pools_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pools_content %}
+<div class="pools-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Find a Pool</h2>
+    <p>Search for specific pools by name or ID.</p>
+</div>
+
+<div class="card" style="padding: 30px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color); max-width: 600px; margin: 0 auto;">
+    <form action="{{ url_for('pools_find') }}" method="GET" style="display: flex; gap: 10px;">
+        <input type="text" name="q" placeholder="Enter pool name or ID..." style="flex-grow: 1; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
+        <button type="submit" class="btn">Search</button>
+    </form>
+    
+    <div style="margin-top: 40px; text-align: center; color: var(--muted-color);">
+        <div style="font-size: 3rem; margin-bottom: 15px;">🔎</div>
+        <p>Use the search box above to find a specific pool to join.</p>
+        <p style="font-size: 0.9em;">Or browse <a href="{{ url_for('pools_public') }}">Public Pools</a> to see what's available.</p>
+    </div>
+</div>
+{% endblock %}
+
+

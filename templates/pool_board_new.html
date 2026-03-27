@@ -1,0 +1,25 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div class="card panel" style="max-width: 680px; margin: 0 auto;">
+    <h2 style="margin-top: 0; color: var(--primary-color);">New Thread</h2>
+    <form action="{{ url_for('pool_board_new_thread', pool_id=pool.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+            <label style="display: block; font-weight: bold; margin-bottom: 6px;">Title</label>
+            <input type="text" name="title" required maxlength="200"
+                   style="width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-color);">
+        </div>
+        <div>
+            <label style="display: block; font-weight: bold; margin-bottom: 6px;">Message</label>
+            <textarea name="content" required rows="6"
+                      style="width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-color); resize: vertical;"></textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn">Post Thread</button>
+            <a href="{{ url_for('pool_board', pool_id=pool.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

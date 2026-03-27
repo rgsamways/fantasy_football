@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+
+{% block full_width %}
+<div class="sub-nav">
+    <ul>
+        <li>
+            <a href="{{ url_for('pools_my') }}" class="{{ 'active' if active_tab == 'my' }}">
+                <i data-lucide="shield"></i>
+                <span class="nav-label">My Pools</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pools_public') }}" class="{{ 'active' if active_tab == 'public' }}">
+                <i data-lucide="globe"></i>
+                <span class="nav-label">Public Pools</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pools_find') }}" class="{{ 'active' if active_tab == 'find' }}">
+                <i data-lucide="search"></i>
+                <span class="nav-label">Find a Pool</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('pools_types') }}" class="{{ 'active' if active_tab == 'types' }}">
+                <i data-lucide="list"></i>
+                <span class="nav-label">Pool Types</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('create_pool') }}" class="{{ 'active' if active_tab == 'create' }}">
+                <i data-lucide="plus-circle"></i>
+                <span class="nav-label">Create</span>
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block vertical_nav %}
+<a href="{{ url_for('pools_my') }}" data-label="My Pools" class="{{ 'active' if active_tab == 'my' }}"><i data-lucide="shield"></i> My Pools</a>
+<a href="{{ url_for('pools_public') }}" data-label="Public Pools" class="{{ 'active' if active_tab == 'public' }}"><i data-lucide="globe"></i> Public Pools</a>
+<a href="{{ url_for('pools_find') }}" data-label="Find a Pool" class="{{ 'active' if active_tab == 'find' }}"><i data-lucide="search"></i> Find Pools</a>
+<a href="{{ url_for('pools_types') }}" data-label="Pool Types" class="{{ 'active' if active_tab == 'types' }}"><i data-lucide="list"></i> Pool Types</a>
+<a href="{{ url_for('create_pool') }}" data-label="Create Pool" class="{{ 'active' if active_tab == 'create' }}"><i data-lucide="plus-circle"></i> Create Pool</a>
+{% endblock %}
+
+{% block content %}
+<div class="league-layout {% block layout_class %}{% endblock %}">
+    <aside class="sidebar-left">
+        {% block pool_sidebar_left %}{% endblock %}
+    </aside>
+
+    <main class="league-main-content">
+        {% block pools_header %}{% endblock %}
+        {% block pools_content %}{% endblock %}
+    </main>
+
+    <aside class="sidebar-right">
+        {% block pool_sidebar_right %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}

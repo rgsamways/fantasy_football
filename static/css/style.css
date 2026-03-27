@@ -242,7 +242,7 @@ nav {
     color: white;
     padding: 0.8rem 1.5rem;
     text-decoration: none;
-    border-radius: 3px;
+    border-radius: 0;
     font-weight: bold;
     transition: background-color 0.2s;
     border: none;
@@ -276,7 +276,7 @@ nav {
 
 .card {
     background-color: var(--card-bg);
-    border-radius: 3px;
+    border-radius: 0;
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
@@ -291,7 +291,7 @@ nav {
 .feature-card {
     background-color: var(--card-bg);
     padding: 2rem;
-    border-radius: 3px;
+    border-radius: 0;
     text-align: center;
     border: 1px solid var(--border-color);
     border-top: 4px solid var(--primary-color);
@@ -304,7 +304,7 @@ nav {
     margin: 2rem auto;
     background-color: var(--card-bg);
     padding: 2rem;
-    border-radius: 3px;
+    border-radius: 0;
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
@@ -323,7 +323,7 @@ nav {
 .form-group input, .form-group select, .form-control {
     width: 100%;
     padding: 0.8rem;
-    border-radius: 3px;
+    border-radius: 0;
     border: 1px solid var(--input-border);
     background-color: var(--input-bg);
     color: var(--text-color);
@@ -335,7 +335,7 @@ table {
     border-collapse: collapse;
     margin-top: 2rem;
     background-color: var(--card-bg);
-    border-radius: 3px;
+    border-radius: 0;
     overflow: hidden;
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -362,6 +362,14 @@ th {
     width: 100%;
 }
 
+/* Sidebar Layout Container */
+.pool-layout, .layout-with-sidebar {
+    display: flex;
+    gap: 7px;
+    align-items: flex-start;
+    width: 100%;
+}
+
 .sidebar-left {
     width: var(--sidebar-left-width);
     flex-shrink: 0;
@@ -379,6 +387,16 @@ th {
 
 .league-layout.no-sidebars .sidebar-left,
 .league-layout.no-sidebars .sidebar-right {
+    display: none;
+}
+
+.pool-main-content, .main-content {
+    flex-grow: 1;
+    min-width: 0; /* Prevents overflow from breaking flex */
+}
+
+.pool-layout.no-sidebars .sidebar-left,
+.pool-layout.no-sidebars .sidebar-right {
     display: none;
 }
 
@@ -414,7 +432,7 @@ div[class*='actions'] {
     padding: 15px !important;
     margin-bottom: 20px !important;
     border: 1px solid var(--actions-border) !important;
-    border-radius: 3px;
+    border-radius: 0;
     background-color: var(--actions-bg) !important;
     color: var(--text-color) !important;
 }
@@ -451,7 +469,7 @@ div[class*='actions'] > div {
     min-height: 200px;
     height: auto;
     background: var(--overlay-bg);
-    border-radius: 3px;
+    border-radius: 0;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 30px;
     display: flex;
@@ -467,7 +485,7 @@ div[class*='actions'] > div {
 .panel {
     padding: 20px;
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: 0;
     background-color: var(--card-bg);
     color: var(--text-color);
 }
@@ -475,7 +493,7 @@ div[class*='actions'] > div {
 .panel-sm {
     padding: 15px;
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: 0;
     background-color: var(--card-bg);
     color: var(--text-color);
 }
@@ -493,7 +511,7 @@ div[class*='actions'] > div {
 .inner-card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: 0;
     padding: 12px;
 }
 
@@ -501,14 +519,14 @@ div[class*='actions'] > div {
     background-color: var(--table-header-bg);
     color: var(--text-color);
     padding: 4px 8px;
-    border-radius: 3px;
+    border-radius: 0;
     font-size: 0.85em;
 }
 
 .slot-badge {
     background: var(--table-header-bg);
     padding: 4px 8px;
-    border-radius: 3px;
+    border-radius: 0;
     font-weight: bold;
     font-size: 0.8em;
     color: var(--text-color);
@@ -528,7 +546,7 @@ div[class*='actions'] > div {
     background: var(--card-bg);
     padding: 2px 6px;
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: 0;
     cursor: pointer;
     color: var(--text-color);
 }
@@ -571,7 +589,7 @@ div[class*='actions'] > div {
     width: 100%;
     height: 36px;
     padding: 0 10px;
-    border-radius: 3px;
+    border-radius: 0;
     text-decoration: none;
     font-size: 0.78rem;
     color: var(--nav-text);
@@ -620,7 +638,7 @@ div[class*='actions'] > div {
     background: var(--text-color);
     color: var(--bg-color);
     padding: 4px 10px;
-    border-radius: 3px;
+    border-radius: 0;
     font-size: 0.78rem;
     font-weight: bold;
     white-space: nowrap;
@@ -657,7 +675,7 @@ div[class*='actions'] > div {
     cursor: pointer;
     font-size: 1.1rem;
     padding: 4px 10px;
-    border-radius: 3px;
+    border-radius: 0;
     margin-left: 1.5rem;
     transition: all 0.2s;
     line-height: 1.4;
@@ -668,3 +686,67 @@ div[class*='actions'] > div {
     color: white;
     border-color: var(--primary-color);
 }
+
+/* ── Toast notifications ─────────────────────────────────────── */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 260px;
+    max-width: 400px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    font-size: 0.9em;
+    pointer-events: all;
+    opacity: 0;
+    transform: translateX(30px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    background: var(--card-bg);
+    border-left: 4px solid var(--primary-color);
+    color: var(--text-color);
+}
+
+.toast.toast-visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-message {
+    flex: 1;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--muted-color);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.toast-close:hover {
+    color: var(--text-color);
+}
+
+/* Category colours */
+.toast-success  { border-left-color: #2ecc71; }
+.toast-error,
+.toast-danger   { border-left-color: #e74c3c; }
+.toast-warning  { border-left-color: #f39c12; }
+.toast-info,
+.toast-message  { border-left-color: var(--primary-color); }

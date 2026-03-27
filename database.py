@@ -20,6 +20,7 @@ class Database:
         self.roster_freeze = self.db.roster_freeze
         self.fantasy_matchups = self.db.fantasy_matchups
         self.leagues = self.db.leagues
+        self.pools = self.db.pools
         self.site_admins = self.db.site_admins
         self.trades = self.db.trades
         self.announcements = self.db.announcements
@@ -27,6 +28,8 @@ class Database:
         self.nfl_schedule = self.db.nfl_schedule
         self.nfl_teams = self.db.nfl_teams
         self.waiver_claims = self.db.waiver_claims
+        self.survivor_picks = self.db.survivor_picks
+        self.pickem_picks = self.db.pickem_picks
 
     def create_announcement(self, announcement_type, message, user_id):
         import uuid
@@ -75,6 +78,164 @@ class Database:
 
     def is_site_admin(self, user_id):
         return self.site_admins.find_one({"user_id": user_id}) is not None
+
+    def create_pool(self, pool_id, name, pool_type, max_members, user_ids=None, administrators=None):
+        if user_ids is None:
+            user_ids = []
+        if administrators is None:
+            administrators = []
+
+        pool = {
+            "id": pool_id,
+            "name": name,
+            "pool_type": pool_type,
+            "user_ids": user_ids,
+            "administrators": administrators,
+            "max_members": int(max_members)
+        }
+        return self.pools.insert_one(pool)
+
+    def get_pool(self, pool_id):
+        return self.pools.find_one({"id": pool_id})
+
+    def add_user_to_pool(self, pool_id, user_id):
+        return self.pools.update_one(
+            {"id": pool_id},
+            {"$addToSet": {"user_ids": user_id}}
+        )
+
+    def remove_user_from_pool(self, pool_id, user_id):
+        return self.pools.update_one(
+            {"id": pool_id},
+            {"$pull": {"user_ids": user_id, "administrators": user_id}}
+        )
+
+    def add_administrator_to_pool(self, pool_id, user_id):
+        return self.pools.update_one(
+            {"id": pool_id},
+            {"$addToSet": {"administrators": user_id}}
+        )
+
+    def remove_administrator_from_pool(self, pool_id, user_id):
+        return self.pools.update_one(
+            {"id": pool_id},
+            {"$pull": {"administrators": user_id}}
+        )
+
+    def update_pool(self, pool_id, update_data):
+        return self.pools.update_one(
+            {"id": pool_id},
+            {"$set": update_data}
+        )
+
+    def delete_pool(self, pool_id):
+        return self.pools.delete_one({"id": pool_id})
+
+    # --- Survivor Picks ---
+
+    def submit_survivor_pick(self, pool_id, user_id, week_number, team_alias, team_name):
+        existing = self.survivor_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+        if existing:
+            return None
+        pick = {
+            "id": str(uuid.uuid4()),
+            "pool_id": pool_id,
+            "user_id": user_id,
+            "week_number": week_number,
+            "team_alias": team_alias,
+            "team_name": team_name,
+            "result": "Pending",
+            "created_at": datetime.now(timezone.utc)
+        }
+        self.survivor_picks.insert_one(pick)
+        return pick
+
+    def get_survivor_pick(self, pool_id, user_id, week_number):
+        return self.survivor_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    def get_survivor_picks_for_week(self, pool_id, week_number):
+        return list(self.survivor_picks.find({"pool_id": pool_id, "week_number": week_number}))
+
+    def get_all_survivor_picks(self, pool_id):
+        return list(self.survivor_picks.find({"pool_id": pool_id}).sort("week_number", 1))
+
+    def get_user_survivor_picks(self, pool_id, user_id):
+        return list(self.survivor_picks.find({"pool_id": pool_id, "user_id": user_id}).sort("week_number", 1))
+
+    def override_survivor_pick(self, pool_id, user_id, week_number, team_alias, team_name):
+        return self.survivor_picks.update_one(
+            {"pool_id": pool_id, "user_id": user_id, "week_number": week_number},
+            {"$set": {"team_alias": team_alias, "team_name": team_name, "result": "Pending"}},
+            upsert=True
+        )
+
+    def process_survivor_week(self, pool_id, week_number, winner_aliases):
+        picks = self.get_survivor_picks_for_week(pool_id, week_number)
+        for pick in picks:
+            result = 'Won' if pick['team_alias'] in winner_aliases else 'Lost'
+            self.survivor_picks.update_one(
+                {"id": pick['id']},
+                {"$set": {"result": result}}
+            )
+
+    def delete_survivor_pick(self, pool_id, user_id, week_number):
+        return self.survivor_picks.delete_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    # --- Pick 'Em Picks ---
+
+    def submit_pickem_pick(self, pool_id, user_id, week_number, team_alias, team_name):
+        existing = self.pickem_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+        if existing:
+            return None
+        pick = {
+            "id": str(uuid.uuid4()),
+            "pool_id": pool_id,
+            "user_id": user_id,
+            "week_number": week_number,
+            "team_alias": team_alias,
+            "team_name": team_name,
+            "result": "Pending",
+            "points": None,
+            "created_at": datetime.now(timezone.utc)
+        }
+        self.pickem_picks.insert_one(pick)
+        return pick
+
+    def get_pickem_pick(self, pool_id, user_id, week_number):
+        return self.pickem_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    def get_pickem_picks_for_week(self, pool_id, week_number):
+        return list(self.pickem_picks.find({"pool_id": pool_id, "week_number": week_number}))
+
+    def get_all_pickem_picks(self, pool_id):
+        return list(self.pickem_picks.find({"pool_id": pool_id}).sort("week_number", 1))
+
+    def get_user_pickem_picks(self, pool_id, user_id):
+        return list(self.pickem_picks.find({"pool_id": pool_id, "user_id": user_id}).sort("week_number", 1))
+
+    def override_pickem_pick(self, pool_id, user_id, week_number, team_alias, team_name):
+        return self.pickem_picks.update_one(
+            {"pool_id": pool_id, "user_id": user_id, "week_number": week_number},
+            {"$set": {"team_alias": team_alias, "team_name": team_name, "result": "Pending", "points": None}},
+            upsert=True
+        )
+
+    def process_pickem_week(self, pool_id, week_number, team_scores):
+        """team_scores: dict of alias -> integer points scored"""
+        picks = self.get_pickem_picks_for_week(pool_id, week_number)
+        for pick in picks:
+            pts = team_scores.get(pick['team_alias'], 0)
+            self.pickem_picks.update_one(
+                {"id": pick['id']},
+                {"$set": {"result": "Scored", "points": pts}}
+            )
+
+    def delete_pickem_pick(self, pool_id, user_id, week_number):
+        return self.pickem_picks.delete_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    def get_pool_invitations(self, pool_id):
+        return list(self.db.pool_invitations.find({"pool_id": pool_id, "status": "pending"}))
+
 
     def create_league(self, league_id, name, league_type, scoring_format, positional_format, play_format, max_teams, has_divisions=False, num_divisions=None, user_ids=None, administrators=None):
         if user_ids is None:

@@ -1,0 +1,86 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div style="display: flex; flex-direction: column; gap: 7px;">
+
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Pick 'Em Standings</h2>
+            <p style="margin: 6px 0 0; color: var(--muted-color); font-size: 0.9em;">
+                {{ standings | length }} players &nbsp;·&nbsp; Week {{ current_week }}
+            </p>
+        </div>
+        <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm">Make Pick (Wk {{ current_week }})</a>
+    </div>
+</div>
+
+<div class="card panel" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.88em; min-width: 500px;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                <th style="padding: 8px 12px;">#</th>
+                <th style="padding: 8px 12px;">Player</th>
+                <th style="padding: 8px 12px; text-align: right;">Total Pts</th>
+                <th style="padding: 8px 12px; text-align: center; color: var(--muted-color); font-size: 0.85em;">Wk Wins</th>
+                {% for wk in weeks %}
+                <th style="padding: 8px 10px; text-align: center; min-width: 60px;">Wk {{ wk }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in standings %}
+            <tr style="border-bottom: 1px solid var(--border-color); {% if entry.id == current_user_id %}background: rgba(52,152,219,0.06);{% endif %}">
+                <td style="padding: 8px 12px; color: var(--muted-color);">{{ loop.index }}</td>
+                <td style="padding: 8px 12px; font-weight: bold;">
+                    {{ entry.username }}
+                    {% if entry.id == current_user_id %}
+                        <span style="font-size: 0.75em; color: var(--primary-color); margin-left: 4px;">(you)</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 8px 12px; text-align: right; font-weight: bold; font-size: 1em;">
+                    {{ entry.total_points }}
+                </td>
+                <td style="padding: 8px 12px; text-align: center; color: var(--muted-color); font-size: 0.85em;">
+                    {{ entry.weekly_wins if entry.weekly_wins else '—' }}
+                </td>
+                {% for wk in weeks %}
+                    {% set pick = entry.picks.get(wk) %}
+                    {% set is_weekly_winner = entry.id in weekly_winners.get(wk, set()) %}
+                    <td style="padding: 6px 10px; text-align: center;">
+                        {% if pick and pick.result == 'Scored' %}
+                            <span style="display: inline-block; background: {% if is_weekly_winner %}#f39c12{% else %}var(--table-header-bg){% endif %}; color: {% if is_weekly_winner %}white{% else %}var(--text-color){% endif %}; font-weight: bold; font-size: 0.78em; padding: 3px 7px; border-radius: 3px;" title="{{ pick.team_name }}">
+                                {{ pick.team_alias }}<br>
+                                <span style="font-weight: normal; font-size: 0.9em;">{{ pick.points }} pts</span>
+                            </span>
+                        {% elif pick and pick.result == 'Pending' %}
+                            {% if pick.user_id == current_user_id or is_admin %}
+                                <span style="display: inline-block; background: var(--primary-color); color: white; font-weight: bold; font-size: 0.78em; padding: 3px 7px; border-radius: 3px; opacity: 0.7;" title="{{ pick.team_name }}">{{ pick.team_alias }}</span>
+                            {% else %}
+                                <span style="color: var(--border-color); font-size: 0.8em;">Hidden</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: var(--border-color);">—</span>
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{{ 4 + weeks | length }}" style="padding: 20px; text-align: center; color: var(--muted-color);">No picks have been made yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="font-size: 0.8em; color: var(--muted-color); display: flex; gap: 16px; flex-wrap: wrap;">
+    <span><span style="display: inline-block; background: #f39c12; color: white; padding: 2px 6px; border-radius: 2px; font-size: 0.9em;">KC / 27</span> Weekly high scorer</span>
+    <span><span style="display: inline-block; background: var(--table-header-bg); color: var(--text-color); padding: 2px 6px; border-radius: 2px; font-size: 0.9em;">BUF / 21</span> Scored</span>
+    <span><span style="color: var(--border-color); font-size: 0.9em;">Hidden</span> Pick not yet revealed (pending)</span>
+</div>
+
+</div>
+{% endblock %}

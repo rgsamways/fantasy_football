@@ -1,0 +1,196 @@
+{% extends "pool_layout.html" %}
+
+{% block pool_content %}
+<div style="display: flex; flex-direction: column; gap: 7px;">
+
+<!-- HEADER -->
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Week {{ current_week }} — Make Your Pick</h2>
+            <p style="margin: 6px 0 0; color: var(--muted-color); font-size: 0.9em;">
+                Pick one NFL team to WIN. You can only use each team once per season.
+            </p>
+        </div>
+        {% if current_pick %}
+            <div style="text-align: right;">
+                {% if current_pick.result == 'Won' %}
+                    <div style="background: #2ecc71; color: white; padding: 8px 18px; border-radius: 4px; font-weight: bold;">
+                        Week {{ current_week }} — {{ current_pick.team_name }} — Won
+                    </div>
+                {% elif current_pick.result == 'Lost' %}
+                    <div style="background: #e74c3c; color: white; padding: 8px 18px; border-radius: 4px; font-weight: bold;">
+                        Week {{ current_week }} — {{ current_pick.team_name }} — Lost / Eliminated
+                    </div>
+                {% else %}
+                    <div style="background: var(--primary-color); color: white; padding: 8px 18px; border-radius: 4px; font-weight: bold;">
+                        Current Pick: {{ current_pick.team_name }}
+                    </div>
+                    {% if not picks_locked %}
+                        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 4px;">Click another team to change</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% elif not is_eliminated and user_in_pool and not picks_locked %}
+            <div style="color: #f39c12; font-weight: bold; font-size: 0.9em;">No pick yet — select a team below</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if not user_in_pool %}
+<!-- NOT A MEMBER -->
+<div class="card panel" style="text-align: center; color: var(--muted-color); padding: 40px;">
+    <p>You are not a member of this pool.</p>
+    {% if not session.get('user_id') %}
+        <a href="{{ url_for('login') }}" class="btn btn-sm">Log In to Join</a>
+    {% endif %}
+</div>
+
+{% elif is_eliminated %}
+<!-- ELIMINATED -->
+<div class="card panel" style="text-align: center; padding: 40px; border-top: 4px solid #e74c3c;">
+    <div style="font-size: 3rem; margin-bottom: 10px;">X</div>
+    <h3 style="color: #e74c3c; margin-top: 0;">You have been eliminated</h3>
+    <p style="color: var(--muted-color);">Better luck next season. Check the standings to see who's still alive.</p>
+    <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="btn btn-sm" style="margin-top: 10px;">View Standings</a>
+</div>
+
+{% elif picks_locked %}
+<!-- PICKS LOCKED -->
+<div class="card panel" style="text-align: center; padding: 30px; color: var(--muted-color);">
+    <p style="font-size: 1.05em;">Picks are locked — results are being processed.</p>
+    <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="btn btn-sm" style="margin-top: 10px;">View Standings</a>
+</div>
+
+{% else %}
+<!-- PICK FORM -->
+{% if games %}
+<form action="{{ url_for('submit_survivor_pick', pool_id=pool.id) }}" method="POST" id="pickForm">
+    <input type="hidden" name="team_alias" id="selectedAlias">
+    <input type="hidden" name="team_name" id="selectedName">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px;">
+        {% for game in games %}
+            {% set home_alias = game.home.alias %}
+            {% set away_alias = game.away.alias %}
+            {% set home_used = home_alias in used_teams and (not current_pick or current_pick.team_alias != home_alias) %}
+            {% set away_used = away_alias in used_teams and (not current_pick or current_pick.team_alias != away_alias) %}
+            <div class="card" style="border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;">
+                <div style="background: var(--table-header-bg); padding: 6px 12px; font-size: 0.75em; color: var(--muted-color); text-align: center; border-bottom: 1px solid var(--border-color);">
+                    NFL Week {{ current_week }}
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch;">
+                    <!-- Away team -->
+                    <button type="button"
+                        class="team-pick-btn"
+                        data-alias="{{ away_alias }}"
+                        data-name="{{ game.away.name }}"
+                        {% if away_used %}disabled{% endif %}
+                        style="border: none; background: {% if current_pick and current_pick.team_alias == away_alias %}var(--primary-color){% elif away_used %}var(--table-header-bg){% else %}var(--card-bg){% endif %}; color: {% if current_pick and current_pick.team_alias == away_alias %}white{% elif away_used %}var(--muted-color){% else %}var(--text-color){% endif %}; padding: 18px 10px; cursor: {% if away_used %}not-allowed{% else %}pointer{% endif %}; text-align: center; transition: background 0.15s; border-right: 1px solid var(--border-color);">
+                        <div style="font-weight: bold; font-size: 1.1em;">{{ away_alias }}</div>
+                        <div style="font-size: 0.75em; margin-top: 3px; opacity: 0.85;">{{ game.away.name }}</div>
+                        {% if away_used %}<div style="font-size: 0.7em; margin-top: 4px; color: #e74c3c;">Used</div>{% endif %}
+                    </button>
+                    <div style="display: flex; align-items: center; padding: 0 10px; color: var(--muted-color); font-size: 0.85em; background: var(--card-bg);">@</div>
+                    <!-- Home team -->
+                    <button type="button"
+                        class="team-pick-btn"
+                        data-alias="{{ home_alias }}"
+                        data-name="{{ game.home.name }}"
+                        {% if home_used %}disabled{% endif %}
+                        style="border: none; background: {% if current_pick and current_pick.team_alias == home_alias %}var(--primary-color){% elif home_used %}var(--table-header-bg){% else %}var(--card-bg){% endif %}; color: {% if current_pick and current_pick.team_alias == home_alias %}white{% elif home_used %}var(--muted-color){% else %}var(--text-color){% endif %}; padding: 18px 10px; cursor: {% if home_used %}not-allowed{% else %}pointer{% endif %}; text-align: center; transition: background 0.15s; border-left: 1px solid var(--border-color);">
+                        <div style="font-weight: bold; font-size: 1.1em;">{{ home_alias }}</div>
+                        <div style="font-size: 0.75em; margin-top: 3px; opacity: 0.85;">{{ game.home.name }}</div>
+                        {% if home_used %}<div style="font-size: 0.7em; margin-top: 4px; color: #e74c3c;">Used</div>{% endif %}
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="confirmBar" style="display: none; margin-top: 14px; padding: 14px 18px; background: var(--primary-color); color: white; border-radius: 4px; align-items: center; justify-content: space-between; gap: 10px;">
+        <span id="confirmText" style="font-weight: bold;"></span>
+        <button type="submit" class="btn btn-sm" style="background: white; color: var(--primary-color); font-weight: bold;">Confirm Pick</button>
+    </div>
+</form>
+{% else %}
+<div class="card panel" style="text-align: center; color: var(--muted-color);">
+    <p>No NFL games found for Week {{ current_week }}.</p>
+</div>
+{% endif %}
+{% endif %}
+
+</div>
+{% endblock %}
+
+{% block pool_sidebar_left %}
+<div class="card panel-sm" style="margin-bottom: 7px;">
+    <h3 style="font-size: 1.05em; margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Picks This Season</h3>
+    {% if user_picks %}
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.85em;">
+            {% for pick in user_picks | sort(attribute='week_number') %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border-color);">
+                <span style="color: var(--muted-color);">Wk {{ pick.week_number }}</span>
+                <span style="font-weight: bold;">{{ pick.team_alias }}</span>
+                {% if pick.result == 'Won' %}
+                    <span style="color: #2ecc71; font-size: 0.85em; font-weight: bold;">W</span>
+                {% elif pick.result == 'Lost' %}
+                    <span style="color: #e74c3c; font-size: 0.85em; font-weight: bold;">L</span>
+                {% else %}
+                    <span style="color: #f39c12; font-size: 0.85em;">Pending</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: var(--muted-color); font-size: 0.85em; margin: 0;">No picks yet.</p>
+    {% endif %}
+</div>
+
+{% if used_teams %}
+<div class="card panel-sm">
+    <h3 style="font-size: 1.05em; margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Used Teams</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.8em;">
+        {% for alias in used_teams %}
+            <span style="background: var(--table-header-bg); border: 1px solid var(--border-color); padding: 3px 8px; border-radius: 3px; color: var(--muted-color);">{{ alias }}</span>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block pool_sidebar_right %}
+<div class="card panel-sm">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 10px;">
+        <h3 style="font-size: 1.05em; margin: 0;">Survivor Standings</h3>
+        <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" style="font-size: 0.8em; color: var(--primary-color);">Full →</a>
+    </div>
+    <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="btn btn-sm" style="width: 100%; text-align: center; display: block;">View All Picks</a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.team-pick-btn:not([disabled])');
+    const aliasInput = document.getElementById('selectedAlias');
+    const nameInput = document.getElementById('selectedName');
+    const confirmBar = document.getElementById('confirmBar');
+    const confirmText = document.getElementById('confirmText');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            buttons.forEach(b => {
+                b.style.background = 'var(--card-bg)';
+                b.style.color = 'var(--text-color)';
+            });
+            this.style.background = 'var(--primary-color)';
+            this.style.color = 'white';
+            const alias = this.dataset.alias;
+            const name = this.dataset.name;
+            aliasInput.value = alias;
+            nameInput.value = name;
+            confirmBar.style.display = 'flex';
+            confirmText.textContent = 'Lock in: ' + name + ' (' + alias + ')';
+        });
+    });
+});
+</script>
+{% endblock %}

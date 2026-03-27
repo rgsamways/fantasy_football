@@ -1,0 +1,50 @@
+{% extends "pools_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pools_header %}
+<div class="pools-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>My Pools</h2>
+    <p>View and manage the pools you have joined.</p>
+</div>
+{% endblock %}
+
+{% block pools_content %}
+<div class="pools-list-container">
+    <div class="card panel">
+        <h3 style="margin-top: 0;">Joined Pools</h3>
+        {% if pools %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                        <th style="padding: 10px;">Name</th>
+                        <th style="padding: 10px;">Type</th>
+                        <th style="padding: 10px;">Members</th>
+                        <th style="padding: 10px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pool in pools %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 10px;">
+                                <a href="{{ url_for('pool_home', pool_id=pool.id) }}" style="text-decoration: none; color: var(--primary-color); font-weight: bold;">
+                                    {{ pool.name }}
+                                </a>
+                            </td>
+                            <td style="padding: 10px;">{{ pool.pool_type }}</td>
+                            <td style="padding: 10px;">{{ pool.user_ids | length }} / {{ pool.max_members if pool.max_members else 12 }}</td>
+                            <td style="padding: 10px;">
+                                <span style="color: #27ae60; font-weight: bold; font-size: 0.9em;">Joined</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>You haven't joined any pools yet. <a href="{{ url_for('pools_public') }}">Browse public pools</a> or <a href="{{ url_for('create_pool') }}">create your own!</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+

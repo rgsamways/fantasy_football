@@ -1,0 +1,81 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin: 0;">Pool Members</h2>
+        <span style="color: var(--muted-color); font-size: 0.9em;">
+            {% if pool_type == "Pick 'Em" %}
+                {{ members | length }} players
+            {% else %}
+                {{ members | selectattr('alive') | list | length }} alive &nbsp;/&nbsp; {{ members | length }} total
+            {% endif %}
+        </span>
+    </div>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--muted-color); font-size: 0.85em;">
+                <th style="padding: 8px 12px;">Player</th>
+                <th style="padding: 8px 12px; text-align: center;">
+                    {% if pool_type == "Pick 'Em" %}Points{% else %}Status{% endif %}
+                </th>
+                <th style="padding: 8px 12px; text-align: center;">Role</th>
+                {% if is_admin %}<th style="padding: 8px 12px;">Actions</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 10px 12px; font-weight: bold;">
+                    {{ member.username }}
+                    {% if member.id == current_user_id %}
+                        <span style="font-size: 0.75em; color: var(--primary-color); margin-left: 4px;">(you)</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                    {% if pool_type == "Pick 'Em" %}
+                        <span style="font-weight: bold; color: var(--primary-color);">{{ member.total_points }} pts</span>
+                    {% elif member.alive %}
+                        <span style="color: #2ecc71; font-weight: bold; font-size: 0.85em;">Alive</span>
+                    {% else %}
+                        <span style="color: #e74c3c; font-weight: bold; font-size: 0.85em;">Eliminated</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                    {% if member.is_admin %}
+                        <span style="font-size: 0.78em; background: #013369; color: white; padding: 2px 8px; border-radius: 10px;">Admin</span>
+                    {% else %}
+                        <span style="font-size: 0.8em; color: var(--muted-color);">Member</span>
+                    {% endif %}
+                </td>
+                {% if is_admin %}
+                <td style="padding: 10px 12px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <form action="{{ url_for('pool_toggle_admin', pool_id=pool.id) }}" method="POST" style="display: inline;">
+                            <input type="hidden" name="user_id" value="{{ member.id }}">
+                            <button type="submit" class="btn btn-sm btn-secondary" style="font-size: 0.78em; padding: 3px 8px;">
+                                {{ 'Remove Admin' if member.is_admin else 'Make Admin' }}
+                            </button>
+                        </form>
+                        {% if member.id != current_user_id %}
+                        <form action="{{ url_for('pool_remove_member', pool_id=pool.id) }}" method="POST" style="display: inline;"
+                              onsubmit="return confirm('Remove {{ member.username }} from the pool?');">
+                            <input type="hidden" name="user_id" value="{{ member.id }}">
+                            <button type="submit" class="btn btn-sm btn-danger" style="font-size: 0.78em; padding: 3px 8px;">Remove</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{{ 4 if is_admin else 3 }}" style="padding: 20px; text-align: center; color: var(--muted-color);">No members yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

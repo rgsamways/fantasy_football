@@ -1,0 +1,43 @@
+{% extends "pool_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pool_content %}
+<div style="display: flex; flex-direction: column; gap: 7px; max-width: 720px; margin: 0 auto;">
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <div>
+        <a href="{{ url_for('pool_board', pool_id=pool.id) }}" style="font-size: 0.85em; color: var(--primary-color);">← Board</a>
+        <h2 style="margin: 4px 0 0; color: var(--primary-color);">{{ thread.title }}</h2>
+    </div>
+</div>
+
+<div class="card panel">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% for post in thread.posts %}
+        <div style="{% if not loop.first %}padding-top: 20px; border-top: 1px solid var(--border-color);{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                <span style="font-weight: bold; color: var(--secondary-color);">{{ post.author_name }}</span>
+                <span style="font-size: 0.78em; color: var(--muted-color);">{{ post.created_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+            </div>
+            <div style="font-size: 0.92em; line-height: 1.6; white-space: pre-wrap;">{{ post.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if session.get('user_id') %}
+<div class="card panel">
+    <h3 style="margin-top: 0; font-size: 1em;">Reply</h3>
+    <form action="{{ url_for('pool_board_reply', pool_id=pool.id, thread_id=thread.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
+        <textarea name="content" required rows="4" placeholder="Write a reply..."
+                  style="width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-color); resize: vertical;"></textarea>
+        <div>
+            <button type="submit" class="btn btn-sm">Post Reply</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

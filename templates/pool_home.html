@@ -1,0 +1,233 @@
+{% extends "pool_layout.html" %}
+
+{% block pool_content %}
+<div style="display: flex; flex-direction: column; gap: 7px;">
+
+<!-- STATUS CARD -->
+{% if pool.pool_type == "Pick 'Em" %}
+<div class="card panel" style="border-top: 4px solid {% if current_pick and current_pick.result == 'Scored' %}#2ecc71{% elif current_pick %}var(--primary-color){% else %}#f39c12{% endif %};">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Week {{ current_week }}</h2>
+            {% if user_in_pool %}
+                {% if current_pick %}
+                    <p style="margin: 6px 0 0; color: var(--text-color);">
+                        Your pick: <strong>{{ current_pick.team_name }}</strong>
+                        {% if current_pick.result == 'Scored' %}<span style="color: #2ecc71; font-weight: bold;"> — {{ current_pick.points }} pts</span>
+                        {% else %}<span style="color: #f39c12;"> — Pending</span>{% endif %}
+                    </p>
+                    <p style="margin: 4px 0 0; color: var(--muted-color); font-size: 0.85em;">Season total: <strong>{{ total_points }} pts</strong></p>
+                {% else %}
+                    <p style="margin: 6px 0 0; color: #f39c12; font-weight: bold;">You haven't made your Week {{ current_week }} pick yet.</p>
+                {% endif %}
+            {% else %}
+                <p style="margin: 6px 0 0; color: var(--muted-color);">Join this pool to participate.</p>
+            {% endif %}
+        </div>
+        {% if user_in_pool %}
+            <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm">
+                {% if current_pick %}Change Pick{% else %}Make Pick{% endif %}
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- PICK 'EM STATS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 7px;">
+    {% if user_in_pool %}
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: #2ecc71;">{{ total_points }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Your Points</div>
+    </div>
+    {% endif %}
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: var(--primary-color);">{{ pool.user_ids | length }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Players</div>
+    </div>
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: var(--text-color);">{{ current_week }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Current Week</div>
+    </div>
+</div>
+
+{% else %}
+<!-- SURVIVOR STATUS CARD -->
+<div class="card panel" style="border-top: 4px solid {% if is_eliminated %}#e74c3c{% elif current_pick %}#2ecc71{% else %}#f39c12{% endif %};">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Week {{ current_week }}</h2>
+            {% if user_in_pool %}
+                {% if is_eliminated %}
+                    <p style="margin: 6px 0 0; color: #e74c3c; font-weight: bold;">You have been eliminated.</p>
+                {% elif current_pick %}
+                    <p style="margin: 6px 0 0; color: var(--text-color);">
+                        Your pick: <strong>{{ current_pick.team_name }}</strong>
+                        {% if current_pick.result == 'Won' %}<span style="color: #2ecc71; font-weight: bold;"> — Won</span>
+                        {% elif current_pick.result == 'Lost' %}<span style="color: #e74c3c; font-weight: bold;"> — Lost</span>
+                        {% else %}<span style="color: #f39c12;"> — Pending</span>{% endif %}
+                    </p>
+                {% else %}
+                    <p style="margin: 6px 0 0; color: #f39c12; font-weight: bold;">You haven't made your Week {{ current_week }} pick yet.</p>
+                {% endif %}
+            {% else %}
+                <p style="margin: 6px 0 0; color: var(--muted-color);">Join this pool to participate.</p>
+            {% endif %}
+        </div>
+        {% if user_in_pool and not is_eliminated %}
+            <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm">
+                {% if current_pick %}Change Pick{% else %}Make Pick{% endif %}
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- SURVIVOR STATS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 7px;">
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: #2ecc71;">{{ alive_count }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Alive</div>
+    </div>
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: #e74c3c;">{{ (pool.user_ids | length) - alive_count }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Eliminated</div>
+    </div>
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: var(--primary-color);">{{ pool.user_ids | length }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Total</div>
+    </div>
+    <div class="card panel-sm" style="text-align: center;">
+        <div style="font-size: 1.6em; font-weight: bold; color: var(--text-color);">{{ current_week }}</div>
+        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 3px;">Current Week</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- MESSAGE BOARD PREVIEW -->
+{% if board_threads %}
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
+        <h3 style="margin: 0;">Message Board</h3>
+        <a href="{{ url_for('pool_board', pool_id=pool.id) }}" style="font-size: 0.82em; color: var(--primary-color);">Full Board →</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for thread in board_threads %}
+        <div style="border-left: 3px solid var(--primary-color); padding-left: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                <a href="{{ url_for('pool_board_thread', pool_id=pool.id, thread_id=thread.id) }}"
+                   style="font-weight: bold; color: var(--text-color); text-decoration: none; font-size: 0.95em;">
+                    {% if thread.pinned %}📌 {% endif %}{{ thread.title }}
+                </a>
+                <span style="font-size: 0.75em; color: var(--muted-color); white-space: nowrap; margin-left: 10px;">
+                    {{ thread.author_name }} · {{ thread.created_at.strftime('%b %d') }}
+                </span>
+            </div>
+            <div style="font-size: 0.83em; color: var(--muted-color);">
+                {{ thread.posts[0].content | truncate(120) }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- MEMBERS LIST -->
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
+        <h3 style="margin: 0;">Members</h3>
+        <a href="{{ url_for('pool_members', pool_id=pool.id) }}" style="font-size: 0.82em; color: var(--primary-color);">All Members →</a>
+    </div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 6px 10px; text-align: left;">Player</th>
+                <th style="padding: 6px 10px; text-align: center;">Status</th>
+                <th style="padding: 6px 10px; text-align: right;" class="last-visited-header">Last Visited</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 10px; font-weight: bold;">
+                    {{ member.username }}
+                    {% if member.is_pool_admin %}
+                        <span style="font-size: 0.72em; background: #013369; color: white; padding: 1px 6px; border-radius: 10px; margin-left: 4px;">Admin</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 8px 10px; text-align: center;">
+                    <span style="font-size: 0.8em; font-weight: bold; color: var(--muted-color);">—</span>
+                </td>
+                <td style="padding: 8px 10px; text-align: right;">
+                    <span class="last-visited" data-utc="{{ member.last_visited }}" style="font-size: 0.8em; color: var(--muted-color);">
+                        {{ 'Never' if not member.last_visited else '...' }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</div>
+{% endblock %}
+
+{% block pool_sidebar_left %}
+<div class="card panel-sm" style="margin-bottom: 7px;">
+    <h2 style="color: var(--primary-color); margin-bottom: 10px; font-size: 1.2em; line-height: 1.2;">
+        {{ pool.name }}
+        {% if is_admin %}
+            <br><span style="font-size: 0.4em; vertical-align: middle; background: #013369; color: white; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 5px;">ADMIN</span>
+        {% endif %}
+    </h2>
+    <div style="font-size: 0.85em;">
+        <p style="margin-bottom: 8px;"><strong>Type:</strong> {{ pool.pool_type }}</p>
+        <p style="margin-bottom: 8px;"><strong>Members:</strong> {{ pool.user_ids | length }} / {{ pool.max_members if pool.max_members else '∞' }}</p>
+        <p style="margin-bottom: 8px;"><strong>Season:</strong> {{ pool.get('current_season', 2026) }}</p>
+        <p style="margin-bottom: 0; color: var(--muted-color); font-size: 0.9em; word-break: break-all;"><strong>ID:</strong> {{ pool.id }}</p>
+    </div>
+</div>
+
+<div class="card panel-sm" style="margin-bottom: 7px;">
+    <h3 style="font-size: 1.05em; margin-top: 0;">Actions</h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a href="{{ url_for('pools') }}" class="btn btn-secondary btn-sm" style="text-align: center;">All Pools</a>
+        {% if user_in_pool and (pool.pool_type == "Pick 'Em" or not is_eliminated) %}
+            <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm" style="text-align: center;">
+                {% if current_pick %}Change Pick{% else %}Make Pick{% endif %}
+            </a>
+        {% endif %}
+        <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="btn btn-secondary btn-sm" style="text-align: center;">Standings</a>
+        {% if is_admin %}
+            <a href="{{ url_for('pool_admin', pool_id=pool.id) }}" class="btn btn-sm" style="text-align: center;">Admin Panel</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block pool_sidebar_right %}
+<div class="card panel-sm">
+    <h3 style="font-size: 1.05em; margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Recent Activity</h3>
+    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85em;">
+        {% for member in members %}
+        <li style="margin-bottom: 10px;">
+            <span style="font-weight: bold; color: var(--secondary-color);">{{ member.username }}</span><br>
+            <span class="last-visited" data-utc="{{ member.last_visited }}" style="color: var(--muted-color); font-size: 0.9em;">
+                Visited: {{ 'Never' if not member.last_visited else '...' }}
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.last-visited').forEach(el => {
+        const utcStr = el.getAttribute('data-utc');
+        if (utcStr && utcStr !== 'None') {
+            const date = new Date(utcStr);
+            const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            el.innerText = 'Visited: ' + date.toLocaleString(undefined, options);
+        }
+    });
+});
+</script>
+{% endblock %}

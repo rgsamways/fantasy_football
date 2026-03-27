@@ -1,0 +1,38 @@
+{% extends "pools_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block pools_content %}
+<div class="pools-header" style="margin-bottom: 30px; text-align: center;">
+    <h2>Create New Pool</h2>
+    <p>Start your own pool and invite others to compete.</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); color: var(--text-color); border-top: 4px solid var(--primary-color);">
+    <form action="{{ url_for('create_pool') }}" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="form-group">
+            <label for="pool_name" style="font-weight: bold; display: block; margin-bottom: 8px;">Pool Name:</label>
+            <input type="text" id="pool_name" name="pool_name" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
+        </div>
+
+        <div class="form-group">
+            <label for="pool_type" style="font-weight: bold; display: block; margin-bottom: 8px;">Pool Type:</label>
+            <select id="pool_type" name="pool_type" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
+                <option value="Survivor" {{ 'selected' if selected_type == 'Survivor' }}>Survivor</option>
+                <option value="Pick 'Em" {{ "selected" if selected_type == "Pick 'Em" }}>Pick 'Em</option>
+                <option value="Pick Seven" {{ 'selected' if selected_type == 'Pick Seven' }}>Pick Seven</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="max_members" style="font-weight: bold; display: block; margin-bottom: 8px;">Max Members:</label>
+            <input type="number" id="max_members" name="max_members" value="12" min="2" max="500" required class="form-control" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--input-border);">
+        </div>
+
+        <div style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <button type="submit" class="btn" style="width: 100%;">Create Pool</button>
+            <a href="{{ url_for('pools_types') }}" class="btn btn-secondary" style="width: 100%; margin-top: 10px; text-align: center;">Back to Pool Types</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

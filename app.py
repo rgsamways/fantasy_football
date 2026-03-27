@@ -1540,6 +1540,652 @@ def speak():
             return redirect(url_for('profile_details'))
     return render_template('speak.html', active_tab='details')
 
+@app.route('/pools/create', methods=['GET', 'POST'])
+def create_pool():
+    if 'user_id' not in session:
+        flash("You must be logged in to create a pool.", "error")
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        pool_id = str(uuid.uuid4())
+        pool_name = request.form.get('pool_name')
+        pool_type = request.form.get('pool_type')
+        max_members = request.form.get('max_members', 12)
+        user_id = session['user_id']
+        db.create_pool(pool_id, pool_name, pool_type, max_members, [user_id], [user_id])
+        db.update_user_last_visited(user_id)
+        flash(f"Pool '{pool_name}' created successfully!", "success")
+        return redirect(url_for('pools_my'))
+    selected_type = request.args.get('type')
+    return render_template('pool_create.html', active_tab='create', selected_type=selected_type)
+
+@app.route('/pools')
+def pools():
+    return redirect(url_for('pools_my'))
+
+@app.route('/pools/my')
+def pools_my():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    my_pools = list(db.pools.find({"user_ids": user_id}))
+    return render_template('pools_my.html', pools=my_pools, active_tab='my')
+
+@app.route('/pools/public')
+def pools_public():
+    all_pools = list(db.pools.find())
+    return render_template('pools_public.html', pools=all_pools, active_tab='public')
+
+@app.route('/pools/find')
+def pools_find():
+    return render_template('pools_find.html', active_tab='find')
+
+@app.route('/pools/types')
+def pools_types():
+    types = [
+        {"name": "Survivor", "description": "The most common way to play. Pick a team each week. Only once. If they win, you're still in."},
+        {"name": "Pick 'Em", "description": "Pick a team each week and get their points. Only once. Total points end of season wins."},
+        {"name": "Pick Seven", "description": "Pick one QB, RB, WR, TE, K, OFF, DEF each week. Similar to Pick 'Em, except with players and the difference between OFF and DEF points."}
+    ]
+    return render_template('pools_types.html', pools_types=types, active_tab='types')
+
+@app.route('/join_pool/<pool_id>', methods=['POST'])
+def join_pool(pool_id):
+    if 'user_id' not in session:
+        flash("You must be logged in to join a pool.", "error")
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    db.add_user_to_pool(pool_id, user_id)
+    flash("Successfully joined the pool!", "success")
+    return redirect(url_for('pools'))
+
+@app.route('/pool/<pool_id>')
+def pool_home(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    if 'user_id' in session:
+        db.update_user_last_visited(session['user_id'])
+    members = []
+    is_admin = False
+    current_user_id = session.get('user_id')
+    pool_admins = pool.get('administrators', [])
+    if current_user_id and current_user_id in pool_admins:
+        is_admin = True
+    for u_id in pool.get('user_ids', []):
+        from bson import ObjectId
+        user = db.users.find_one({"_id": ObjectId(u_id)})
+        if user:
+            last_visited = user.get('last_visited')
+            iso_visited = None
+            if last_visited:
+                iso_visited = last_visited.isoformat()
+                if not iso_visited.endswith('Z') and '+' not in iso_visited:
+                    iso_visited += 'Z'
+            members.append({
+                "id": str(user['_id']),
+                "username": user['username'],
+                "last_visited": iso_visited,
+                "is_pool_admin": str(user['_id']) in pool_admins
+            })
+    pending_invites = []
+    if is_admin:
+        pending_invites = db.get_pool_invitations(pool_id)
+
+    current_week = pool.get('current_week', 1)
+    season = pool.get('current_season', 2026)
+    pool_type = pool.get('pool_type', 'survivor')
+
+    current_pick = None
+    is_eliminated = False
+    total_points = 0
+    alive_count = 0
+    user_in_pool = current_user_id and current_user_id in pool.get('user_ids', [])
+
+    if pool_type == "Pick 'Em":
+        if user_in_pool:
+            user_picks = db.get_user_pickem_picks(pool_id, current_user_id)
+            total_points = sum((p.get('points') or 0) for p in user_picks if p['result'] == 'Scored')
+            current_pick = db.get_pickem_pick(pool_id, current_user_id, current_week)
+        alive_count = len(pool.get('user_ids', []))
+    else:
+        if user_in_pool:
+            user_picks = db.get_user_survivor_picks(pool_id, current_user_id)
+            is_eliminated = any(p['result'] == 'Lost' for p in user_picks)
+            current_pick = db.get_survivor_pick(pool_id, current_user_id, current_week)
+        all_picks = db.get_all_survivor_picks(pool_id)
+        eliminated_users = set(p['user_id'] for p in all_picks if p['result'] == 'Lost')
+        alive_count = len([u for u in pool.get('user_ids', []) if u not in eliminated_users])
+
+    # Build message board preview
+    board_threads = db.get_threads(pool_id)
+    user_cache = {}
+    def _get_username(uid):
+        if uid not in user_cache:
+            u = db.get_user_by_id(uid)
+            user_cache[uid] = u['username'] if u else 'Unknown'
+        return user_cache[uid]
+    for t in board_threads[:5]:
+        t['author_name'] = _get_username(t['author_id'])
+        for p in t.get('posts', []):
+            p['author_name'] = _get_username(p['author_id'])
+
+    return render_template('pool_home.html', pool=pool, members=members, is_admin=is_admin,
+                           pending_invites=pending_invites, current_week=current_week,
+                           board_threads=board_threads, current_pick=current_pick,
+                           is_eliminated=is_eliminated, alive_count=alive_count,
+                           total_points=total_points, user_in_pool=user_in_pool)
+
+@app.route('/pool/<pool_id>/picks')
+def pool_picks(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    current_week = pool.get('current_week', 1)
+    season = pool.get('current_season', 2026)
+    pool_type = pool.get('pool_type', 'survivor')
+    user_in_pool = current_user_id and current_user_id in pool.get('user_ids', [])
+    games = list(db.nfl_schedule.find({"season_year": season, "week_number": current_week}))
+
+    if pool_type == "Pick 'Em":
+        user_picks = []
+        used_teams = set()
+        current_pick = None
+        if current_user_id:
+            user_picks = db.get_user_pickem_picks(pool_id, current_user_id)
+            used_teams = {p['team_alias'] for p in user_picks}
+            current_pick = db.get_pickem_pick(pool_id, current_user_id, current_week)
+        week_picks = db.get_pickem_picks_for_week(pool_id, current_week)
+        picks_locked = any(p['result'] == 'Scored' for p in week_picks)
+        return render_template('pool_picks_pickem.html', pool=pool, games=games,
+                               current_week=current_week, user_picks=user_picks,
+                               used_teams=used_teams, current_pick=current_pick,
+                               picks_locked=picks_locked, is_admin=is_admin,
+                               user_in_pool=user_in_pool)
+    else:
+        user_picks = []
+        used_teams = set()
+        current_pick = None
+        is_eliminated = False
+        if current_user_id:
+            user_picks = db.get_user_survivor_picks(pool_id, current_user_id)
+            used_teams = {p['team_alias'] for p in user_picks}
+            current_pick = db.get_survivor_pick(pool_id, current_user_id, current_week)
+            is_eliminated = any(p['result'] == 'Lost' for p in user_picks)
+        week_picks = db.get_survivor_picks_for_week(pool_id, current_week)
+        picks_locked = any(p['result'] in ('Won', 'Lost') for p in week_picks)
+        return render_template('pool_picks.html', pool=pool, games=games,
+                               current_week=current_week, user_picks=user_picks,
+                               used_teams=used_teams, current_pick=current_pick,
+                               is_eliminated=is_eliminated, picks_locked=picks_locked,
+                               is_admin=is_admin, user_in_pool=user_in_pool)
+
+@app.route('/pool/<pool_id>/picks/submit', methods=['POST'])
+def submit_survivor_pick(pool_id):
+    if 'user_id' not in session:
+        flash("You must be logged in to make a pick.", "error")
+        return redirect(url_for('login'))
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    user_id = session['user_id']
+    current_week = pool.get('current_week', 1)
+
+    if user_id not in pool.get('user_ids', []):
+        flash("You are not a member of this pool.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # Check eliminated
+    user_picks = db.get_user_survivor_picks(pool_id, user_id)
+    if any(p['result'] == 'Lost' for p in user_picks):
+        flash("You have been eliminated from this pool.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # Picks locked?
+    week_picks = db.get_survivor_picks_for_week(pool_id, current_week)
+    if any(p['result'] in ('Won', 'Lost') for p in week_picks):
+        flash("Picks are locked for this week.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    team_alias = request.form.get('team_alias', '').strip()
+    team_name = request.form.get('team_name', team_alias).strip()
+    if not team_alias:
+        flash("Please select a team.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # No-repeat check — exclude current week's pick from used_teams
+    used_teams = {p['team_alias'] for p in user_picks if p['week_number'] != current_week}
+    if team_alias in used_teams:
+        flash(f"You have already used {team_name} this season.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # Replace existing pick for this week
+    existing = db.get_survivor_pick(pool_id, user_id, current_week)
+    if existing:
+        db.delete_survivor_pick(pool_id, user_id, current_week)
+
+    db.submit_survivor_pick(pool_id, user_id, current_week, team_alias, team_name)
+    flash(f"Pick saved: {team_name} — Week {current_week}", "success")
+    return redirect(url_for('pool_picks', pool_id=pool_id))
+
+@app.route('/pool/<pool_id>/picks/submit-pickem', methods=['POST'])
+def submit_pickem_pick(pool_id):
+    if 'user_id' not in session:
+        flash("You must be logged in to make a pick.", "error")
+        return redirect(url_for('login'))
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    user_id = session['user_id']
+    current_week = pool.get('current_week', 1)
+
+    if user_id not in pool.get('user_ids', []):
+        flash("You are not a member of this pool.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    week_picks = db.get_pickem_picks_for_week(pool_id, current_week)
+    if any(p['result'] == 'Scored' for p in week_picks):
+        flash("Picks are locked for this week.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    team_alias = request.form.get('team_alias', '').strip()
+    team_name = request.form.get('team_name', team_alias).strip()
+    if not team_alias:
+        flash("Please select a team.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    user_picks = db.get_user_pickem_picks(pool_id, user_id)
+    used_teams = {p['team_alias'] for p in user_picks if p['week_number'] != current_week}
+    if team_alias in used_teams:
+        flash(f"You have already used {team_name} this season.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    existing = db.get_pickem_pick(pool_id, user_id, current_week)
+    if existing:
+        db.delete_pickem_pick(pool_id, user_id, current_week)
+
+    db.submit_pickem_pick(pool_id, user_id, current_week, team_alias, team_name)
+    flash(f"Pick saved: {team_name} — Week {current_week}", "success")
+    return redirect(url_for('pool_picks', pool_id=pool_id))
+
+@app.route('/pool/<pool_id>/standings')
+def pool_standings(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    current_week = pool.get('current_week', 1)
+    pool_type = pool.get('pool_type', 'survivor')
+    weeks = list(range(1, current_week + 1))
+
+    if pool_type == "Pick 'Em":
+        all_picks = db.get_all_pickem_picks(pool_id)
+        picks_by_user = {}
+        for pick in all_picks:
+            picks_by_user.setdefault(pick['user_id'], {})[pick['week_number']] = pick
+
+        # Compute weekly winners (users with highest points that week)
+        weekly_winners = {}
+        for wk in weeks:
+            max_pts = -1
+            for uwp in picks_by_user.values():
+                pick = uwp.get(wk)
+                if pick and pick['result'] == 'Scored':
+                    max_pts = max(max_pts, pick.get('points') or 0)
+            if max_pts >= 0:
+                weekly_winners[wk] = {
+                    uid for uid, uwp in picks_by_user.items()
+                    if uwp.get(wk) and uwp[wk]['result'] == 'Scored'
+                    and (uwp[wk].get('points') or 0) == max_pts
+                }
+
+        standings = []
+        for u_id in pool.get('user_ids', []):
+            user = db.get_user_by_id(u_id)
+            if not user:
+                continue
+            user_week_picks = picks_by_user.get(u_id, {})
+            total_points = sum((p.get('points') or 0) for p in user_week_picks.values() if p['result'] == 'Scored')
+            weekly_wins = sum(1 for wk, winners in weekly_winners.items() if u_id in winners)
+            standings.append({
+                'id': u_id,
+                'username': user['username'],
+                'total_points': total_points,
+                'weekly_wins': weekly_wins,
+                'picks': user_week_picks,
+            })
+
+        standings.sort(key=lambda x: (-x['total_points'], -x['weekly_wins']))
+        return render_template('pool_standings_pickem.html', pool=pool, standings=standings,
+                               weeks=weeks, current_week=current_week, is_admin=is_admin,
+                               current_user_id=current_user_id, weekly_winners=weekly_winners)
+    else:
+        all_picks = db.get_all_survivor_picks(pool_id)
+        picks_by_user = {}
+        for pick in all_picks:
+            picks_by_user.setdefault(pick['user_id'], {})[pick['week_number']] = pick
+
+        standings = []
+        for u_id in pool.get('user_ids', []):
+            user = db.get_user_by_id(u_id)
+            if not user:
+                continue
+            user_week_picks = picks_by_user.get(u_id, {})
+            eliminated_week = None
+            for wk in sorted(user_week_picks):
+                if user_week_picks[wk]['result'] == 'Lost':
+                    eliminated_week = wk
+                    break
+            standings.append({
+                'id': u_id,
+                'username': user['username'],
+                'alive': eliminated_week is None,
+                'eliminated_week': eliminated_week,
+                'picks': user_week_picks,
+            })
+
+        standings.sort(key=lambda x: (0 if x['alive'] else 1, -(x['eliminated_week'] or 0)))
+        return render_template('pool_standings.html', pool=pool, standings=standings, weeks=weeks,
+                               current_week=current_week, is_admin=is_admin,
+                               current_user_id=current_user_id)
+
+@app.route('/pool/<pool_id>/members')
+def pool_members(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    pool_type = pool.get('pool_type', 'survivor')
+    pool_admins = pool.get('administrators', [])
+
+    if pool_type == "Pick 'Em":
+        all_picks = db.get_all_pickem_picks(pool_id)
+        points_by_user = {}
+        for p in all_picks:
+            if p['result'] == 'Scored':
+                points_by_user[p['user_id']] = points_by_user.get(p['user_id'], 0) + (p.get('points') or 0)
+        members = []
+        for u_id in pool.get('user_ids', []):
+            user = db.get_user_by_id(u_id)
+            if not user:
+                continue
+            members.append({
+                'id': u_id,
+                'username': user['username'],
+                'total_points': points_by_user.get(u_id, 0),
+                'is_admin': u_id in pool_admins,
+            })
+        members.sort(key=lambda x: -x['total_points'])
+    else:
+        all_picks = db.get_all_survivor_picks(pool_id)
+        eliminated_users = set(p['user_id'] for p in all_picks if p['result'] == 'Lost')
+        members = []
+        for u_id in pool.get('user_ids', []):
+            user = db.get_user_by_id(u_id)
+            if not user:
+                continue
+            members.append({
+                'id': u_id,
+                'username': user['username'],
+                'alive': u_id not in eliminated_users,
+                'is_admin': u_id in pool_admins,
+            })
+
+    return render_template('pool_members.html', pool=pool, members=members,
+                           is_admin=is_admin, current_user_id=current_user_id,
+                           pool_type=pool_type)
+
+@app.route('/pool/<pool_id>/members/remove', methods=['POST'])
+def pool_remove_member(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    if not current_user_id or current_user_id not in pool.get('administrators', []):
+        flash("Admin access required.", "error")
+        return redirect(url_for('pool_members', pool_id=pool_id))
+    target_user_id = request.form.get('user_id')
+    db.remove_user_from_pool(pool_id, target_user_id)
+    flash("Member removed.", "success")
+    return redirect(url_for('pool_members', pool_id=pool_id))
+
+@app.route('/pool/<pool_id>/members/toggle-admin', methods=['POST'])
+def pool_toggle_admin(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    if not current_user_id or current_user_id not in pool.get('administrators', []):
+        flash("Admin access required.", "error")
+        return redirect(url_for('pool_members', pool_id=pool_id))
+    target_user_id = request.form.get('user_id')
+    if target_user_id in pool.get('administrators', []):
+        db.remove_administrator_from_pool(pool_id, target_user_id)
+    else:
+        db.add_administrator_to_pool(pool_id, target_user_id)
+    return redirect(url_for('pool_members', pool_id=pool_id))
+
+@app.route('/pool/<pool_id>/rules')
+def pool_rules(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    return render_template('pool_rules.html', pool=pool, is_admin=is_admin)
+
+@app.route('/pool/<pool_id>/board')
+def pool_board(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    threads = db.get_threads(pool_id)
+    user_cache = {}
+    def _get_username(uid):
+        if uid not in user_cache:
+            u = db.get_user_by_id(uid)
+            user_cache[uid] = u['username'] if u else 'Unknown'
+        return user_cache[uid]
+    for t in threads:
+        t['author_name'] = _get_username(t['author_id'])
+        for p in t.get('posts', []):
+            p['author_name'] = _get_username(p['author_id'])
+    return render_template('pool_board.html', pool=pool, threads=threads, is_admin=is_admin)
+
+@app.route('/pool/<pool_id>/board/new', methods=['GET', 'POST'])
+def pool_board_new_thread(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        if title and content:
+            db.create_thread(pool_id, session['user_id'], title, content)
+            flash("Thread posted.", "success")
+        return redirect(url_for('pool_board', pool_id=pool_id))
+    return render_template('pool_board_new.html', pool=pool)
+
+@app.route('/pool/<pool_id>/board/<thread_id>')
+def pool_board_thread(pool_id, thread_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    thread = db.get_thread(thread_id)
+    if not thread:
+        flash("Thread not found.", "error")
+        return redirect(url_for('pool_board', pool_id=pool_id))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    user_cache = {}
+    def _get_username(uid):
+        if uid not in user_cache:
+            u = db.get_user_by_id(uid)
+            user_cache[uid] = u['username'] if u else 'Unknown'
+        return user_cache[uid]
+    thread['author_name'] = _get_username(thread['author_id'])
+    for p in thread.get('posts', []):
+        p['author_name'] = _get_username(p['author_id'])
+    return render_template('pool_board_thread.html', pool=pool, thread=thread, is_admin=is_admin)
+
+@app.route('/pool/<pool_id>/board/<thread_id>/reply', methods=['POST'])
+def pool_board_reply(pool_id, thread_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    content = request.form.get('content', '').strip()
+    if content:
+        db.add_post(thread_id, session['user_id'], content)
+    return redirect(url_for('pool_board_thread', pool_id=pool_id, thread_id=thread_id))
+
+@app.route('/pool/<pool_id>/invites')
+def pool_invites(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    pending_invites = db.get_pool_invitations(pool_id) if is_admin else []
+    return render_template('pool_invites.html', pool=pool, is_admin=is_admin,
+                           pending_invites=pending_invites)
+
+@app.route('/pool/<pool_id>/archives')
+def pool_archives(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        flash("Pool not found.", "error")
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    is_admin = current_user_id in pool.get('administrators', [])
+    return render_template('pool_archives.html', pool=pool, is_admin=is_admin)
+
+@app.route('/pool/<pool_id>/admin')
+def pool_admin(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    if not current_user_id or current_user_id not in pool.get('administrators', []):
+        flash("Admin access required.", "error")
+        return redirect(url_for('pool_home', pool_id=pool_id))
+    current_week = pool.get('current_week', 1)
+    season = pool.get('current_season', 2026)
+    pool_type = pool.get('pool_type', 'survivor')
+    games = list(db.nfl_schedule.find({"season_year": season, "week_number": current_week}))
+    members = []
+    for u_id in pool.get('user_ids', []):
+        user = db.get_user_by_id(u_id)
+        if user:
+            members.append({'id': u_id, 'username': user['username']})
+    user_map = {m['id']: m['username'] for m in members}
+
+    if pool_type == "Pick 'Em":
+        week_picks = db.get_pickem_picks_for_week(pool_id, current_week)
+        for p in week_picks:
+            p['username'] = user_map.get(p['user_id'], 'Unknown')
+        alive_count = len(pool.get('user_ids', []))
+    else:
+        week_picks = db.get_survivor_picks_for_week(pool_id, current_week)
+        for p in week_picks:
+            p['username'] = user_map.get(p['user_id'], 'Unknown')
+        all_picks = db.get_all_survivor_picks(pool_id)
+        eliminated_users = set(p['user_id'] for p in all_picks if p['result'] == 'Lost')
+        alive_count = len([u for u in pool.get('user_ids', []) if u not in eliminated_users])
+
+    return render_template('pool_admin.html', pool=pool, games=games, members=members,
+                           week_picks=week_picks, current_week=current_week,
+                           alive_count=alive_count, pool_type=pool_type, is_admin=True)
+
+@app.route('/pool/<pool_id>/admin/advance-week', methods=['POST'])
+def pool_advance_week(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    if not current_user_id or current_user_id not in pool.get('administrators', []):
+        flash("Admin access required.", "error")
+        return redirect(url_for('pool_home', pool_id=pool_id))
+    new_week = int(request.form.get('week', pool.get('current_week', 1) + 1))
+    db.update_pool(pool_id, {'current_week': new_week})
+    flash(f"Advanced to Week {new_week}.", "success")
+    return redirect(url_for('pool_admin', pool_id=pool_id))
+
+@app.route('/pool/<pool_id>/admin/process-week', methods=['POST'])
+def pool_process_week(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    if not current_user_id or current_user_id not in pool.get('administrators', []):
+        flash("Admin access required.", "error")
+        return redirect(url_for('pool_home', pool_id=pool_id))
+    week_number = int(request.form.get('week_number', pool.get('current_week', 1)))
+    season = pool.get('current_season', 2026)
+    pool_type = pool.get('pool_type', 'survivor')
+    games = list(db.nfl_schedule.find({"season_year": season, "week_number": week_number}))
+
+    if pool_type == "Pick 'Em":
+        team_scores = {}
+        for g in games:
+            scoring = g.get('scoring', {}) or {}
+            home_pts = scoring.get('home_points')
+            away_pts = scoring.get('away_points')
+            if home_pts is not None:
+                team_scores[g['home']['alias']] = int(home_pts)
+            if away_pts is not None:
+                team_scores[g['away']['alias']] = int(away_pts)
+        db.process_pickem_week(pool_id, week_number, team_scores)
+        flash(f"Week {week_number} results processed — {len(team_scores)} teams scored.", "success")
+    else:
+        winner_aliases = set()
+        for g in games:
+            scoring = g.get('scoring', {}) or {}
+            home_pts = scoring.get('home_points')
+            away_pts = scoring.get('away_points')
+            if home_pts is not None and away_pts is not None:
+                if home_pts > away_pts:
+                    winner_aliases.add(g['home']['alias'])
+                elif away_pts > home_pts:
+                    winner_aliases.add(g['away']['alias'])
+        db.process_survivor_week(pool_id, week_number, winner_aliases)
+        flash(f"Week {week_number} results processed — {len(winner_aliases)} winning teams.", "success")
+
+    return redirect(url_for('pool_admin', pool_id=pool_id))
+
+@app.route('/pool/<pool_id>/admin/override-pick', methods=['POST'])
+def pool_override_pick(pool_id):
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    current_user_id = session.get('user_id')
+    if not current_user_id or current_user_id not in pool.get('administrators', []):
+        flash("Admin access required.", "error")
+        return redirect(url_for('pool_home', pool_id=pool_id))
+    target_user_id = request.form.get('user_id')
+    week_number = int(request.form.get('week_number'))
+    team_alias = request.form.get('team_alias', '').strip()
+    team_name = request.form.get('team_name', team_alias).strip()
+    pool_type = pool.get('pool_type', 'survivor')
+    if pool_type == "Pick 'Em":
+        db.override_pickem_pick(pool_id, target_user_id, week_number, team_alias, team_name)
+    else:
+        db.override_survivor_pick(pool_id, target_user_id, week_number, team_alias, team_name)
+    flash(f"Pick overridden: {team_name} — Week {week_number}.", "success")
+    return redirect(url_for('pool_admin', pool_id=pool_id))
+
 @app.route('/leagues')
 def leagues():
     return redirect(url_for('leagues_my'))
