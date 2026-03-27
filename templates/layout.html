@@ -169,6 +169,15 @@
             disableMobile: false
         });
 
+        // Wrap every table in main content in a scroll container
+        document.querySelectorAll('.page-main table').forEach(function(tbl) {
+            if (tbl.closest('.table-scroll')) return;
+            const wrap = document.createElement('div');
+            wrap.className = 'table-scroll';
+            tbl.parentNode.insertBefore(wrap, tbl);
+            wrap.appendChild(tbl);
+        });
+
         // Initialize Lucide icons
         lucide.createIcons();
 

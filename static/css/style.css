@@ -2,6 +2,12 @@
     box-sizing: border-box;
 }
 
+/* Prevent the page itself from ever scrolling horizontally */
+html {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
 :root {
     --primary-color: #3498db;
     --secondary-color: #2980b9;
@@ -982,11 +988,17 @@ div[class*='actions'] > div {
         box-sizing: border-box;
     }
 
-    /* Tables scroll horizontally within their clamped container */
-    .page-main table {
-        display: block;
-        max-width: 100%;
+    /* Scrollable table wrapper — injected by JS */
+    .table-scroll {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+
+    .table-scroll > table {
+        display: table;
+        width: max-content;
+        min-width: 100%;
+        margin-top: 0;
     }
 }
