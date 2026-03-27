@@ -69,6 +69,8 @@
 <a href="{{ url_for('league_watchlist', league_id=league.id) }}" data-label="Watchlist" class="{{ 'active' if request.endpoint in ['league_watchlist', 'watchlist_add', 'watchlist_remove'] }}"><i data-lucide="eye"></i> Watchlist</a>
 <a href="{{ url_for('league_transactions', league_id=league.id) }}" data-label="Transactions" class="{{ 'active' if request.endpoint == 'league_transactions' }}"><i data-lucide="arrow-left-right"></i> Transactions</a>
 <a href="{{ url_for('league_archives', league_id=league.id) }}" data-label="Archives" class="{{ 'active' if request.endpoint == 'league_archives' }}"><i data-lucide="archive"></i> Archives</a>
+<div class="vnav-divider" style="margin-top: auto;"></div>
+<a href="#" id="actionsNavBtn" data-label="Actions"><i data-lucide="zap"></i> Actions</a>
 {% endblock %}
 
 {% block content %}

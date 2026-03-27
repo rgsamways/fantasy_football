@@ -249,34 +249,33 @@
     </div>
 </div>
 
-<div class="actions card panel-sm" style="margin-bottom: 7px;">
-    <h3 style="font-size: 1.1em; margin-top: 0;">Actions</h3>
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-        <a href="{{ url_for('leagues') }}" class="btn btn-secondary btn-sm" style="text-align: center; width: 100%;">All Leagues</a>
-        
-        {% if session.get('user_id') not in league.user_ids %}
-            <form action="{{ url_for('join_league', league_id=league.id) }}" method="POST">
-                <button type="submit" class="btn btn-sm" style="width: 100%;">Join League</button>
-            </form>
-        {% endif %}
+{% endblock %}
 
-        {% if is_admin %}
-            <a href="{{ url_for('edit_league', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Edit League</a>
-            <a href="{{ url_for('league_scoring', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Scoring Settings</a>
-            <a href="{{ url_for('league_roster_settings', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Roster Settings</a>
-            {% if league.play_format == 'Head-2-Head' and league.has_divisions %}
-                <a href="{{ url_for('league_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Division Names</a>
-                <a href="{{ url_for('league_assign_divisions', league_id=league.id) }}" class="btn btn-sm" style="text-align: center; width: 100%;">Assign Divisions</a>
-            {% endif %}
-        {% endif %}
-        {% if session.get('user_id') == league.user_ids[0] %}
-            <form action="{{ url_for('delete_league', league_id=league.id) }}" method="POST" onsubmit="return confirm('Are you absolutely sure you want to delete this league? This action cannot be undone.');">
-                <button type="submit" class="btn btn-danger btn-sm" style="width: 100%;">Delete League</button>
-            </form>
-        {% endif %}
-    </div>
-</div>
+{% block actions_panel_content %}
+<a href="{{ url_for('leagues') }}"><i data-lucide="layout-list"></i> All Leagues</a>
 
+{% if session.get('user_id') not in league.user_ids %}
+    <form action="{{ url_for('join_league', league_id=league.id) }}" method="POST">
+        <button type="submit" class="ap-link"><i data-lucide="user-plus"></i> Join League</button>
+    </form>
+{% endif %}
+
+{% if is_admin %}
+    <a href="{{ url_for('edit_league', league_id=league.id) }}"><i data-lucide="pencil"></i> Edit League</a>
+    <a href="{{ url_for('league_scoring', league_id=league.id) }}"><i data-lucide="sliders-horizontal"></i> Scoring Settings</a>
+    <a href="{{ url_for('league_roster_settings', league_id=league.id) }}"><i data-lucide="clipboard-list"></i> Roster Settings</a>
+    {% if league.play_format == 'Head-2-Head' and league.has_divisions %}
+        <a href="{{ url_for('league_divisions', league_id=league.id) }}"><i data-lucide="tag"></i> Division Names</a>
+        <a href="{{ url_for('league_assign_divisions', league_id=league.id) }}"><i data-lucide="git-branch"></i> Assign Divisions</a>
+    {% endif %}
+{% endif %}
+
+{% if session.get('user_id') == league.user_ids[0] %}
+    <form action="{{ url_for('delete_league', league_id=league.id) }}" method="POST"
+          onsubmit="return confirm('Are you absolutely sure you want to delete this league? This action cannot be undone.');">
+        <button type="submit" class="ap-link ap-link-danger"><i data-lucide="trash-2"></i> Delete League</button>
+    </form>
+{% endif %}
 {% endblock %}
 
 {% block league_sidebar_right %}
