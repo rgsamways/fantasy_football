@@ -26,6 +26,7 @@ class Database:
         self.nfl_games = self.db.nfl_games
         self.nfl_schedule = self.db.nfl_schedule
         self.nfl_teams = self.db.nfl_teams
+        self.waiver_claims = self.db.waiver_claims
 
     def create_announcement(self, announcement_type, message, user_id):
         import uuid
@@ -363,6 +364,92 @@ class Database:
             {"user_id": user_id, "league_id": league_id},
             {"$unset": {f"starters.{slot}": ""}}
         )
+
+    def get_watchlist(self, user_id, league_id):
+        """Returns the watchlist player_ids for a user in a league."""
+        roster = self.rosters.find_one({"user_id": user_id, "league_id": league_id})
+        return roster.get('watchlist', []) if roster else []
+
+    def add_to_watchlist(self, user_id, league_id, player_id):
+        """Adds a player to the watchlist if not already present."""
+        return self.rosters.update_one(
+            {"user_id": user_id, "league_id": league_id},
+            {"$addToSet": {"watchlist": player_id}},
+            upsert=True
+        )
+
+    def remove_from_watchlist(self, user_id, league_id, player_id):
+        """Removes a player from the watchlist."""
+        return self.rosters.update_one(
+            {"user_id": user_id, "league_id": league_id},
+            {"$pull": {"watchlist": player_id}}
+        )
+
+    # --- Waiver Claims ---
+
+    def submit_waiver_claim(self, league_id, user_id, player_id, drop_player_id, week_number, priority):
+        now = datetime.now(timezone.utc)
+        claim = {
+            "id": str(uuid.uuid4()),
+            "league_id": league_id,
+            "user_id": user_id,
+            "player_id": player_id,
+            "drop_player_id": drop_player_id,  # may be None
+            "priority": priority,
+            "status": "Pending",  # Pending | Awarded | Failed | Cancelled
+            "week_number": week_number,
+            "created_at": now,
+            "processed_at": None,
+            "fail_reason": None,
+        }
+        self.db.waiver_claims.insert_one(claim)
+        return claim
+
+    def get_waiver_claims(self, league_id, status=None, week_number=None):
+        query = {"league_id": league_id}
+        if status:
+            query["status"] = status
+        if week_number is not None:
+            query["week_number"] = week_number
+        return list(self.db.waiver_claims.find(query).sort("priority", 1))
+
+    def get_user_waiver_claims(self, league_id, user_id, week_number=None):
+        query = {"league_id": league_id, "user_id": user_id}
+        if week_number is not None:
+            query["week_number"] = week_number
+        return list(self.db.waiver_claims.find(query).sort("created_at", -1))
+
+    def cancel_waiver_claim(self, claim_id, user_id):
+        return self.db.waiver_claims.update_one(
+            {"id": claim_id, "user_id": user_id, "status": "Pending"},
+            {"$set": {"status": "Cancelled"}}
+        )
+
+    def update_waiver_claim_status(self, claim_id, status, fail_reason=None):
+        now = datetime.now(timezone.utc)
+        update = {"status": status, "processed_at": now}
+        if fail_reason:
+            update["fail_reason"] = fail_reason
+        return self.db.waiver_claims.update_one({"id": claim_id}, {"$set": update})
+
+    def get_waiver_priority(self, league_id):
+        """Returns ordered list of user_ids by waiver priority (index 0 = highest)."""
+        league = self.get_league(league_id)
+        return league.get("waiver_priority", league.get("user_ids", []))
+
+    def set_waiver_priority(self, league_id, ordered_user_ids):
+        return self.leagues.update_one(
+            {"id": league_id},
+            {"$set": {"waiver_priority": ordered_user_ids}}
+        )
+
+    def rotate_waiver_priority(self, league_id, user_id):
+        """Move user_id to the end of the priority list after a successful claim."""
+        priority = self.get_waiver_priority(league_id)
+        if user_id in priority:
+            priority.remove(user_id)
+            priority.append(user_id)
+        self.set_waiver_priority(league_id, priority)
 
     def add_draft_pick_to_roster(self, user_id, league_id, team_id, year, round_num, pick_num):
         pick = {

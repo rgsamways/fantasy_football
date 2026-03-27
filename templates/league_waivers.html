@@ -1,0 +1,255 @@
+{% extends "league_layout.html" %}
+
+{% block league_content %}
+<div style="display: flex; flex-direction: column; gap: 7px;">
+
+<!-- SUBMIT A CLAIM -->
+<div class="card panel">
+    <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">Submit Waiver Claim — Week {{ current_week }}</h3>
+    <form action="{{ url_for('waiver_claim', league_id=league.id) }}" method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end;">
+            <div>
+                <label style="display: block; font-size: 0.8em; font-weight: bold; color: var(--muted-color); margin-bottom: 4px;">Add Player (free agents only)</label>
+                <input type="hidden" name="player_id" id="claimPlayerId">
+                <input type="text" id="claimPlayerSearch" placeholder="Search free agents..."
+                       autocomplete="off"
+                       style="width: 100%; padding: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.88em; box-sizing: border-box;">
+                <div id="claimSearchResults" style="border: 1px solid var(--border-color); display: none; max-height: 200px; overflow-y: auto; background: var(--card-bg); position: relative; z-index: 50;"></div>
+                <div id="claimPlayerDisplay" style="font-size: 0.82em; color: var(--primary-color); margin-top: 4px; min-height: 18px;"></div>
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.8em; font-weight: bold; color: var(--muted-color); margin-bottom: 4px;">Drop Player (optional)</label>
+                <select name="drop_player_id" style="width: 100%; padding: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.88em;">
+                    <option value="">— Keep roster as-is —</option>
+                    {% for p in my_players %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-sm" style="white-space: nowrap;">Submit Claim</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- MY PENDING CLAIMS -->
+{% set pending_claims = my_claims | selectattr('status', 'equalto', 'Pending') | list %}
+<div class="card panel">
+    <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">
+        My Pending Claims
+        {% if pending_claims %}<span style="font-size: 0.75em; color: var(--primary-color); margin-left: 8px;">{{ pending_claims | length }} pending</span>{% endif %}
+    </h3>
+    {% if pending_claims %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 8px 10px; text-align: left;">Add</th>
+                <th style="padding: 8px 10px; text-align: left;">Drop</th>
+                <th style="padding: 8px 10px; text-align: left;">Submitted</th>
+                <th style="padding: 8px 10px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in pending_claims %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 10px; font-weight: bold;">{{ c.player_name }}</td>
+                <td style="padding: 8px 10px; color: var(--muted-color);">{{ c.drop_name }}</td>
+                <td style="padding: 8px 10px; color: var(--muted-color); font-size: 0.85em;">{{ c.created_at.strftime('%b %d, %H:%M') }}</td>
+                <td style="padding: 8px 10px;">
+                    <form action="{{ url_for('waiver_cancel', league_id=league.id, claim_id=c.id) }}" method="POST">
+                        <button type="submit" class="btn btn-sm">Cancel</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.88em; margin: 0;">No pending claims for Week {{ current_week }}.</p>
+    {% endif %}
+</div>
+
+<!-- FREE AGENTS -->
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+        <h3 style="margin: 0;">Free Agents</h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="faSearch" placeholder="Filter..." style="padding: 5px 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.82em; width: 160px;">
+            <select id="faPosFilter" style="padding: 5px 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 0.82em;">
+                <option value="">All Positions</option>
+                {% for pos in ['QB','RB','FB','WR','TE','K'] %}
+                <option value="{{ pos }}">{{ pos }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;" id="faTable">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 7px 10px; text-align: left;">Player</th>
+                <th style="padding: 7px 10px; text-align: left;">Pos</th>
+                <th style="padding: 7px 10px; text-align: left;">NFL Team</th>
+                <th style="padding: 7px 10px; text-align: right;">Pts</th>
+                <th style="padding: 7px 10px;"></th>
+            </tr>
+        </thead>
+        <tbody id="faBody">
+            {% for p in free_agents %}
+            <tr class="fa-row" data-name="{{ p.name | lower }}" data-pos="{{ p.position }}"
+                style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 7px 10px; font-weight: bold;">
+                    <a href="{{ url_for('league_player', league_id=league.id, player_id=p.id) }}"
+                       style="color: var(--primary-color); text-decoration: none;">{{ p.name }}</a>
+                </td>
+                <td style="padding: 7px 10px; color: var(--muted-color);">{{ p.position }}</td>
+                <td style="padding: 7px 10px; color: var(--muted-color);">{{ p.team }}</td>
+                <td style="padding: 7px 10px; text-align: right;">{{ p.points }}</td>
+                <td style="padding: 7px 10px;">
+                    {% if p.already_claimed %}
+                        <span style="font-size: 0.8em; color: var(--muted-color);">Claimed</span>
+                    {% else %}
+                        <button class="btn btn-sm claim-btn"
+                                data-id="{{ p.id }}"
+                                data-name="{{ p.name }} ({{ p.position }} · {{ p.team }})">
+                            + Claim
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not free_agents %}
+    <p style="color: var(--muted-color); font-size: 0.9em; margin-top: 10px;">No free agents available.</p>
+    {% endif %}
+</div>
+
+<!-- RECENT RESULTS -->
+{% if processed_claims %}
+<div class="card panel">
+    <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px;">Recent Waiver Results</h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 8px 10px; text-align: left;">Team</th>
+                <th style="padding: 8px 10px; text-align: left;">Add</th>
+                <th style="padding: 8px 10px; text-align: left;">Drop</th>
+                <th style="padding: 8px 10px; text-align: left;">Result</th>
+                <th style="padding: 8px 10px; text-align: left;">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in processed_claims %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 10px; font-weight: bold;">{{ c.team_name }}</td>
+                <td style="padding: 8px 10px;">{{ c.player_name }}</td>
+                <td style="padding: 8px 10px; color: var(--muted-color);">{{ c.drop_name }}</td>
+                <td style="padding: 8px 10px;">
+                    {% if c.status == 'Awarded' %}
+                        <span style="color: #27ae60; font-weight: bold; font-size: 0.85em;">Awarded</span>
+                    {% elif c.status == 'Failed' %}
+                        <span style="color: var(--danger, #e74c3c); font-size: 0.85em;" title="{{ c.fail_reason }}">Failed</span>
+                    {% else %}
+                        <span style="color: var(--muted-color); font-size: 0.85em;">{{ c.status }}</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 8px 10px; color: var(--muted-color); font-size: 0.85em;">
+                    {{ (c.processed_at or c.created_at).strftime('%b %d') }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const leagueId = "{{ league.id }}";
+    const searchInput = document.getElementById('claimPlayerSearch');
+    const resultsDiv = document.getElementById('claimSearchResults');
+    const hiddenId = document.getElementById('claimPlayerId');
+    const display = document.getElementById('claimPlayerDisplay');
+
+    document.querySelectorAll('.claim-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            hiddenId.value = this.dataset.id;
+            display.textContent = '✓ ' + this.dataset.name;
+            searchInput.value = '';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+    });
+
+    const faSearch = document.getElementById('faSearch');
+    const faPosFilter = document.getElementById('faPosFilter');
+    function filterFA() {
+        const q = faSearch.value.toLowerCase();
+        const pos = faPosFilter.value;
+        document.querySelectorAll('.fa-row').forEach(row => {
+            const nameMatch = !q || row.dataset.name.includes(q);
+            const posMatch = !pos || row.dataset.pos === pos;
+            row.style.display = nameMatch && posMatch ? '' : 'none';
+        });
+    }
+    faSearch.addEventListener('input', filterFA);
+    faPosFilter.addEventListener('change', filterFA);
+
+    searchInput.addEventListener('input', function() {
+        const q = this.value.trim();
+        if (q.length < 2) { resultsDiv.style.display = 'none'; return; }
+        fetch(`/league/${leagueId}/waivers/search?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(players => {
+                if (!players.length) { resultsDiv.style.display = 'none'; return; }
+                resultsDiv.innerHTML = players.map(p => `
+                    <div data-id="${p.id}" data-name="${p.name} (${p.position} · ${p.team})"
+                         style="padding: 8px 12px; cursor: pointer; font-size: 0.88em; border-bottom: 1px solid var(--border-color);">
+                        <strong>${p.name}</strong> <span style="color:gray;">${p.position} · ${p.team}</span>
+                    </div>`).join('');
+                resultsDiv.style.display = 'block';
+                resultsDiv.querySelectorAll('[data-id]').forEach(el => {
+                    el.addEventListener('click', function() {
+                        hiddenId.value = this.dataset.id;
+                        searchInput.value = '';
+                        display.textContent = '✓ ' + this.dataset.name;
+                        resultsDiv.style.display = 'none';
+                    });
+                });
+            });
+    });
+
+    document.addEventListener('click', e => {
+        if (!resultsDiv.contains(e.target) && e.target !== searchInput) resultsDiv.style.display = 'none';
+    });
+});
+</script>
+
+</div>
+{% endblock %}
+
+{% block league_sidebar_right %}
+<div class="card panel-sm" style="margin-bottom: 7px;">
+    <h3 style="font-size: 1em; margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px;">Waiver Priority</h3>
+    <ol style="list-style: none; padding: 0; margin: 0; font-size: 0.83em;">
+        {% for entry in priority_display %}
+        <li style="padding: 5px 0; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--muted-color); width: 18px; text-align: right;">{{ entry.rank }}</span>
+            <span style="font-weight: {{ 'bold' if entry.is_me else 'normal' }}; color: {{ 'var(--primary-color)' if entry.is_me else 'var(--text-color)' }};">
+                {{ entry.team_name }}{% if entry.is_me %} ★{% endif %}
+            </span>
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+
+{% if is_admin %}
+<div class="card panel-sm">
+    <h3 style="font-size: 1em; margin-top: 0; margin-bottom: 12px;">Admin</h3>
+    <form action="{{ url_for('waiver_process', league_id=league.id) }}" method="POST"
+          onsubmit="return confirm('Process all pending waiver claims now?');">
+        <button type="submit" class="btn btn-sm" style="width: 100%;">Process Waivers</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

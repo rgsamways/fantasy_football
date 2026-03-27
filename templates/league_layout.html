@@ -56,14 +56,18 @@
 {% endblock %}
 
 {% block vertical_nav %}
-<a href="{{ url_for('league_home', league_id=league.id) }}" data-label="{{ league.name }} Home" class="{{ 'active' if request.endpoint == 'league_home' }}"><i data-lucide="home"></i></a>
-<a href="{{ url_for('league_teams', league_id=league.id) }}" data-label="Teams" class="{{ 'active' if request.endpoint in ['league_teams', 'league_team'] }}"><i data-lucide="users"></i></a>
-<a href="{{ url_for('league_standings', league_id=league.id) }}" data-label="Standings" class="{{ 'active' if request.endpoint == 'league_standings' }}"><i data-lucide="bar-chart-2"></i></a>
-<a href="{{ url_for('league_matchups', league_id=league.id) }}" data-label="Matchups" class="{{ 'active' if request.endpoint == 'league_matchups' }}"><i data-lucide="swords"></i></a>
-<a href="{{ url_for('league_draft', league_id=league.id) }}" data-label="Draft" class="{{ 'active' if request.endpoint == 'league_draft' }}"><i data-lucide="clipboard-list"></i></a>
-<a href="{{ url_for('league_players', league_id=league.id) }}" data-label="Players" class="{{ 'active' if request.endpoint in ['league_players', 'league_player'] }}"><i data-lucide="user-search"></i></a>
-<a href="{{ url_for('league_rules', league_id=league.id) }}" data-label="Rules" class="{{ 'active' if request.endpoint == 'league_rules' }}"><i data-lucide="scroll-text"></i></a>
-<a href="{{ url_for('league_board', league_id=league.id) }}" data-label="Board" class="{{ 'active' if request.endpoint in ['league_board', 'league_board_thread', 'league_board_new_thread'] }}"><i data-lucide="message-square"></i></a>
+<a href="{{ url_for('league_home', league_id=league.id) }}" data-label="{{ league.name }} Home" class="{{ 'active' if request.endpoint == 'league_home' }}"><i data-lucide="home"></i> {{ league.name }} Home</a>
+<a href="{{ url_for('league_teams', league_id=league.id) }}" data-label="Teams" class="{{ 'active' if request.endpoint in ['league_teams', 'league_team'] }}"><i data-lucide="users"></i> Teams</a>
+<a href="{{ url_for('league_standings', league_id=league.id) }}" data-label="Standings" class="{{ 'active' if request.endpoint == 'league_standings' }}"><i data-lucide="bar-chart-2"></i> Standings</a>
+<a href="{{ url_for('league_matchups', league_id=league.id) }}" data-label="Matchups" class="{{ 'active' if request.endpoint == 'league_matchups' }}"><i data-lucide="swords"></i> Matchups</a>
+<a href="{{ url_for('league_draft', league_id=league.id) }}" data-label="Draft" class="{{ 'active' if request.endpoint == 'league_draft' }}"><i data-lucide="clipboard-list"></i> Draft</a>
+<a href="{{ url_for('league_players', league_id=league.id) }}" data-label="Players" class="{{ 'active' if request.endpoint in ['league_players', 'league_player'] }}"><i data-lucide="user-search"></i> Players</a>
+<a href="{{ url_for('league_waivers', league_id=league.id) }}" data-label="Waivers" class="{{ 'active' if request.endpoint in ['league_waivers', 'waiver_claim', 'waiver_cancel', 'waiver_process'] }}"><i data-lucide="clock"></i> Waivers</a>
+<a href="{{ url_for('league_rules', league_id=league.id) }}" data-label="Rules" class="{{ 'active' if request.endpoint == 'league_rules' }}"><i data-lucide="scroll-text"></i> Rules</a>
+<a href="{{ url_for('league_board', league_id=league.id) }}" data-label="Board" class="{{ 'active' if request.endpoint in ['league_board', 'league_board_thread', 'league_board_new_thread'] }}"><i data-lucide="message-square"></i> Board</a>
+<a href="{{ url_for('league_invites', league_id=league.id) }}" data-label="Invites" class="{{ 'active' if request.endpoint == 'league_invites' }}"><i data-lucide="mail-plus"></i> Invites</a>
+<a href="{{ url_for('league_watchlist', league_id=league.id) }}" data-label="Watchlist" class="{{ 'active' if request.endpoint in ['league_watchlist', 'watchlist_add', 'watchlist_remove'] }}"><i data-lucide="eye"></i> Watchlist</a>
+<a href="{{ url_for('league_transactions', league_id=league.id) }}" data-label="Transactions" class="{{ 'active' if request.endpoint == 'league_transactions' }}"><i data-lucide="arrow-left-right"></i> Transactions</a>
 {% endblock %}
 
 {% block content %}

@@ -38,11 +38,11 @@
 {% endblock %}
 
 {% block vertical_nav %}
-<a href="{{ url_for('leagues_my') }}" data-label="My Leagues" class="{{ 'active' if active_tab == 'my' }}"><i data-lucide="shield"></i></a>
-<a href="{{ url_for('leagues_public') }}" data-label="Public Leagues" class="{{ 'active' if active_tab == 'public' }}"><i data-lucide="globe"></i></a>
-<a href="{{ url_for('leagues_find') }}" data-label="Find a League" class="{{ 'active' if active_tab == 'find' }}"><i data-lucide="search"></i></a>
-<a href="{{ url_for('leagues_types') }}" data-label="League Types" class="{{ 'active' if active_tab == 'types' }}"><i data-lucide="list"></i></a>
-<a href="{{ url_for('create_league') }}" data-label="Create League" class="{{ 'active' if active_tab == 'create' }}"><i data-lucide="plus-circle"></i></a>
+<a href="{{ url_for('leagues_my') }}" data-label="My Leagues" class="{{ 'active' if active_tab == 'my' }}"><i data-lucide="shield"></i> My Leagues</a>
+<a href="{{ url_for('leagues_public') }}" data-label="Public Leagues" class="{{ 'active' if active_tab == 'public' }}"><i data-lucide="globe"></i> Public Leagues</a>
+<a href="{{ url_for('leagues_find') }}" data-label="Find a League" class="{{ 'active' if active_tab == 'find' }}"><i data-lucide="search"></i> Find Leagues</a>
+<a href="{{ url_for('leagues_types') }}" data-label="League Types" class="{{ 'active' if active_tab == 'types' }}"><i data-lucide="list"></i> League Types</a>
+<a href="{{ url_for('create_league') }}" data-label="Create League" class="{{ 'active' if active_tab == 'create' }}"><i data-lucide="plus-circle"></i> Create League</a>
 {% endblock %}
 
 {% block content %}

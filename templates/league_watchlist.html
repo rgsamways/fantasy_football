@@ -1,0 +1,107 @@
+{% extends "league_layout.html" %}
+
+{% block league_content %}
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
+        <h3 style="margin: 0;">My Watchlist</h3>
+        <span style="color: var(--muted-color); font-size: 0.85em;">{{ watchlist_players | length }} player{{ 's' if watchlist_players | length != 1 }}</span>
+    </div>
+
+    <!-- Search to add -->
+    <div style="margin-bottom: 20px;">
+        <input type="text" id="watchlistSearch" placeholder="Search players to add..." class="form-control"
+               style="width: 100%; padding: 8px; font-size: 0.9em; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color);">
+        <div id="searchResults" style="border: 1px solid var(--border-color); display: none; max-height: 220px; overflow-y: auto; background: var(--card-bg);"></div>
+    </div>
+
+    {% if watchlist_players %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--muted-color); font-size: 0.8em;">
+                <th style="padding: 8px 12px;">Player</th>
+                <th style="padding: 8px 12px;">Pos</th>
+                <th style="padding: 8px 12px;">NFL Team</th>
+                <th style="padding: 8px 12px; text-align: right;">Pts</th>
+                <th style="padding: 8px 12px;">Status</th>
+                <th style="padding: 8px 12px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in watchlist_players %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 12px; font-weight: bold;">
+                    <a href="{{ url_for('league_player', league_id=league.id, player_id=p.id) }}"
+                       style="color: var(--primary-color); text-decoration: none;">{{ p.name }}</a>
+                </td>
+                <td style="padding: 8px 12px; color: var(--muted-color);">{{ p.position }}</td>
+                <td style="padding: 8px 12px; color: var(--muted-color);">{{ p.team }}</td>
+                <td style="padding: 8px 12px; text-align: right; font-weight: bold;">{{ "%.2f"|format(p.points) }}</td>
+                <td style="padding: 8px 12px; font-size: 0.85em;">
+                    {% if p.is_mine %}
+                        <span style="color: var(--primary-color); font-weight: bold;">On My Roster</span>
+                    {% elif p.in_league %}
+                        <span style="color: var(--muted-color);">{{ p.owned_by }}</span>
+                    {% else %}
+                        <span style="color: #2ecc71; font-weight: bold;">Available</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 8px 12px;">
+                    <div style="display: flex; gap: 6px;">
+                        {% if not p.is_mine and not p.in_league %}
+                            <a href="{{ url_for('add_player', player_id=p.id, league_id=league.id) }}" class="btn btn-sm">Add</a>
+                        {% endif %}
+                        <form action="{{ url_for('watchlist_remove', league_id=league.id, player_id=p.id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm">Remove</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p style="color: var(--muted-color); font-size: 0.9em;">No players on your watchlist yet. Search above to add some.</p>
+    {% endif %}
+</div>
+
+<script>
+const allPlayers = {{ watchlist_players | tojson }};
+const watchlistIds = {{ watchlist_ids | tojson }};
+
+// We need the full player list for search — fetch it via the existing players data
+// Use a simple debounced fetch against the players page data attributes
+const searchInput = document.getElementById('watchlistSearch');
+const searchResults = document.getElementById('searchResults');
+
+// Inline player data from server for search (all players passed as JSON)
+const leagueId = "{{ league.id }}";
+
+searchInput.addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    if (q.length < 2) { searchResults.style.display = 'none'; return; }
+
+    fetch(`/league/${leagueId}/watchlist/search?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(players => {
+            if (!players.length) { searchResults.style.display = 'none'; return; }
+            searchResults.innerHTML = players.map(p => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.88em;">
+                    <span><strong>${p.name}</strong> <span style="color: var(--muted-color);">${p.position} · ${p.team}</span></span>
+                    ${watchlistIds.includes(p.id)
+                        ? '<span style="color: var(--muted-color); font-size: 0.85em;">On watchlist</span>'
+                        : `<form method="POST" action="/league/${leagueId}/watchlist/add/${p.id}" style="margin:0;">
+                               <button class="btn btn-sm" type="submit">+ Watch</button>
+                           </form>`
+                    }
+                </div>`).join('');
+            searchResults.style.display = 'block';
+        });
+});
+
+document.addEventListener('click', function(e) {
+    if (!searchResults.contains(e.target) && e.target !== searchInput) {
+        searchResults.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

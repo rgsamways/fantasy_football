@@ -1,0 +1,55 @@
+{% extends "league_layout.html" %}
+
+{% block league_content %}
+<div class="card panel">
+    <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Invite Members</h3>
+
+    {% if not is_admin %}
+        <p style="color: var(--muted-color);">Only league admins can manage invitations.</p>
+    {% else %}
+        <form action="{{ url_for('league_invite', league_id=league.id) }}" method="POST" style="display: flex; gap: 8px; margin-bottom: 30px;">
+            <input type="email" name="email" placeholder="friend@example.com" required
+                   style="flex: 1; padding: 8px; border: 1px solid var(--input-border); font-size: 0.9em; background: var(--input-bg); color: var(--text-color);">
+            <button type="submit" class="btn btn-sm">Send Invite</button>
+        </form>
+
+        {% if pending_invites %}
+        <h4 style="margin-bottom: 12px;">Pending Invites</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 0;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                    <th style="padding: 10px;">Email</th>
+                    <th style="padding: 10px;">Sent</th>
+                    <th style="padding: 10px;">Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invite in pending_invites %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 10px;">{{ invite.email }}</td>
+                    <td style="padding: 10px; color: var(--muted-color); font-size: 0.9em;">{{ invite.created_at.strftime('%b %d, %Y') }}</td>
+                    <td style="padding: 10px;">
+                        <button class="btn btn-sm" onclick="copyInviteLink('{{ url_for('join_by_token', token=invite.token, _external=True) }}')">
+                            Copy Link
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p style="color: var(--muted-color); font-size: 0.9em;">No pending invites.</p>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+function copyInviteLink(link) {
+    navigator.clipboard.writeText(link).then(() => {
+        alert("Invitation link copied to clipboard!");
+    }).catch(err => {
+        alert("Failed to copy link.");
+    });
+}
+</script>
+{% endblock %}

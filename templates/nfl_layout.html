@@ -44,12 +44,12 @@
 {% endblock %}
 
 {% block vertical_nav %}
-<a href="{{ url_for('nfl_home') }}" data-label="Home" class="{{ 'active' if active_tab == 'home' }}"><i data-lucide="home"></i></a>
-<a href="{{ url_for('nfl_teams') }}" data-label="Teams" class="{{ 'active' if active_tab == 'teams' }}"><i data-lucide="shield"></i></a>
-<a href="{{ url_for('nfl_players') }}" data-label="Players" class="{{ 'active' if active_tab == 'players' }}"><i data-lucide="user"></i></a>
-<a href="{{ url_for('nfl_standings') }}" data-label="Standings" class="{{ 'active' if active_tab == 'standings' }}"><i data-lucide="bar-chart-2"></i></a>
-<a href="{{ url_for('nfl_schedule') }}" data-label="Schedule" class="{{ 'active' if active_tab == 'schedule' }}"><i data-lucide="calendar"></i></a>
-<a href="{{ url_for('nfl_rumors') }}" data-label="Rumors" class="{{ 'active' if active_tab == 'rumors' }}"><i data-lucide="radio"></i></a>
+<a href="{{ url_for('nfl_home') }}" data-label="Home" class="{{ 'active' if active_tab == 'home' }}"><i data-lucide="home"></i> NFL Home</a>
+<a href="{{ url_for('nfl_teams') }}" data-label="Teams" class="{{ 'active' if active_tab == 'teams' }}"><i data-lucide="shield"></i> Team</a>
+<a href="{{ url_for('nfl_players') }}" data-label="Players" class="{{ 'active' if active_tab == 'players' }}"><i data-lucide="user"></i> Players</a>
+<a href="{{ url_for('nfl_standings') }}" data-label="Standings" class="{{ 'active' if active_tab == 'standings' }}"><i data-lucide="bar-chart-2"></i> Standings</a>
+<a href="{{ url_for('nfl_schedule') }}" data-label="Schedule" class="{{ 'active' if active_tab == 'schedule' }}"><i data-lucide="calendar"></i> Schedule</a>
+<a href="{{ url_for('nfl_rumors') }}" data-label="Rumors" class="{{ 'active' if active_tab == 'rumors' }}"><i data-lucide="radio"></i> Rumors</a>
 {% endblock %}
 
 {% block content %}

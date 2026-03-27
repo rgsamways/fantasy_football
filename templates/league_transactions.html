@@ -1,0 +1,91 @@
+{% extends "league_layout.html" %}
+
+{% block league_content %}
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
+        <h3 style="margin: 0;">Transactions</h3>
+    </div>
+
+    <!-- Tab bar -->
+    <div style="display: flex; gap: 0; border-bottom: 2px solid var(--border-color); margin-bottom: 20px;">
+        <a href="{{ url_for('league_transactions', league_id=league.id, tab='trades') }}"
+           style="padding: 8px 18px; font-size: 0.88em; font-weight: bold; text-decoration: none;
+                  color: {{ 'var(--primary-color)' if active_tab == 'trades' else 'var(--muted-color)' }};
+                  border-bottom: 2px solid {{ 'var(--primary-color)' if active_tab == 'trades' else 'transparent' }};
+                  margin-bottom: -2px;">
+            Trades
+        </a>
+        <a href="{{ url_for('league_transactions', league_id=league.id, tab='waivers') }}"
+           style="padding: 8px 18px; font-size: 0.88em; font-weight: bold; text-decoration: none;
+                  color: {{ 'var(--primary-color)' if active_tab == 'waivers' else 'var(--muted-color)' }};
+                  border-bottom: 2px solid {{ 'var(--primary-color)' if active_tab == 'waivers' else 'transparent' }};
+                  margin-bottom: -2px;">
+            Waivers
+        </a>
+    </div>
+
+    {% if active_tab == 'trades' %}
+    {% if completed_trades %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for trade in completed_trades %}
+        <div class="card" style="padding: 14px 18px; border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 0.78em; color: var(--muted-color);">{{ trade.date.strftime('%b %d, %Y') }}</span>
+                <span style="font-size: 0.75em; font-weight: bold; color: #27ae60; padding: 2px 8px; border: 1px solid #27ae60;">Finalized</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: start;">
+                <div>
+                    <div style="font-weight: bold; font-size: 0.88em; margin-bottom: 6px;">{{ trade.offering_team }} receives</div>
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.83em;">
+                        {% for p in trade.responding_players %}<li style="padding: 2px 0;">👤 {{ p }}</li>{% endfor %}
+                        {% for pick in trade.responding_picks %}<li style="padding: 2px 0; color: var(--muted-color);">🎯 {{ pick.year }} Rd {{ pick.round }}</li>{% endfor %}
+                        {% if not trade.responding_players and not trade.responding_picks %}<li style="color: var(--muted-color);">—</li>{% endif %}
+                    </ul>
+                </div>
+                <div style="text-align: center; color: var(--muted-color); font-size: 1.2em; padding-top: 20px;">⇄</div>
+                <div>
+                    <div style="font-weight: bold; font-size: 0.88em; margin-bottom: 6px;">{{ trade.responding_team }} receives</div>
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.83em;">
+                        {% for p in trade.offering_players %}<li style="padding: 2px 0;">👤 {{ p }}</li>{% endfor %}
+                        {% for pick in trade.offering_picks %}<li style="padding: 2px 0; color: var(--muted-color);">🎯 {{ pick.year }} Rd {{ pick.round }}</li>{% endfor %}
+                        {% if not trade.offering_players and not trade.offering_picks %}<li style="color: var(--muted-color);">—</li>{% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No completed trades yet.</p>
+    {% endif %}
+
+    {% elif active_tab == 'waivers' %}
+    {% if awarded_waivers %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.88em;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); color: var(--muted-color);">
+                <th style="padding: 8px 12px; text-align: left;">Date</th>
+                <th style="padding: 8px 12px; text-align: left;">Wk</th>
+                <th style="padding: 8px 12px; text-align: left;">Team</th>
+                <th style="padding: 8px 12px; text-align: left;">Added</th>
+                <th style="padding: 8px 12px; text-align: left;">Dropped</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in awarded_waivers %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 8px 12px; color: var(--muted-color); font-size: 0.85em;">{{ w.date.strftime('%b %d, %Y') }}</td>
+                <td style="padding: 8px 12px; color: var(--muted-color);">{{ w.week }}</td>
+                <td style="padding: 8px 12px; font-weight: bold;">{{ w.team_name }}</td>
+                <td style="padding: 8px 12px; color: #27ae60;">+ {{ w.player_added }}</td>
+                <td style="padding: 8px 12px; color: var(--muted-color);">{{ '− ' + w.player_dropped if w.player_dropped else '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No processed waiver claims yet.</p>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

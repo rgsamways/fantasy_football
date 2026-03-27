@@ -26,9 +26,9 @@
 {% endblock %}
 
 {% block vertical_nav %}
-<a href="{{ url_for('profile') }}" data-label="Details" class="{{ 'active' if active_tab == 'details' }}"><i data-lucide="user-circle"></i></a>
-<a href="{{ url_for('profile_achievements') }}" data-label="Achievements" class="{{ 'active' if active_tab == 'achievements' }}"><i data-lucide="trophy"></i></a>
-<a href="{{ url_for('profile_actions') }}" data-label="Actions" class="{{ 'active' if active_tab == 'actions' }}"><i data-lucide="settings"></i></a>
+<a href="{{ url_for('profile') }}" data-label="Details" class="{{ 'active' if active_tab == 'details' }}"><i data-lucide="user-circle"></i> Details</a>
+<a href="{{ url_for('profile_achievements') }}" data-label="Achievements" class="{{ 'active' if active_tab == 'achievements' }}"><i data-lucide="trophy"></i> Achievements</a>
+<a href="{{ url_for('profile_actions') }}" data-label="Actions" class="{{ 'active' if active_tab == 'actions' }}"><i data-lucide="settings"></i> Actions</a>
 {% endblock %}
 
 {% block content %}

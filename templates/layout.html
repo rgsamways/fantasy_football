@@ -27,9 +27,10 @@
             <div class="nav-links">
                 <a href="{{ url_for('nfl_home') }}" class="{{ 'active' if request.path.startswith('/nfl') or request.endpoint in ['nfl', 'nfl_home', 'nfl_teams', 'nfl_players', 'nfl_player', 'nfl_team', 'nfl_standings', 'nfl_schedule', 'nfl_rumors'] }}">NFL</a>
                 <a href="{{ url_for('leagues') }}" class="{{ 'active' if request.endpoint in ['leagues', 'leagues_my', 'leagues_public', 'leagues_find', 'league_home', 'league_teams', 'league_rules', 'league_team'] }}">Leagues</a>
+                <a href="{{ url_for('social_home') }}" class="{{ 'active' if request.endpoint in ['social_home'] }}">Social</a>
                 {% if session.get('user_id') %}
                     <a href="{{ url_for('profile') }}" class="{{ 'active' if request.endpoint in ['profile', 'profile_details', 'profile_achievements', 'profile_actions'] }}">Profile</a>
-                    <a href="{{ url_for('logout') }}">Logout ({{ session.get('username') }})</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="{{ 'active' if request.endpoint == 'login' }}">Login</a>
                     <a href="{{ url_for('register') }}" class="{{ 'active' if request.endpoint == 'register' }}">Register</a>

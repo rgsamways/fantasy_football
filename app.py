@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from database import db
 from dotenv import load_dotenv
 
@@ -479,6 +479,17 @@ def nfl():
 @app.route('/nfl/home')
 def nfl_home():
     return render_template('nfl_home.html', active_tab='home')
+
+@app.route('/social')
+def social_home():
+    # Placeholder channels — replace with DB-backed channels when ready
+    channels = [
+        {'name': 'general', 'description': 'General fantasy football discussion', 'member_count': 0},
+        {'name': 'trades', 'description': 'Trade talk and analysis', 'member_count': 0},
+        {'name': 'waiver-wire', 'description': 'Waiver wire pickups and drops', 'member_count': 0},
+        {'name': 'trash-talk', 'description': 'All the banter you can handle', 'member_count': 0},
+    ]
+    return render_template('social_home.html', active_tab='home', channels=channels)
 
 @app.route('/nfl/teams')
 def nfl_teams():
@@ -1382,14 +1393,411 @@ def league_invite(league_id):
     email = request.form.get('email')
     if not email:
         flash("Email address is required.", "error")
-        return redirect(url_for('league_home', league_id=league_id))
+        return redirect(url_for('league_invites', league_id=league_id))
     token = db.create_invitation(league_id, email, session['user_id'])
     invite_url = url_for('join_by_token', token=token, _external=True)
     print(f"\n[MOCK EMAIL SERVICE] To: {email}")
     print(f"Subject: You've been invited to join {league['name']}!")
     print(f"Link: {invite_url}\n")
     flash(f"Invitation sent to {email}!", "success")
-    return redirect(url_for('league_home', league_id=league_id))
+    return redirect(url_for('league_invites', league_id=league_id))
+
+@app.route('/league/<league_id>/invites')
+def league_invites(league_id):
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+    pending_invites = db.get_league_invitations(league_id) if is_admin else []
+    return render_template('league_invites.html', league=league, is_admin=is_admin, pending_invites=pending_invites)
+
+@app.route('/league/<league_id>/waivers')
+def league_waivers(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+
+    user_id = session['user_id']
+    current_week = league.get('current_week', 1)
+
+    # Build ownership map
+    all_rosters = list(db.rosters.find({"league_id": league_id}))
+    from bson import ObjectId
+    users_data = {str(u['_id']): u for u in db.users.find({"_id": {"$in": [ObjectId(r['user_id']) for r in all_rosters]}})}
+    player_ownership = {}
+    for roster in all_rosters:
+        owner = users_data.get(roster['user_id'])
+        owner_name = (roster.get('team', {}).get('name') if roster.get('team') else None) or (owner['username'] if owner else 'Unknown')
+        for p_id in roster.get('player_ids', []):
+            player_ownership[p_id] = {'owner_id': roster['user_id'], 'owner_name': owner_name}
+
+    # My roster for drop candidates
+    my_roster = db.get_roster(user_id, league_id)
+    my_player_ids = my_roster.get('player_ids', []) if my_roster else []
+    my_players = []
+    for p_id in my_player_ids:
+        p = db.get_player_by_id(p_id)
+        if p:
+            my_players.append({'id': p_id, 'name': p.get('name', 'Unknown'), 'position': p.get('position', '?')})
+
+    # My pending claims this week
+    my_claims = db.get_user_waiver_claims(league_id, user_id, current_week)
+    claimed_player_ids = {c['player_id'] for c in my_claims if c['status'] == 'Pending'}
+
+    # Decorate claims with player/drop names
+    player_cache = {}
+    def _pname(pid):
+        if pid and pid not in player_cache:
+            p = db.get_player_by_id(pid)
+            player_cache[pid] = p.get('name', 'Unknown') if p else 'Unknown'
+        return player_cache.get(pid, '—')
+
+    for c in my_claims:
+        c['player_name'] = _pname(c['player_id'])
+        c['drop_name'] = _pname(c['drop_player_id']) if c['drop_player_id'] else '—'
+
+    # Waiver priority list
+    priority = db.get_waiver_priority(league_id)
+    priority_display = []
+    for i, uid in enumerate(priority):
+        u = db.get_user_by_id(uid)
+        r = db.get_roster(uid, league_id)
+        team_name = (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+        priority_display.append({'rank': i + 1, 'team_name': team_name, 'is_me': uid == user_id})
+
+    # Recent processed claims (last 20)
+    all_claims = db.get_waiver_claims(league_id)
+    processed = sorted(
+        [c for c in all_claims if c['status'] in ('Awarded', 'Failed', 'Cancelled')],
+        key=lambda c: c.get('processed_at') or c['created_at'], reverse=True
+    )[:20]
+    for c in processed:
+        c['player_name'] = _pname(c['player_id'])
+        c['drop_name'] = _pname(c['drop_player_id']) if c['drop_player_id'] else '—'
+        u = db.get_user_by_id(c['user_id'])
+        r = db.get_roster(c['user_id'], league_id)
+        c['team_name'] = (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+
+    all_season_data = get_all_player_data(league_id)
+
+    # Build free agent list
+    owned_ids = set(player_ownership.keys())
+    free_agents = []
+    for p in db.get_all_players():
+        if p['id'] not in owned_ids:
+            pd = all_season_data.get(p['id'], {})
+            free_agents.append({
+                'id': p['id'],
+                'name': p.get('name', 'Unknown'),
+                'position': p.get('position', '?'),
+                'team': p.get('team', '?'),
+                'points': round(pd.get('points', 0.0), 2),
+                'already_claimed': p['id'] in claimed_player_ids,
+            })
+    free_agents.sort(key=lambda x: x['points'], reverse=True)
+
+    return render_template('league_waivers.html',
+        league=league, is_admin=is_admin,
+        current_week=current_week,
+        my_players=my_players,
+        my_claims=my_claims,
+        claimed_player_ids=list(claimed_player_ids),
+        priority_display=priority_display,
+        processed_claims=processed,
+        player_ownership=player_ownership,
+        free_agents=free_agents,
+    )
+
+
+@app.route('/league/<league_id>/waivers/claim', methods=['POST'])
+def waiver_claim(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+
+    user_id = session['user_id']
+    player_id = request.form.get('player_id', '').strip()
+    drop_player_id = request.form.get('drop_player_id', '').strip() or None
+    current_week = league.get('current_week', 1)
+
+    if not player_id:
+        flash("No player selected.", "error")
+        return redirect(url_for('league_waivers', league_id=league_id))
+
+    # Check player isn't already owned
+    all_rosters = list(db.rosters.find({"league_id": league_id}))
+    owned = {p_id for r in all_rosters for p_id in r.get('player_ids', [])}
+    if player_id in owned:
+        flash("That player is already on a roster.", "error")
+        return redirect(url_for('league_waivers', league_id=league_id))
+
+    # Check no duplicate pending claim for same player
+    existing = db.get_user_waiver_claims(league_id, user_id, current_week)
+    if any(c['player_id'] == player_id and c['status'] == 'Pending' for c in existing):
+        flash("You already have a pending claim for that player.", "error")
+        return redirect(url_for('league_waivers', league_id=league_id))
+
+    priority_list = db.get_waiver_priority(league_id)
+    priority = priority_list.index(user_id) if user_id in priority_list else 999
+
+    db.submit_waiver_claim(league_id, user_id, player_id, drop_player_id, current_week, priority)
+    flash("Waiver claim submitted.", "success")
+    return redirect(url_for('league_waivers', league_id=league_id))
+
+
+@app.route('/league/<league_id>/waivers/cancel/<claim_id>', methods=['POST'])
+def waiver_cancel(league_id, claim_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    db.cancel_waiver_claim(claim_id, session['user_id'])
+    flash("Claim cancelled.", "info")
+    return redirect(url_for('league_waivers', league_id=league_id))
+
+
+@app.route('/league/<league_id>/waivers/process', methods=['POST'])
+def waiver_process(league_id):
+    """Admin-triggered waiver processing."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league or not is_admin:
+        flash("Unauthorized.", "error")
+        return redirect(url_for('leagues'))
+
+    current_week = league.get('current_week', 1)
+    pending = db.get_waiver_claims(league_id, status='Pending', week_number=current_week)
+    # Sort by priority then created_at
+    pending.sort(key=lambda c: (c['priority'], c['created_at']))
+
+    awarded_players = set()  # player_ids already awarded this run
+    max_roster = league.get('rules', {}).get('roster', {}).get('max_roster_size', 15)
+    awarded = 0
+    failed = 0
+
+    for claim in pending:
+        user_id = claim['user_id']
+        player_id = claim['player_id']
+        drop_id = claim['drop_player_id']
+
+        # Skip if player already awarded to someone else
+        if player_id in awarded_players:
+            db.update_waiver_claim_status(claim['id'], 'Failed', 'Player already awarded to another team')
+            failed += 1
+            continue
+
+        # Check player still free
+        all_rosters = list(db.rosters.find({"league_id": league_id}))
+        owned = {p_id for r in all_rosters for p_id in r.get('player_ids', [])}
+        if player_id in owned:
+            db.update_waiver_claim_status(claim['id'], 'Failed', 'Player no longer available')
+            failed += 1
+            continue
+
+        # Check roster space (after drop)
+        my_roster = db.get_roster(user_id, league_id)
+        my_ids = list(my_roster.get('player_ids', [])) if my_roster else []
+        if drop_id and drop_id in my_ids:
+            my_ids.remove(drop_id)
+        if len(my_ids) >= max_roster:
+            db.update_waiver_claim_status(claim['id'], 'Failed', 'Roster full — no drop player specified or drop invalid')
+            failed += 1
+            continue
+
+        # Execute: drop then add
+        if drop_id:
+            final_ids = [p for p in (my_roster.get('player_ids', []) if my_roster else []) if p != drop_id]
+        else:
+            final_ids = list(my_roster.get('player_ids', [])) if my_roster else []
+        final_ids.append(player_id)
+        db.update_roster(user_id, league_id, final_ids)
+
+        db.update_waiver_claim_status(claim['id'], 'Awarded')
+        awarded_players.add(player_id)
+        db.rotate_waiver_priority(league_id, user_id)
+
+        # Cancel other pending claims for the same player
+        for other in pending:
+            if other['player_id'] == player_id and other['id'] != claim['id'] and other['status'] == 'Pending':
+                db.update_waiver_claim_status(other['id'], 'Failed', 'Player awarded to higher priority team')
+
+        awarded += 1
+
+    flash(f"Waivers processed: {awarded} awarded, {failed} failed.", "success")
+    return redirect(url_for('league_waivers', league_id=league_id))
+
+
+@app.route('/league/<league_id>/waivers/search')
+def waiver_search(league_id):
+    if 'user_id' not in session:
+        return jsonify([])
+    q = request.args.get('q', '').lower()
+    if len(q) < 2:
+        return jsonify([])
+    all_rosters = list(db.rosters.find({"league_id": league_id}))
+    owned = {p_id for r in all_rosters for p_id in r.get('player_ids', [])}
+    results = [
+        {'id': p['id'], 'name': p['name'], 'position': p['position'], 'team': p.get('team', '')}
+        for p in db.get_all_players()
+        if p['id'] not in owned and (q in p['name'].lower() or q in p.get('team', '').lower() or q in p['position'].lower())
+    ][:20]
+    return jsonify(results)
+
+
+@app.route('/league/<league_id>/transactions')
+def league_transactions(league_id):
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+
+    all_trades = db.get_league_trades(league_id)
+    completed_trades = [t for t in all_trades if t['status'] == 'Finalized']
+    completed_trades.sort(key=lambda t: t.get('status_modified') or t['_id'].generation_time, reverse=True)
+
+    # Resolve player names and team names
+    user_cache = {}
+    player_cache = {}
+    roster_cache = {}
+
+    def get_team_name(user_id):
+        if user_id not in user_cache:
+            u = db.get_user_by_id(user_id)
+            r = db.get_roster(user_id, league_id)
+            roster_cache[user_id] = r
+            user_cache[user_id] = {
+                'username': u['username'] if u else 'Unknown',
+                'team_name': (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+            }
+        return user_cache[user_id]['team_name']
+
+    def get_player_name(player_id):
+        if player_id not in player_cache:
+            p = db.get_player_by_id(player_id)
+            player_cache[player_id] = p.get('name', 'Unknown') if p else 'Unknown'
+        return player_cache[player_id]
+
+    decorated = []
+    for t in completed_trades:
+        o_id = t['team_offering']['team_id']
+        r_id = t['team_responding']['team_id']
+        decorated.append({
+            'id': t['id'],
+            'date': t.get('status_modified') or t['_id'].generation_time,
+            'offering_team': get_team_name(o_id),
+            'responding_team': get_team_name(r_id),
+            'offering_players': [get_player_name(p) for p in t['team_offering'].get('player_ids', [])],
+            'responding_players': [get_player_name(p) for p in t['team_responding'].get('player_ids', [])],
+            'offering_picks': t['team_offering'].get('draft_picks', []),
+            'responding_picks': t['team_responding'].get('draft_picks', []),
+        })
+
+    # Awarded waiver claims
+    all_claims = db.get_waiver_claims(league_id)
+    awarded_claims = sorted(
+        [c for c in all_claims if c['status'] == 'Awarded'],
+        key=lambda c: c.get('processed_at') or c['created_at'], reverse=True
+    )
+    decorated_waivers = []
+    for c in awarded_claims:
+        u = db.get_user_by_id(c['user_id'])
+        r = db.get_roster(c['user_id'], league_id)
+        team_name = (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+        decorated_waivers.append({
+            'date': c.get('processed_at') or c['created_at'],
+            'week': c.get('week_number', '—'),
+            'team_name': team_name,
+            'player_added': get_player_name(c['player_id']),
+            'player_dropped': get_player_name(c['drop_player_id']) if c.get('drop_player_id') else None,
+        })
+
+    active_tab = request.args.get('tab', 'trades')
+    return render_template('league_transactions.html', league=league, is_admin=is_admin,
+                           completed_trades=decorated, awarded_waivers=decorated_waivers,
+                           active_tab=active_tab)
+
+@app.route('/league/<league_id>/watchlist')
+def league_watchlist(league_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    league, is_admin = get_league_context(league_id)
+    if not league:
+        flash("League not found.", "error")
+        return redirect(url_for('leagues'))
+    user_id = session['user_id']
+    watchlist_ids = db.get_watchlist(user_id, league_id)
+
+    # Build ownership map
+    all_rosters = list(db.rosters.find({"league_id": league_id}))
+    from bson import ObjectId
+    users_data = {str(u['_id']): u for u in db.users.find({"_id": {"$in": [ObjectId(r['user_id']) for r in all_rosters]}})}
+    player_ownership = {}
+    for roster in all_rosters:
+        owner = users_data.get(roster['user_id'])
+        owner_name = (roster.get('team', {}).get('name') if roster.get('team') else None) or (owner['username'] if owner else 'Unknown')
+        for p_id in roster.get('player_ids', []):
+            player_ownership[p_id] = {'owner_id': roster['user_id'], 'owner_name': owner_name}
+
+    all_season_data = get_all_player_data(league_id)
+    my_roster = db.get_roster(user_id, league_id)
+    my_player_ids = set(my_roster.get('player_ids', [])) if my_roster else set()
+
+    watchlist_players = []
+    for p_id in watchlist_ids:
+        p = db.get_player_by_id(p_id)
+        if not p:
+            continue
+        pd = all_season_data.get(p_id, {})
+        ownership = player_ownership.get(p_id)
+        watchlist_players.append({
+            'id': p_id,
+            'name': p.get('name', 'Unknown'),
+            'position': p.get('position', '?'),
+            'team': p.get('team', '?'),
+            'points': round(pd.get('points', 0.0), 2),
+            'owned_by': ownership['owner_name'] if ownership else None,
+            'owner_id': ownership['owner_id'] if ownership else None,
+            'is_mine': p_id in my_player_ids,
+            'in_league': bool(ownership),
+        })
+    watchlist_players.sort(key=lambda x: x['points'], reverse=True)
+
+    return render_template('league_watchlist.html', league=league, is_admin=is_admin,
+                           watchlist_players=watchlist_players, watchlist_ids=watchlist_ids)
+
+@app.route('/league/<league_id>/watchlist/add/<player_id>', methods=['POST'])
+def watchlist_add(league_id, player_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    db.add_to_watchlist(session['user_id'], league_id, player_id)
+    return redirect(request.referrer or url_for('league_watchlist', league_id=league_id))
+
+@app.route('/league/<league_id>/watchlist/remove/<player_id>', methods=['POST'])
+def watchlist_remove(league_id, player_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    db.remove_from_watchlist(session['user_id'], league_id, player_id)
+    return redirect(request.referrer or url_for('league_watchlist', league_id=league_id))
+
+@app.route('/league/<league_id>/watchlist/search')
+def watchlist_search(league_id):
+    if 'user_id' not in session:
+        return jsonify([])
+    q = request.args.get('q', '').lower()
+    if len(q) < 2:
+        return jsonify([])
+    all_players = db.get_all_players()
+    results = [
+        {'id': p['id'], 'name': p['name'], 'position': p['position'], 'team': p.get('team', '')}
+        for p in all_players
+        if q in p['name'].lower() or q in p.get('team', '').lower() or q in p['position'].lower()
+    ][:20]
+    return jsonify(results)
 
 @app.route('/join/<token>')
 def join_by_token(token):
@@ -1549,7 +1957,138 @@ def league_home(league_id):
                 'pick_count': len(trade['team_offering'].get('draft_picks', [])) + len(trade['team_responding'].get('draft_picks', []))
             })
 
-    return render_template('league_home.html', league=league, members=members, is_admin=is_admin, pending_invites=pending_invites, pending_trades=pending_trades)
+    # Build standings for sidebar
+    season = league.get('current_season', 2026)
+    all_points_data = get_all_player_data(league_id)
+    slots = get_league_roster_slots(league)
+    all_matchups = db.get_all_league_matchups(league_id, season)
+    standings_map = {}
+    for m_obj in members:
+        standings_map[m_obj['id']] = {
+            'team_name': m_obj['team_name'], 'wins': 0, 'losses': 0, 'ties': 0,
+            'points_for': 0.0, 'pct': 0.0
+        }
+    def _weekly_score(u_id, _week):
+        roster = db.get_roster(u_id, league_id)
+        if not roster: return 0.0
+        starter_ids = roster.get('starters', {})
+        return round(sum(all_points_data.get(starter_ids.get(sl), {}).get('points', 0.0) for sl in slots), 2)
+    for m in all_matchups:
+        if m['status'] == 'scheduled':
+            h_id, a_id = m['home_id'], m['away_id']
+            h_score = _weekly_score(h_id, m['week_number'])
+            a_score = _weekly_score(a_id, m['week_number'])
+            for uid, my_score, opp_score in [(h_id, h_score, a_score), (a_id, a_score, h_score)]:
+                if uid in standings_map:
+                    standings_map[uid]['points_for'] += my_score
+                    if my_score > opp_score: standings_map[uid]['wins'] += 1
+                    elif opp_score > my_score: standings_map[uid]['losses'] += 1
+                    else: standings_map[uid]['ties'] += 1
+    for s in standings_map.values():
+        total = s['wins'] + s['losses'] + s['ties']
+        s['pct'] = (s['wins'] + 0.5 * s['ties']) / total if total > 0 else 0.0
+        s['points_for'] = round(s['points_for'], 2)
+    standings_list = sorted(standings_map.values(), key=lambda x: (x['pct'], x['points_for']), reverse=True)
+
+    # Build current user's roster for display
+    my_roster_players = []
+    if current_user_id and current_user_id in league.get('user_ids', []):
+        my_roster = db.get_roster(current_user_id, league_id)
+        if my_roster:
+            starter_ids = set(my_roster.get('starters', {}).values())
+            for p_id in my_roster.get('player_ids', []):
+                p = db.get_player_by_id(p_id)
+                if p:
+                    my_roster_players.append({
+                        'name': p.get('name', 'Unknown'),
+                        'position': p.get('position', '?'),
+                        'team': p.get('team', '?'),
+                        'is_starter': p_id in starter_ids,
+                    })
+            my_roster_players.sort(key=lambda x: (0 if x['is_starter'] else 1, x['position'], x['name']))
+
+    # Build current week matchups for sidebar
+    current_week = league.get('current_week', 1)
+    week_matchups = db.get_league_matchups(league_id, current_week, season)
+    for m in week_matchups:
+        for side in ['home', 'away']:
+            u_id = m[f'{side}_id']
+            from bson import ObjectId
+            user = db.users.find_one({"_id": ObjectId(u_id)})
+            roster = db.get_roster(u_id, league_id)
+            m[f'{side}_name'] = (roster.get('team', {}).get('name') if roster else None) or (user['username'] if user else 'Unknown')
+            starter_ids = roster.get('starters', {}) if roster else {}
+            m[f'{side}_score'] = round(sum(all_points_data.get(starter_ids.get(sl), {}).get('points', 0.0) for sl in slots), 2)
+
+    # Build message board preview
+    board_threads = db.get_threads(league_id)
+    user_cache = {}
+    def _get_username(uid):
+        if uid not in user_cache:
+            u = db.get_user_by_id(uid)
+            user_cache[uid] = u['username'] if u else 'Unknown'
+        return user_cache[uid]
+    for t in board_threads[:5]:  # limit to 5 most recent threads
+        t['author_name'] = _get_username(t['author_id'])
+        for p in t.get('posts', []):
+            p['author_name'] = _get_username(p['author_id'])
+
+    # Build watchlist for sidebar
+    home_watchlist = []
+    if current_user_id and current_user_id in league.get('user_ids', []):
+        watchlist_ids = db.get_watchlist(current_user_id, league_id)
+        all_rosters = list(db.rosters.find({"league_id": league_id}))
+        player_ownership = {}
+        for r in all_rosters:
+            for p_id in r.get('player_ids', []):
+                player_ownership[p_id] = r['user_id']
+        my_player_ids = set(db.get_roster(current_user_id, league_id).get('player_ids', []) if db.get_roster(current_user_id, league_id) else [])
+        for p_id in watchlist_ids:
+            p = db.get_player_by_id(p_id)
+            if p:
+                home_watchlist.append({
+                    'id': p_id,
+                    'name': p.get('name', 'Unknown'),
+                    'position': p.get('position', '?'),
+                    'points': round(all_points_data.get(p_id, {}).get('points', 0.0), 2),
+                    'is_mine': p_id in my_player_ids,
+                    'in_league': p_id in player_ownership,
+                })
+        home_watchlist.sort(key=lambda x: x['points'], reverse=True)
+
+    # Build recent transactions for home page
+    all_trades = db.get_league_trades(league_id)
+    recent_trades = sorted(
+        [t for t in all_trades if t['status'] == 'Finalized'],
+        key=lambda t: t.get('status_modified') or t['_id'].generation_time,
+        reverse=True
+    )[:5]
+    trade_user_cache = {}
+    trade_player_cache = {}
+    def _trade_team(uid):
+        if uid not in trade_user_cache:
+            u = db.get_user_by_id(uid)
+            r = db.get_roster(uid, league_id)
+            trade_user_cache[uid] = (r.get('team', {}).get('name') if r else None) or (u['username'] if u else 'Unknown')
+        return trade_user_cache[uid]
+    def _trade_player(pid):
+        if pid not in trade_player_cache:
+            p = db.get_player_by_id(pid)
+            trade_player_cache[pid] = p.get('name', 'Unknown') if p else 'Unknown'
+        return trade_player_cache[pid]
+    decorated_trades = []
+    for t in recent_trades:
+        decorated_trades.append({
+            'date': t.get('status_modified') or t['_id'].generation_time,
+            'offering_team': _trade_team(t['team_offering']['team_id']),
+            'responding_team': _trade_team(t['team_responding']['team_id']),
+            'offering_players': [_trade_player(p) for p in t['team_offering'].get('player_ids', [])],
+            'responding_players': [_trade_player(p) for p in t['team_responding'].get('player_ids', [])],
+            'offering_picks': t['team_offering'].get('draft_picks', []),
+            'responding_picks': t['team_responding'].get('draft_picks', []),
+        })
+
+    return render_template('league_home.html', league=league, members=members, is_admin=is_admin, pending_invites=pending_invites, pending_trades=pending_trades, standings=standings_list, my_roster_players=my_roster_players, week_matchups=week_matchups, current_week=current_week, home_watchlist=home_watchlist, board_threads=board_threads, recent_trades=decorated_trades)
 
 @app.route('/league/<league_id>/edit', methods=['GET', 'POST'])
 def edit_league(league_id):
@@ -1777,6 +2316,7 @@ def league_teams(league_id):
             user['starters'] = roster_starters
             user['bench'] = bench_players
             user['total_points'] = round(sum(p['points'] for p in roster_starters.values() if p), 2)
+            user['team_name'] = (roster.get('team', {}).get('name') if roster else None) or user['username']
             all_members[u_id] = user
     grouped_teams = []
     assigned_user_ids = set()
@@ -2970,7 +3510,7 @@ def accept_trade(league_id, trade_id):
             db.award_achievement(u_id, 'asset_manager')
 
     # Quick Draw — responder accepted within 1 hour of trade creation
-    from datetime import timezone as tz
+    from datetime import datetime, timezone as tz
     created = trade.get('status_modified') or trade.get('_id').generation_time
     now_utc = datetime.now(tz.utc)
     if hasattr(created, 'tzinfo') and created.tzinfo is None:

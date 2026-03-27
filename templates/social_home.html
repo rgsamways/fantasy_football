@@ -1,0 +1,32 @@
+{% extends "social_layout.html" %}
+
+{% block layout_class %}no-sidebars{% endblock %}
+
+{% block social_content %}
+<div class="card panel">
+    <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;">
+        <h3 style="margin: 0;">Social Channels</h3>
+    </div>
+
+    {% if channels %}
+    <div style="display: flex; flex-direction: column; gap: 7px;">
+        {% for channel in channels %}
+        <div class="card" style="padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: bold; font-size: 1em;"># {{ channel.name }}</div>
+                {% if channel.description %}
+                <div style="color: var(--muted-color); font-size: 0.85em; margin-top: 3px;">{{ channel.description }}</div>
+                {% endif %}
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="color: var(--muted-color); font-size: 0.8em;">{{ channel.member_count }} member{{ 's' if channel.member_count != 1 }}</span>
+                <a href="#" class="btn btn-sm">Join</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No channels yet. Check back soon.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -7,8 +7,8 @@
         <div style="text-align: center; margin-bottom: 15px;">
             <div style="font-size: 1.5rem; margin-bottom: 5px;">👤</div>
             <h4 style="margin: 5px 0; font-size: 1.2em; color: var(--primary-color);">
-                {% if member.roster and member.roster.team and member.roster.team.name %}
-                    {{ member.roster.team.name }}
+                {% if member.team_name and member.team_name != member.username %}
+                    {{ member.team_name }}
                     <br><small class="muted" style="font-weight: normal; font-size: 0.75em;">Manager: {{ member.username }}</small>
                 {% else %}
                     {{ member.username }}
@@ -99,7 +99,7 @@
                 All Teams (A-Z)
             </h3>
             <div class="teams-grid" style="display: flex; flex-wrap: wrap; gap: 15px;">
-                {% for member in all_members | sort(attribute='roster.team.name', case_sensitive=False) %}
+                {% for member in all_members | sort(attribute='team_name', case_sensitive=False) %}
                     {{ render_team_card(member, league, is_admin) }}
                 {% endfor %}
             </div>
