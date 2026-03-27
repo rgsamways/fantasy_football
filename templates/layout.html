@@ -21,10 +21,13 @@
     </script>
 </head>
 <body>
-    <nav>
+    <nav id="mainNav">
         <div class="nav-container">
             <a href="{{ url_for('index') }}" class="brand">NFL Fantasy</a>
-            <div class="nav-links">
+            <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
                 <a href="{{ url_for('nfl_home') }}" class="{{ 'active' if request.path.startswith('/nfl') or request.endpoint in ['nfl', 'nfl_home', 'nfl_teams', 'nfl_players', 'nfl_player', 'nfl_team', 'nfl_standings', 'nfl_schedule', 'nfl_rumors'] }}">NFL</a>
                 <a href="{{ url_for('leagues') }}" class="{{ 'active' if request.endpoint in ['leagues', 'leagues_my', 'leagues_public', 'leagues_find', 'league_home', 'league_teams', 'league_rules', 'league_team'] }}">Leagues</a>
                 <a href="{{ url_for('pools') }}" class="{{ 'active' if request.endpoint in ['pools', 'pools_my', 'pools_public', 'pools_find', 'pools_types', 'pool_home', 'pool_members', 'pool_rules', 'pool_picks'] }}">Pools</a>
@@ -138,6 +141,25 @@
         });
 
         window.updateToggleIcon();
+
+        // Hamburger menu toggle
+        const hamburger = document.getElementById('navHamburger');
+        const navLinks = document.getElementById('navLinks');
+        if (hamburger && navLinks) {
+            hamburger.addEventListener('click', function() {
+                const open = navLinks.classList.toggle('nav-open');
+                hamburger.setAttribute('aria-expanded', open);
+                hamburger.classList.toggle('is-open', open);
+            });
+            // Close menu when a link is clicked
+            navLinks.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    navLinks.classList.remove('nav-open');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                    hamburger.classList.remove('is-open');
+                });
+            });
+        }
 
         // Initialize Flatpickr on all .datepicker inputs
         flatpickr('.datepicker', {

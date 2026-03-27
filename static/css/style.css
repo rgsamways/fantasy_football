@@ -667,6 +667,34 @@ div[class*='actions'] > div {
     flex-direction: column;
 }
 
+/* Hamburger button (hidden on desktop) */
+.nav-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--nav-text);
+    cursor: pointer;
+    padding: 7px 10px;
+    border-radius: 0;
+    margin-left: auto;
+}
+
+.nav-hamburger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--nav-text);
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+/* Animate to × when open */
+.nav-hamburger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.is-open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
 /* Dark mode toggle button */
 .theme-toggle {
     background: none;
@@ -857,6 +885,52 @@ div[class*='actions'] > div {
         display: none;
     }
 
+    /* Top nav hamburger */
+    #mainNav {
+        position: relative;
+    }
+
+    .nav-hamburger {
+        display: flex;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--nav-bg);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 8px 0;
+        z-index: 300;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .nav-links.nav-open {
+        display: flex;
+    }
+
+    .nav-links a {
+        margin-left: 0;
+        padding: 11px 20px;
+        border-bottom: none;
+        width: 100%;
+    }
+
+    .nav-links a.active {
+        border-bottom: none;
+        border-left: 3px solid var(--primary-color);
+        padding-left: 17px;
+    }
+
+    .theme-toggle {
+        margin: 6px 20px 4px;
+        align-self: flex-start;
+    }
+
     /* Push page content above the bottom nav */
     .page-main {
         padding-bottom: 68px;
@@ -894,5 +968,12 @@ div[class*='actions'] > div {
     .pick7-team-grid,
     .pick7-slots-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Tables in main content scroll horizontally instead of overflowing */
+    .page-main table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
