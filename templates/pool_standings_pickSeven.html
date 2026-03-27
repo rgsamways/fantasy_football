@@ -8,12 +8,12 @@
 <div class="card panel">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
-            <h2 style="margin: 0; color: var(--primary-color);">PickEm Standings</h2>
+            <h2 style="margin: 0; color: var(--primary-color);">Pick Seven Standings</h2>
             <p style="margin: 6px 0 0; color: var(--muted-color); font-size: 0.9em;">
                 {{ standings | length }} players &nbsp;·&nbsp; Week {{ current_week }}
             </p>
         </div>
-        <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm">Make Pick (Wk {{ current_week }})</a>
+        <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm">Make Picks (Wk {{ current_week }})</a>
     </div>
 </div>
 
@@ -26,7 +26,7 @@
                 <th style="padding: 8px 12px; text-align: right;">Total Pts</th>
                 <th style="padding: 8px 12px; text-align: center; color: var(--muted-color); font-size: 0.85em;">Wk Wins</th>
                 {% for wk in weeks %}
-                <th style="padding: 8px 10px; text-align: center; min-width: 60px;">Wk {{ wk }}</th>
+                <th style="padding: 8px 10px; text-align: center; min-width: 80px;">Wk {{ wk }}</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -51,13 +51,17 @@
                     {% set is_weekly_winner = entry.id in (weekly_winners.get(wk) or []) %}
                     <td style="padding: 6px 10px; text-align: center;">
                         {% if pick and pick.result == 'Scored' %}
-                            <span style="display: inline-block; background: {% if is_weekly_winner %}#f39c12{% else %}var(--table-header-bg){% endif %}; color: {% if is_weekly_winner %}white{% else %}var(--text-color){% endif %}; font-weight: bold; font-size: 0.78em; padding: 3px 7px; border-radius: 3px;" title="{{ pick.team_name }}">
-                                {{ pick.team_alias }}<br>
-                                <span style="font-weight: normal; font-size: 0.9em;">{{ pick.points }} pts</span>
+                            <span style="display: inline-block; background: {% if is_weekly_winner %}#f39c12{% else %}var(--table-header-bg){% endif %}; color: {% if is_weekly_winner %}white{% else %}var(--text-color){% endif %}; font-weight: bold; font-size: 0.75em; padding: 3px 6px; border-radius: 3px; line-height: 1.5; cursor: default;"
+                                  title="QB: {{ pick.qb_name }} ({{ pick.qb_points }}) | RB: {{ pick.rb_name }} ({{ pick.rb_points }}) | WR: {{ pick.wr_name }} ({{ pick.wr_points }}) | TE: {{ pick.te_name }} ({{ pick.te_points }}) | K: {{ pick.k_name }} ({{ pick.k_points }}) | OFF: {{ pick.off_alias }} ({{ pick.off_points }}) | DEF: {{ pick.def_alias }} ({{ pick.def_points }})">
+                                {{ pick.off_alias }}/{{ pick.def_alias }}<br>
+                                <span style="font-weight: normal; font-size: 0.9em;">{{ pick.total_points }} pts</span>
                             </span>
                         {% elif pick and pick.result == 'Pending' %}
                             {% if pick.user_id == current_user_id or is_admin %}
-                                <span style="display: inline-block; background: var(--primary-color); color: white; font-weight: bold; font-size: 0.78em; padding: 3px 7px; border-radius: 3px; opacity: 0.7;" title="{{ pick.team_name }}">{{ pick.team_alias }}</span>
+                                <span style="display: inline-block; background: var(--primary-color); color: white; font-weight: bold; font-size: 0.75em; padding: 3px 6px; border-radius: 3px; opacity: 0.7;"
+                                      title="QB: {{ pick.qb_name }} | RB: {{ pick.rb_name }} | WR: {{ pick.wr_name }} | TE: {{ pick.te_name }} | K: {{ pick.k_name }} | OFF: {{ pick.off_alias }} | DEF: {{ pick.def_alias }}">
+                                    Pending
+                                </span>
                             {% else %}
                                 <span style="color: var(--border-color); font-size: 0.8em;">Hidden</span>
                             {% endif %}
@@ -77,9 +81,10 @@
 </div>
 
 <div style="font-size: 0.8em; color: var(--muted-color); display: flex; gap: 16px; flex-wrap: wrap;">
-    <span><span style="display: inline-block; background: #f39c12; color: white; padding: 2px 6px; border-radius: 2px; font-size: 0.9em;">KC / 27</span> Weekly high scorer</span>
-    <span><span style="display: inline-block; background: var(--table-header-bg); color: var(--text-color); padding: 2px 6px; border-radius: 2px; font-size: 0.9em;">BUF / 21</span> Scored</span>
-    <span><span style="color: var(--border-color); font-size: 0.9em;">Hidden</span> Pick not yet revealed (pending)</span>
+    <span><span style="display: inline-block; background: #f39c12; color: white; padding: 2px 6px; border-radius: 2px; font-size: 0.9em;">KC/BUF / 38.5</span> Weekly high scorer</span>
+    <span><span style="display: inline-block; background: var(--table-header-bg); color: var(--text-color); padding: 2px 6px; border-radius: 2px; font-size: 0.9em;">KC/BUF / 31.2</span> Scored</span>
+    <span><span style="color: var(--border-color); font-size: 0.9em;">Hidden</span> Picks not yet revealed (pending)</span>
+    <span style="color: var(--muted-color);">Hover a scored cell to see the full breakdown.</span>
 </div>
 
 </div>

@@ -30,6 +30,7 @@ class Database:
         self.waiver_claims = self.db.waiver_claims
         self.survivor_picks = self.db.survivor_picks
         self.pickem_picks = self.db.pickem_picks
+        self.pick_seven_picks = self.db.pick_seven_picks
 
     def create_announcement(self, announcement_type, message, user_id):
         import uuid
@@ -181,7 +182,7 @@ class Database:
     def delete_survivor_pick(self, pool_id, user_id, week_number):
         return self.survivor_picks.delete_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
 
-    # --- Pick 'Em Picks ---
+    # --- pickem Picks ---
 
     def submit_pickem_pick(self, pool_id, user_id, week_number, team_alias, team_name):
         existing = self.pickem_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
@@ -232,6 +233,68 @@ class Database:
 
     def delete_pickem_pick(self, pool_id, user_id, week_number):
         return self.pickem_picks.delete_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    # --- Pick Seven Picks ---
+
+    def submit_pick_seven(self, pool_id, user_id, week_number, pick_data):
+        existing = self.pick_seven_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+        if existing:
+            return None
+        pick = {
+            "id": str(uuid.uuid4()),
+            "pool_id": pool_id,
+            "user_id": user_id,
+            "week_number": week_number,
+            "qb_id": pick_data.get("qb_id"), "qb_name": pick_data.get("qb_name"), "qb_points": None,
+            "rb_id": pick_data.get("rb_id"), "rb_name": pick_data.get("rb_name"), "rb_points": None,
+            "wr_id": pick_data.get("wr_id"), "wr_name": pick_data.get("wr_name"), "wr_points": None,
+            "te_id": pick_data.get("te_id"), "te_name": pick_data.get("te_name"), "te_points": None,
+            "k_id": pick_data.get("k_id"), "k_name": pick_data.get("k_name"), "k_points": None,
+            "off_alias": pick_data.get("off_alias"), "off_name": pick_data.get("off_name"), "off_points": None,
+            "def_alias": pick_data.get("def_alias"), "def_name": pick_data.get("def_name"), "def_points": None,
+            "total_points": None,
+            "result": "Pending",
+            "created_at": datetime.now(timezone.utc)
+        }
+        self.pick_seven_picks.insert_one(pick)
+        return pick
+
+    def get_pick_seven(self, pool_id, user_id, week_number):
+        return self.pick_seven_picks.find_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    def get_pick_seven_for_week(self, pool_id, week_number):
+        return list(self.pick_seven_picks.find({"pool_id": pool_id, "week_number": week_number}))
+
+    def get_all_pick_seven(self, pool_id):
+        return list(self.pick_seven_picks.find({"pool_id": pool_id}).sort("week_number", 1))
+
+    def get_user_pick_seven(self, pool_id, user_id):
+        return list(self.pick_seven_picks.find({"pool_id": pool_id, "user_id": user_id}).sort("week_number", 1))
+
+    def delete_pick_seven(self, pool_id, user_id, week_number):
+        return self.pick_seven_picks.delete_one({"pool_id": pool_id, "user_id": user_id, "week_number": week_number})
+
+    def process_pick_seven_week(self, pool_id, week_number, player_points, team_scores, points_allowed):
+        """player_points: {player_id: float}, team_scores: {alias: pts_scored}, points_allowed: {alias: pts_allowed}"""
+        picks = self.get_pick_seven_for_week(pool_id, week_number)
+        for pick in picks:
+            qb_pts = player_points.get(pick.get("qb_id"), 0.0) if pick.get("qb_id") else 0.0
+            rb_pts = player_points.get(pick.get("rb_id"), 0.0) if pick.get("rb_id") else 0.0
+            wr_pts = player_points.get(pick.get("wr_id"), 0.0) if pick.get("wr_id") else 0.0
+            te_pts = player_points.get(pick.get("te_id"), 0.0) if pick.get("te_id") else 0.0
+            k_pts = player_points.get(pick.get("k_id"), 0.0) if pick.get("k_id") else 0.0
+            off_pts = team_scores.get(pick.get("off_alias"), 0) if pick.get("off_alias") else 0
+            def_pts = points_allowed.get(pick.get("def_alias"), 0) if pick.get("def_alias") else 0
+            total = round(qb_pts + rb_pts + wr_pts + te_pts + k_pts + (off_pts - def_pts), 2)
+            self.pick_seven_picks.update_one(
+                {"id": pick["id"]},
+                {"$set": {
+                    "qb_points": qb_pts, "rb_points": rb_pts, "wr_points": wr_pts,
+                    "te_points": te_pts, "k_points": k_pts,
+                    "off_points": off_pts, "def_points": def_pts,
+                    "total_points": total, "result": "Scored"
+                }}
+            )
 
     def get_pool_invitations(self, pool_id):
         return list(self.db.pool_invitations.find({"pool_id": pool_id, "status": "pending"}))

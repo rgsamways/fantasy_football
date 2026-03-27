@@ -9,7 +9,7 @@
     <h2 style="margin: 0 0 4px; color: var(--primary-color);">Admin Panel — {{ pool.name }}</h2>
     <p style="margin: 0; color: var(--muted-color); font-size: 0.9em;">
         Week {{ current_week }} &nbsp;·&nbsp;
-        {% if pool_type == "Pick 'Em" %}
+        {% if pool_type == "PickEm" or pool_type == "Pick Seven" %}
             {{ pool.user_ids | length }} members
         {% else %}
             {{ alive_count }} alive &nbsp;·&nbsp; {{ pool.user_ids | length }} total members
@@ -35,8 +35,10 @@
 <div class="card panel">
     <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Process Week Results</h3>
     <p style="font-size: 0.9em; color: var(--muted-color);">
-        {% if pool_type == "Pick 'Em" %}
+        {% if pool_type == "PickEm" %}
             Reads game scores from the NFL schedule and records points earned by each pick. Run this after all games in the week are complete.
+        {% elif pool_type == "Pick Seven" %}
+            Reads player fantasy points and team scores from the NFL schedule. Calculates total = QB+RB+WR+TE+K points + (OFF score &minus; DEF score). Run this after all games in the week are complete.
         {% else %}
             Reads game scores from the NFL schedule and marks picks as Won or Lost. Run this after all games in the week are complete. Ties count as a loss.
         {% endif %}
@@ -53,13 +55,51 @@
     {% if week_picks %}
     <div style="margin-top: 16px;">
         <div style="font-size: 0.85em; font-weight: bold; margin-bottom: 8px; color: var(--muted-color);">Week {{ current_week }} Picks ({{ week_picks | length }} submitted)</div>
+        {% if pool_type == "Pick Seven" %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--muted-color);">
+                    <th style="padding: 5px 8px; text-align: left;">Player</th>
+                    <th style="padding: 5px 8px;">QB</th>
+                    <th style="padding: 5px 8px;">RB</th>
+                    <th style="padding: 5px 8px;">WR</th>
+                    <th style="padding: 5px 8px;">TE</th>
+                    <th style="padding: 5px 8px;">K</th>
+                    <th style="padding: 5px 8px; color: #2ecc71;">OFF</th>
+                    <th style="padding: 5px 8px; color: #e74c3c;">DEF</th>
+                    <th style="padding: 5px 8px; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pick in week_picks %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 6px 8px; font-weight: bold;">{{ pick.username }}</td>
+                    <td style="padding: 6px 8px;">{{ pick.qb_name or '—' }}{% if pick.qb_points is not none %}<br><span style="color: var(--muted-color); font-size: 0.85em;">{{ pick.qb_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px;">{{ pick.rb_name or '—' }}{% if pick.rb_points is not none %}<br><span style="color: var(--muted-color); font-size: 0.85em;">{{ pick.rb_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px;">{{ pick.wr_name or '—' }}{% if pick.wr_points is not none %}<br><span style="color: var(--muted-color); font-size: 0.85em;">{{ pick.wr_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px;">{{ pick.te_name or '—' }}{% if pick.te_points is not none %}<br><span style="color: var(--muted-color); font-size: 0.85em;">{{ pick.te_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px;">{{ pick.k_name or '—' }}{% if pick.k_points is not none %}<br><span style="color: var(--muted-color); font-size: 0.85em;">{{ pick.k_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px; color: #2ecc71; font-weight: bold;">{{ pick.off_alias or '—' }}{% if pick.off_points is not none %}<br><span style="font-size: 0.85em;">{{ pick.off_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px; color: #e74c3c; font-weight: bold;">{{ pick.def_alias or '—' }}{% if pick.def_points is not none %}<br><span style="font-size: 0.85em;">{{ pick.def_points }}</span>{% endif %}</td>
+                    <td style="padding: 6px 8px; text-align: right;">
+                        {% if pick.result == 'Scored' %}
+                            <span style="color: #2ecc71; font-weight: bold;">{{ pick.total_points }} pts</span>
+                        {% else %}
+                            <span style="color: #f39c12;">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
         <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border-color); color: var(--muted-color);">
                     <th style="padding: 5px 8px; text-align: left;">Player</th>
                     <th style="padding: 5px 8px; text-align: left;">Team Picked</th>
                     <th style="padding: 5px 8px; text-align: left;">
-                        {% if pool_type == "Pick 'Em" %}Points{% else %}Result{% endif %}
+                        {% if pool_type == "PickEm" %}Points{% else %}Result{% endif %}
                     </th>
                 </tr>
             </thead>
@@ -69,7 +109,7 @@
                     <td style="padding: 6px 8px;">{{ pick.username }}</td>
                     <td style="padding: 6px 8px; font-weight: bold;">{{ pick.team_alias }} — {{ pick.team_name }}</td>
                     <td style="padding: 6px 8px;">
-                        {% if pool_type == "Pick 'Em" %}
+                        {% if pool_type == "PickEm" %}
                             {% if pick.result == 'Scored' %}
                                 <span style="color: #2ecc71; font-weight: bold;">{{ pick.points }} pts</span>
                             {% else %}
@@ -89,6 +129,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
     {% else %}
     <p style="margin-top: 12px; font-size: 0.85em; color: var(--muted-color);">No picks submitted for Week {{ current_week }} yet.</p>
@@ -98,6 +139,28 @@
 <!-- OVERRIDE PICK -->
 <div class="card panel">
     <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Override a Pick</h3>
+    {% if pool_type == "Pick Seven" %}
+    <p style="font-size: 0.9em; color: var(--muted-color);">Delete a member's Pick Seven entry for a given week so they can resubmit all 7 picks.</p>
+    <form action="{{ url_for('pool_override_pick', pool_id=pool.id) }}" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end;">
+        <div>
+            <label style="display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 4px;">Player</label>
+            <select name="user_id" required style="width: 100%; padding: 8px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-color);">
+                <option value="">— Select —</option>
+                {% for member in members %}
+                <option value="{{ member.id }}">{{ member.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 4px;">Week</label>
+            <input type="number" name="week_number" value="{{ current_week }}" min="1" max="18" required
+                   style="width: 100%; padding: 8px; border: 1px solid var(--input-border); border-radius: 4px; background: var(--input-bg); color: var(--text-color);">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-sm btn-danger" style="width: 100%;" onclick="return confirm('Delete this member\'s picks for the selected week?');">Delete Pick</button>
+        </div>
+    </form>
+    {% else %}
     <p style="font-size: 0.9em; color: var(--muted-color);">Manually set or replace a player's pick for any week. This resets the result to Pending.</p>
     <form action="{{ url_for('pool_override_pick', pool_id=pool.id) }}" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end;">
         <div>
@@ -128,6 +191,7 @@
             <button type="submit" class="btn btn-sm" style="width: 100%;">Override Pick</button>
         </div>
     </form>
+    {% endif %}
 
     {% if games %}
     <div style="margin-top: 14px; font-size: 0.82em; color: var(--muted-color);">

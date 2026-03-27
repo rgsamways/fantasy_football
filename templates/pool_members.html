@@ -7,7 +7,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <h2 style="margin: 0;">Pool Members</h2>
         <span style="color: var(--muted-color); font-size: 0.9em;">
-            {% if pool_type == "Pick 'Em" %}
+            {% if pool_type == "PickEm" or pool_type == "Pick Seven" %}
                 {{ members | length }} players
             {% else %}
                 {{ members | selectattr('alive') | list | length }} alive &nbsp;/&nbsp; {{ members | length }} total
@@ -19,7 +19,7 @@
             <tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--muted-color); font-size: 0.85em;">
                 <th style="padding: 8px 12px;">Player</th>
                 <th style="padding: 8px 12px; text-align: center;">
-                    {% if pool_type == "Pick 'Em" %}Points{% else %}Status{% endif %}
+                    {% if pool_type == "PickEm" or pool_type == "Pick Seven" %}Points{% else %}Status{% endif %}
                 </th>
                 <th style="padding: 8px 12px; text-align: center;">Role</th>
                 {% if is_admin %}<th style="padding: 8px 12px;">Actions</th>{% endif %}
@@ -35,7 +35,7 @@
                     {% endif %}
                 </td>
                 <td style="padding: 10px 12px; text-align: center;">
-                    {% if pool_type == "Pick 'Em" %}
+                    {% if pool_type == "PickEm" or pool_type == "Pick Seven" %}
                         <span style="font-weight: bold; color: var(--primary-color);">{{ member.total_points }} pts</span>
                     {% elif member.alive %}
                         <span style="color: #2ecc71; font-weight: bold; font-size: 0.85em;">Alive</span>

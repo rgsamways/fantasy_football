@@ -1583,8 +1583,8 @@ def pools_find():
 def pools_types():
     types = [
         {"name": "Survivor", "description": "The most common way to play. Pick a team each week. Only once. If they win, you're still in."},
-        {"name": "Pick 'Em", "description": "Pick a team each week and get their points. Only once. Total points end of season wins."},
-        {"name": "Pick Seven", "description": "Pick one QB, RB, WR, TE, K, OFF, DEF each week. Similar to Pick 'Em, except with players and the difference between OFF and DEF points."}
+        {"name": "PickEm", "description": "Pick a team each week and get their points. Only once. Total points end of season wins."},
+        {"name": "Pick Seven", "description": "Pick one QB, RB, WR, TE, K, OFF, DEF each week. Player fantasy points + the difference between OFF and DEF team scores."}
     ]
     return render_template('pools_types.html', pools_types=types, active_tab='types')
 
@@ -1642,11 +1642,17 @@ def pool_home(pool_id):
     alive_count = 0
     user_in_pool = current_user_id and current_user_id in pool.get('user_ids', [])
 
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         if user_in_pool:
             user_picks = db.get_user_pickem_picks(pool_id, current_user_id)
             total_points = sum((p.get('points') or 0) for p in user_picks if p['result'] == 'Scored')
             current_pick = db.get_pickem_pick(pool_id, current_user_id, current_week)
+        alive_count = len(pool.get('user_ids', []))
+    elif pool_type == "Pick Seven":
+        if user_in_pool:
+            user_picks = db.get_user_pick_seven(pool_id, current_user_id)
+            total_points = sum((p.get('total_points') or 0) for p in user_picks if p['result'] == 'Scored')
+            current_pick = db.get_pick_seven(pool_id, current_user_id, current_week)
         alive_count = len(pool.get('user_ids', []))
     else:
         if user_in_pool:
@@ -1690,7 +1696,7 @@ def pool_picks(pool_id):
     user_in_pool = current_user_id and current_user_id in pool.get('user_ids', [])
     games = list(db.nfl_schedule.find({"season_year": season, "week_number": current_week}))
 
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         user_picks = []
         used_teams = set()
         current_pick = None
@@ -1703,6 +1709,43 @@ def pool_picks(pool_id):
         return render_template('pool_picks_pickem.html', pool=pool, games=games,
                                current_week=current_week, user_picks=user_picks,
                                used_teams=used_teams, current_pick=current_pick,
+                               picks_locked=picks_locked, is_admin=is_admin,
+                               user_in_pool=user_in_pool)
+    elif pool_type == "Pick Seven":
+        all_players = db.get_all_players()
+        players_by_pos = {"QB": [], "RB": [], "WR": [], "TE": [], "K": []}
+        for p in all_players:
+            pos = p.get('position', '')
+            if pos == 'FB':
+                pos = 'RB'
+            if pos in players_by_pos:
+                players_by_pos[pos].append({"id": p['id'], "name": p.get('name', ''), "team": p.get('team', '')})
+        for pos in players_by_pos:
+            players_by_pos[pos].sort(key=lambda x: x['name'])
+        user_picks = []
+        current_pick = None
+        used_qbs = set(); used_rbs = set(); used_wrs = set(); used_tes = set(); used_ks = set()
+        used_off_teams = set(); used_def_teams = set()
+        if current_user_id:
+            user_picks = db.get_user_pick_seven(pool_id, current_user_id)
+            current_pick = db.get_pick_seven(pool_id, current_user_id, current_week)
+            for p in user_picks:
+                if p['week_number'] != current_week:
+                    if p.get('qb_id'): used_qbs.add(p['qb_id'])
+                    if p.get('rb_id'): used_rbs.add(p['rb_id'])
+                    if p.get('wr_id'): used_wrs.add(p['wr_id'])
+                    if p.get('te_id'): used_tes.add(p['te_id'])
+                    if p.get('k_id'): used_ks.add(p['k_id'])
+                    if p.get('off_alias'): used_off_teams.add(p['off_alias'])
+                    if p.get('def_alias'): used_def_teams.add(p['def_alias'])
+        week_picks = db.get_pick_seven_for_week(pool_id, current_week)
+        picks_locked = any(p['result'] == 'Scored' for p in week_picks)
+        return render_template('pool_picks_pickSeven.html', pool=pool, games=games,
+                               current_week=current_week, user_picks=user_picks,
+                               players_by_pos=players_by_pos, current_pick=current_pick,
+                               used_qbs=used_qbs, used_rbs=used_rbs, used_wrs=used_wrs,
+                               used_tes=used_tes, used_ks=used_ks,
+                               used_off_teams=used_off_teams, used_def_teams=used_def_teams,
                                picks_locked=picks_locked, is_admin=is_admin,
                                user_in_pool=user_in_pool)
     else:
@@ -1811,6 +1854,71 @@ def submit_pickem_pick(pool_id):
     flash(f"Pick saved: {team_name} — Week {current_week}", "success")
     return redirect(url_for('pool_picks', pool_id=pool_id))
 
+@app.route('/pool/<pool_id>/picks/submit-pickseven', methods=['POST'])
+def submit_pick_seven(pool_id):
+    if 'user_id' not in session:
+        flash("You must be logged in to make a pick.", "error")
+        return redirect(url_for('login'))
+    pool = db.get_pool(pool_id)
+    if not pool:
+        return redirect(url_for('pools'))
+    user_id = session['user_id']
+    current_week = pool.get('current_week', 1)
+    season = pool.get('current_season', 2026)
+
+    if user_id not in pool.get('user_ids', []):
+        flash("You are not a member of this pool.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    week_picks = db.get_pick_seven_for_week(pool_id, current_week)
+    if any(p['result'] == 'Scored' for p in week_picks):
+        flash("Picks are locked for this week.", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # Collect form values
+    fields = ['qb_id', 'qb_name', 'rb_id', 'rb_name', 'wr_id', 'wr_name',
+              'te_id', 'te_name', 'k_id', 'k_name',
+              'off_alias', 'off_name', 'def_alias', 'def_name']
+    pick_data = {f: request.form.get(f, '').strip() or None for f in fields}
+
+    if not all([pick_data['qb_id'], pick_data['rb_id'], pick_data['wr_id'],
+                pick_data['te_id'], pick_data['k_id'],
+                pick_data['off_alias'], pick_data['def_alias']]):
+        flash("Please select all 7 picks (QB, RB, WR, TE, K, OFF, DEF).", "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # No-repeat check against prior weeks
+    prior_picks = [p for p in db.get_user_pick_seven(pool_id, user_id) if p['week_number'] != current_week]
+    used_qbs  = {p['qb_id']    for p in prior_picks if p.get('qb_id')}
+    used_rbs  = {p['rb_id']    for p in prior_picks if p.get('rb_id')}
+    used_wrs  = {p['wr_id']    for p in prior_picks if p.get('wr_id')}
+    used_tes  = {p['te_id']    for p in prior_picks if p.get('te_id')}
+    used_ks   = {p['k_id']     for p in prior_picks if p.get('k_id')}
+    used_off  = {p['off_alias'] for p in prior_picks if p.get('off_alias')}
+    used_def  = {p['def_alias'] for p in prior_picks if p.get('def_alias')}
+
+    errors = []
+    if pick_data['qb_id']    in used_qbs:  errors.append(f"QB {pick_data['qb_name']} already used this season.")
+    if pick_data['rb_id']    in used_rbs:  errors.append(f"RB {pick_data['rb_name']} already used this season.")
+    if pick_data['wr_id']    in used_wrs:  errors.append(f"WR {pick_data['wr_name']} already used this season.")
+    if pick_data['te_id']    in used_tes:  errors.append(f"TE {pick_data['te_name']} already used this season.")
+    if pick_data['k_id']     in used_ks:   errors.append(f"K {pick_data['k_name']} already used this season.")
+    if pick_data['off_alias'] in used_off: errors.append(f"OFF team {pick_data['off_name']} already used this season.")
+    if pick_data['def_alias'] in used_def: errors.append(f"DEF team {pick_data['def_name']} already used this season.")
+    if errors:
+        for e in errors:
+            flash(e, "error")
+        return redirect(url_for('pool_picks', pool_id=pool_id))
+
+    # Replace existing pick for this week
+    existing = db.get_pick_seven(pool_id, user_id, current_week)
+    if existing:
+        db.delete_pick_seven(pool_id, user_id, current_week)
+
+    db.submit_pick_seven(pool_id, user_id, current_week, pick_data)
+    flash(f"Picks saved for Week {current_week}.", "success")
+    return redirect(url_for('pool_picks', pool_id=pool_id))
+
 @app.route('/pool/<pool_id>/standings')
 def pool_standings(pool_id):
     pool = db.get_pool(pool_id)
@@ -1823,7 +1931,7 @@ def pool_standings(pool_id):
     pool_type = pool.get('pool_type', 'survivor')
     weeks = list(range(1, current_week + 1))
 
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         all_picks = db.get_all_pickem_picks(pool_id)
         picks_by_user = {}
         for pick in all_picks:
@@ -1862,6 +1970,46 @@ def pool_standings(pool_id):
 
         standings.sort(key=lambda x: (-x['total_points'], -x['weekly_wins']))
         return render_template('pool_standings_pickem.html', pool=pool, standings=standings,
+                               weeks=weeks, current_week=current_week, is_admin=is_admin,
+                               current_user_id=current_user_id, weekly_winners=weekly_winners)
+    elif pool_type == "Pick Seven":
+        all_picks = db.get_all_pick_seven(pool_id)
+        picks_by_user = {}
+        for pick in all_picks:
+            picks_by_user.setdefault(pick['user_id'], {})[pick['week_number']] = pick
+
+        weekly_winners = {}
+        for wk in weeks:
+            max_pts = -1
+            for uwp in picks_by_user.values():
+                pick = uwp.get(wk)
+                if pick and pick['result'] == 'Scored':
+                    max_pts = max(max_pts, pick.get('total_points') or 0)
+            if max_pts >= 0:
+                weekly_winners[wk] = {
+                    uid for uid, uwp in picks_by_user.items()
+                    if uwp.get(wk) and uwp[wk]['result'] == 'Scored'
+                    and (uwp[wk].get('total_points') or 0) == max_pts
+                }
+
+        standings = []
+        for u_id in pool.get('user_ids', []):
+            user = db.get_user_by_id(u_id)
+            if not user:
+                continue
+            user_week_picks = picks_by_user.get(u_id, {})
+            total_points = sum((p.get('total_points') or 0) for p in user_week_picks.values() if p['result'] == 'Scored')
+            weekly_wins = sum(1 for wk, winners in weekly_winners.items() if u_id in winners)
+            standings.append({
+                'id': u_id,
+                'username': user['username'],
+                'total_points': total_points,
+                'weekly_wins': weekly_wins,
+                'picks': user_week_picks,
+            })
+
+        standings.sort(key=lambda x: (-x['total_points'], -x['weekly_wins']))
+        return render_template('pool_standings_pickSeven.html', pool=pool, standings=standings,
                                weeks=weeks, current_week=current_week, is_admin=is_admin,
                                current_user_id=current_user_id, weekly_winners=weekly_winners)
     else:
@@ -1905,12 +2053,30 @@ def pool_members(pool_id):
     pool_type = pool.get('pool_type', 'survivor')
     pool_admins = pool.get('administrators', [])
 
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         all_picks = db.get_all_pickem_picks(pool_id)
         points_by_user = {}
         for p in all_picks:
             if p['result'] == 'Scored':
                 points_by_user[p['user_id']] = points_by_user.get(p['user_id'], 0) + (p.get('points') or 0)
+        members = []
+        for u_id in pool.get('user_ids', []):
+            user = db.get_user_by_id(u_id)
+            if not user:
+                continue
+            members.append({
+                'id': u_id,
+                'username': user['username'],
+                'total_points': points_by_user.get(u_id, 0),
+                'is_admin': u_id in pool_admins,
+            })
+        members.sort(key=lambda x: -x['total_points'])
+    elif pool_type == "Pick Seven":
+        all_picks = db.get_all_pick_seven(pool_id)
+        points_by_user = {}
+        for p in all_picks:
+            if p['result'] == 'Scored':
+                points_by_user[p['user_id']] = points_by_user.get(p['user_id'], 0) + (p.get('total_points') or 0)
         members = []
         for u_id in pool.get('user_ids', []):
             user = db.get_user_by_id(u_id)
@@ -2092,8 +2258,13 @@ def pool_admin(pool_id):
             members.append({'id': u_id, 'username': user['username']})
     user_map = {m['id']: m['username'] for m in members}
 
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         week_picks = db.get_pickem_picks_for_week(pool_id, current_week)
+        for p in week_picks:
+            p['username'] = user_map.get(p['user_id'], 'Unknown')
+        alive_count = len(pool.get('user_ids', []))
+    elif pool_type == "Pick Seven":
+        week_picks = db.get_pick_seven_for_week(pool_id, current_week)
         for p in week_picks:
             p['username'] = user_map.get(p['user_id'], 'Unknown')
         alive_count = len(pool.get('user_ids', []))
@@ -2137,7 +2308,7 @@ def pool_process_week(pool_id):
     pool_type = pool.get('pool_type', 'survivor')
     games = list(db.nfl_schedule.find({"season_year": season, "week_number": week_number}))
 
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         team_scores = {}
         for g in games:
             scoring = g.get('scoring', {}) or {}
@@ -2149,6 +2320,24 @@ def pool_process_week(pool_id):
                 team_scores[g['away']['alias']] = int(away_pts)
         db.process_pickem_week(pool_id, week_number, team_scores)
         flash(f"Week {week_number} results processed — {len(team_scores)} teams scored.", "success")
+    elif pool_type == "Pick Seven":
+        team_scores = {}    # alias -> pts scored
+        points_allowed = {} # alias -> pts allowed (opponent's score)
+        for g in games:
+            scoring = g.get('scoring', {}) or {}
+            home_pts = scoring.get('home_points')
+            away_pts = scoring.get('away_points')
+            if home_pts is not None:
+                team_scores[g['home']['alias']] = int(home_pts)
+            if away_pts is not None:
+                team_scores[g['away']['alias']] = int(away_pts)
+            if home_pts is not None and away_pts is not None:
+                points_allowed[g['home']['alias']] = int(away_pts)
+                points_allowed[g['away']['alias']] = int(home_pts)
+        player_data = get_all_player_data(season=season, week=week_number)
+        player_points = {pid: d['points'] for pid, d in player_data.items()}
+        db.process_pick_seven_week(pool_id, week_number, player_points, team_scores, points_allowed)
+        flash(f"Week {week_number} results processed.", "success")
     else:
         winner_aliases = set()
         for g in games:
@@ -2179,11 +2368,15 @@ def pool_override_pick(pool_id):
     team_alias = request.form.get('team_alias', '').strip()
     team_name = request.form.get('team_name', team_alias).strip()
     pool_type = pool.get('pool_type', 'survivor')
-    if pool_type == "Pick 'Em":
+    if pool_type == "PickEm":
         db.override_pickem_pick(pool_id, target_user_id, week_number, team_alias, team_name)
+        flash(f"Pick overridden: {team_name} — Week {week_number}.", "success")
+    elif pool_type == "Pick Seven":
+        db.delete_pick_seven(pool_id, target_user_id, week_number)
+        flash(f"Pick Seven pick deleted for Week {week_number} — user can resubmit.", "success")
     else:
         db.override_survivor_pick(pool_id, target_user_id, week_number, team_alias, team_name)
-    flash(f"Pick overridden: {team_name} — Week {week_number}.", "success")
+        flash(f"Pick overridden: {team_name} — Week {week_number}.", "success")
     return redirect(url_for('pool_admin', pool_id=pool_id))
 
 @app.route('/leagues')

@@ -750,3 +750,149 @@ div[class*='actions'] > div {
 .toast-warning  { border-left-color: #f39c12; }
 .toast-info,
 .toast-message  { border-left-color: var(--primary-color); }
+
+/* =====================
+   Pick Seven layout helpers
+   ===================== */
+.pick7-team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.pick7-slots-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    color: var(--muted-color);
+    font-size: 0.88em;
+}
+
+/* =====================
+   Responsive Breakpoints
+   ===================== */
+
+/* Tablet ≤1024px — narrow vertical nav, keep icon + clipped text */
+@media (max-width: 1024px) {
+    .vertical-nav {
+        min-width: 52px;
+        width: 52px;
+        padding: 8px 4px;
+    }
+
+    .vertical-nav a {
+        justify-content: center;
+        padding: 0 6px;
+        font-size: 0;         /* hide text while keeping icon */
+    }
+
+    .vertical-nav a svg {
+        font-size: initial;   /* not inherited, just for clarity */
+    }
+
+    /* Tooltip stays as the label on tablet */
+    .vertical-nav a::after {
+        opacity: 0;
+    }
+
+    .vertical-nav a:hover::after {
+        opacity: 1;
+    }
+
+    .vertical-nav .vnav-divider {
+        width: 28px;
+    }
+}
+
+/* Mobile ≤768px — bottom nav bar + single-column layout */
+@media (max-width: 768px) {
+    /* Vertical nav becomes a fixed bottom bar */
+    .page-body {
+        flex-direction: column;
+    }
+
+    .vertical-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        min-width: unset;
+        height: auto;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        padding: 4px 0 env(safe-area-inset-bottom, 4px);
+        border-right: none;
+        border-top: 1px solid var(--border-color);
+        overflow-x: auto;
+        overflow-y: hidden;
+        z-index: 200;
+    }
+
+    .vertical-nav a {
+        flex-direction: column;
+        height: auto;
+        padding: 5px 6px;
+        gap: 2px;
+        font-size: 0.6rem;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        min-width: 44px;
+    }
+
+    .vertical-nav a svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* No hover tooltip on mobile */
+    .vertical-nav a::after {
+        display: none;
+    }
+
+    .vertical-nav .vnav-divider {
+        display: none;
+    }
+
+    /* Push page content above the bottom nav */
+    .page-main {
+        padding-bottom: 68px;
+    }
+
+    /* Stack pool/league layouts into a single column */
+    .pool-layout,
+    .league-layout,
+    .layout-with-sidebar {
+        flex-direction: column;
+    }
+
+    .sidebar-left,
+    .sidebar-right {
+        width: 100%;
+    }
+
+    /* Overlay content fits mobile screen */
+    .overlay-content {
+        width: calc(100vw - 32px);
+        padding: 20px;
+    }
+
+    /* Toast sits above bottom nav */
+    #toast-container {
+        bottom: 76px;
+        right: 12px;
+    }
+
+    .toast {
+        max-width: calc(100vw - 24px);
+    }
+
+    /* Pick Seven grids stack to single column */
+    .pick7-team-grid,
+    .pick7-slots-grid {
+        grid-template-columns: 1fr;
+    }
+}

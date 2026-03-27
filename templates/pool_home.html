@@ -4,7 +4,7 @@
 <div style="display: flex; flex-direction: column; gap: 7px;">
 
 <!-- STATUS CARD -->
-{% if pool.pool_type == "Pick 'Em" %}
+{% if pool.pool_type == "PickEm" or pool.pool_type == "Pick Seven" %}
 <div class="card panel" style="border-top: 4px solid {% if current_pick and current_pick.result == 'Scored' %}#2ecc71{% elif current_pick %}var(--primary-color){% else %}#f39c12{% endif %};">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
@@ -12,13 +12,19 @@
             {% if user_in_pool %}
                 {% if current_pick %}
                     <p style="margin: 6px 0 0; color: var(--text-color);">
-                        Your pick: <strong>{{ current_pick.team_name }}</strong>
-                        {% if current_pick.result == 'Scored' %}<span style="color: #2ecc71; font-weight: bold;"> — {{ current_pick.points }} pts</span>
-                        {% else %}<span style="color: #f39c12;"> — Pending</span>{% endif %}
+                        {% if pool.pool_type == "Pick Seven" %}
+                            Your picks: <strong>{{ current_pick.qb_name }} / {{ current_pick.rb_name }} / {{ current_pick.wr_name }} / {{ current_pick.te_name }} / {{ current_pick.k_name }} &nbsp;|&nbsp; OFF: {{ current_pick.off_alias }} DEF: {{ current_pick.def_alias }}</strong>
+                            {% if current_pick.result == 'Scored' %}<span style="color: #2ecc71; font-weight: bold;"> — {{ current_pick.total_points }} pts</span>
+                            {% else %}<span style="color: #f39c12;"> — Pending</span>{% endif %}
+                        {% else %}
+                            Your pick: <strong>{{ current_pick.team_name }}</strong>
+                            {% if current_pick.result == 'Scored' %}<span style="color: #2ecc71; font-weight: bold;"> — {{ current_pick.points }} pts</span>
+                            {% else %}<span style="color: #f39c12;"> — Pending</span>{% endif %}
+                        {% endif %}
                     </p>
                     <p style="margin: 4px 0 0; color: var(--muted-color); font-size: 0.85em;">Season total: <strong>{{ total_points }} pts</strong></p>
                 {% else %}
-                    <p style="margin: 6px 0 0; color: #f39c12; font-weight: bold;">You haven't made your Week {{ current_week }} pick yet.</p>
+                    <p style="margin: 6px 0 0; color: #f39c12; font-weight: bold;">You haven't made your Week {{ current_week }} {% if pool.pool_type == "Pick Seven" %}picks{% else %}pick{% endif %} yet.</p>
                 {% endif %}
             {% else %}
                 <p style="margin: 6px 0 0; color: var(--muted-color);">Join this pool to participate.</p>
@@ -190,7 +196,7 @@
     <h3 style="font-size: 1.05em; margin-top: 0;">Actions</h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
         <a href="{{ url_for('pools') }}" class="btn btn-secondary btn-sm" style="text-align: center;">All Pools</a>
-        {% if user_in_pool and (pool.pool_type == "Pick 'Em" or not is_eliminated) %}
+        {% if user_in_pool and (pool.pool_type in ("PickEm", "Pick Seven") or not is_eliminated) %}
             <a href="{{ url_for('pool_picks', pool_id=pool.id) }}" class="btn btn-sm" style="text-align: center;">
                 {% if current_pick %}Change Pick{% else %}Make Pick{% endif %}
             </a>

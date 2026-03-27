@@ -1,0 +1,259 @@
+{% extends "pool_layout.html" %}
+
+{% block pool_content %}
+<div style="display: flex; flex-direction: column; gap: 7px;">
+
+<!-- HEADER -->
+<div class="card panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 style="margin: 0; color: var(--primary-color);">Week {{ current_week }} — Pick Seven</h2>
+            <p style="margin: 6px 0 0; color: var(--muted-color); font-size: 0.9em;">
+                Pick a QB, RB, WR, TE, K, Offensive Team, and Defensive Team. Each can only be used once per season.
+                Score = player fantasy points + (OFF pts scored &minus; points DEF allowed).
+            </p>
+        </div>
+        {% if current_pick %}
+            <div style="text-align: right;">
+                {% if current_pick.result == 'Scored' %}
+                    <div style="background: #2ecc71; color: white; padding: 8px 18px; border-radius: 4px; font-weight: bold;">
+                        Week {{ current_week }} — {{ current_pick.total_points }} pts
+                    </div>
+                {% else %}
+                    <div style="background: var(--primary-color); color: white; padding: 8px 18px; border-radius: 4px; font-weight: bold;">
+                        Picks submitted — Pending
+                    </div>
+                    {% if not picks_locked %}
+                        <div style="font-size: 0.8em; color: var(--muted-color); margin-top: 4px;">You can update your picks below</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% elif user_in_pool and not picks_locked %}
+            <div style="color: #f39c12; font-weight: bold; font-size: 0.9em;">No picks yet — fill in all 7 slots below</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if not user_in_pool %}
+<div class="card panel" style="text-align: center; color: var(--muted-color); padding: 40px;">
+    <p>You are not a member of this pool.</p>
+    {% if not session.get('user_id') %}
+        <a href="{{ url_for('login') }}" class="btn btn-sm">Log In to Join</a>
+    {% endif %}
+</div>
+
+{% elif picks_locked %}
+<div class="card panel" style="text-align: center; padding: 30px; color: var(--muted-color);">
+    <p style="font-size: 1.05em;">Picks are locked — results are being processed.</p>
+    <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="btn btn-sm" style="margin-top: 10px;">View Standings</a>
+</div>
+
+{% else %}
+<form action="{{ url_for('submit_pick_seven', pool_id=pool.id) }}" method="POST" id="pickSevenForm">
+
+<!-- PLAYER PICKS -->
+<div class="card panel">
+    <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Player Picks</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;">
+        {% for pos, used_set in [('QB', used_qbs), ('RB', used_rbs), ('WR', used_wrs), ('TE', used_tes), ('K', used_ks)] %}
+        {% set field_id = pos.lower() + '_id' %}
+        {% set field_name_key = pos.lower() + '_name' %}
+        {% set current_val = current_pick[field_id] if current_pick else None %}
+        <div>
+            <label style="display: block; font-size: 0.85em; font-weight: bold; margin-bottom: 5px; color: var(--primary-color);">{{ pos }}</label>
+            <input type="text" id="search_{{ pos }}" placeholder="Search {{ pos }}..."
+                   style="width: 100%; padding: 6px 8px; border: 1px solid var(--input-border); border-radius: 4px 4px 0 0; background: var(--input-bg); color: var(--text-color); box-sizing: border-box; font-size: 0.85em;"
+                   oninput="filterSelect('sel_{{ pos }}', this.value)">
+            <select name="{{ field_id }}" id="sel_{{ pos }}" size="5" required
+                    style="width: 100%; border: 1px solid var(--input-border); border-top: none; border-radius: 0 0 4px 4px; background: var(--input-bg); color: var(--text-color); font-size: 0.82em; padding: 2px;"
+                    onchange="syncName(this, '{{ field_name_key }}')">
+                <option value="">— Select {{ pos }} —</option>
+                {% for player in players_by_pos[pos] %}
+                    {% set is_used = player.id in used_set %}
+                    {% set is_current = current_val and current_val == player.id %}
+                    <option value="{{ player.id }}"
+                            data-label="{{ player.name }} ({{ player.team }})"
+                            {% if is_used and not is_current %}disabled style="color: var(--muted-color);"{% endif %}
+                            {% if is_current %}selected{% endif %}>
+                        {{ player.name }} ({{ player.team }}){% if is_used and not is_current %} [Used]{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="{{ field_name_key }}" id="hid_{{ field_name_key }}"
+                   value="{{ current_pick[field_name_key] if current_pick else '' }}">
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- TEAM PICKS -->
+<div class="card panel">
+    <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Team Picks</h3>
+    {% if games %}
+    <div class="pick7-team-grid">
+        <!-- OFF -->
+        <div>
+            <div style="font-size: 0.85em; font-weight: bold; color: #2ecc71; margin-bottom: 8px;">Offensive Team <span style="font-weight: normal; color: var(--muted-color);">(earn their score)</span></div>
+            <input type="hidden" name="off_alias" id="selectedOffAlias" value="{{ current_pick.off_alias if current_pick else '' }}">
+            <input type="hidden" name="off_name"  id="selectedOffName"  value="{{ current_pick.off_name if current_pick else '' }}">
+            <div id="offSelectedBadge" style="margin-bottom: 8px; min-height: 26px;">
+                {% if current_pick and current_pick.off_alias %}
+                    <span style="background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px; font-weight: bold; font-size: 0.85em;">{{ current_pick.off_alias }}</span>
+                {% endif %}
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                {% for game in games %}
+                    {% for alias, name in [(game.away.alias, game.away.name), (game.home.alias, game.home.name)] %}
+                        {% set is_used = alias in used_off_teams and (not current_pick or current_pick.off_alias != alias) %}
+                        <button type="button" class="off-btn"
+                                data-alias="{{ alias }}" data-name="{{ name }}"
+                                {% if is_used %}disabled{% endif %}
+                                style="border: 1px solid var(--border-color); border-radius: 4px; padding: 7px 10px; text-align: left; cursor: {% if is_used %}not-allowed{% else %}pointer{% endif %}; background: {% if current_pick and current_pick.off_alias == alias %}#2ecc71{% elif is_used %}var(--table-header-bg){% else %}var(--card-bg){% endif %}; color: {% if current_pick and current_pick.off_alias == alias %}white{% elif is_used %}var(--muted-color){% else %}var(--text-color){% endif %}; font-size: 0.82em; transition: background 0.15s;">
+                            <strong>{{ alias }}</strong> — {{ name }}
+                            {% if is_used %}<span style="color: #e74c3c; font-size: 0.8em;"> [Used]</span>{% endif %}
+                        </button>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+        <!-- DEF -->
+        <div>
+            <div style="font-size: 0.85em; font-weight: bold; color: #e74c3c; margin-bottom: 8px;">Defensive Team <span style="font-weight: normal; color: var(--muted-color);">(subtract points they allowed)</span></div>
+            <input type="hidden" name="def_alias" id="selectedDefAlias" value="{{ current_pick.def_alias if current_pick else '' }}">
+            <input type="hidden" name="def_name"  id="selectedDefName"  value="{{ current_pick.def_name if current_pick else '' }}">
+            <div id="defSelectedBadge" style="margin-bottom: 8px; min-height: 26px;">
+                {% if current_pick and current_pick.def_alias %}
+                    <span style="background: #e74c3c; color: white; padding: 3px 10px; border-radius: 4px; font-weight: bold; font-size: 0.85em;">{{ current_pick.def_alias }}</span>
+                {% endif %}
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                {% for game in games %}
+                    {% for alias, name in [(game.away.alias, game.away.name), (game.home.alias, game.home.name)] %}
+                        {% set is_used = alias in used_def_teams and (not current_pick or current_pick.def_alias != alias) %}
+                        <button type="button" class="def-btn"
+                                data-alias="{{ alias }}" data-name="{{ name }}"
+                                {% if is_used %}disabled{% endif %}
+                                style="border: 1px solid var(--border-color); border-radius: 4px; padding: 7px 10px; text-align: left; cursor: {% if is_used %}not-allowed{% else %}pointer{% endif %}; background: {% if current_pick and current_pick.def_alias == alias %}#e74c3c{% elif is_used %}var(--table-header-bg){% else %}var(--card-bg){% endif %}; color: {% if current_pick and current_pick.def_alias == alias %}white{% elif is_used %}var(--muted-color){% else %}var(--text-color){% endif %}; font-size: 0.82em; transition: background 0.15s;">
+                            <strong>{{ alias }}</strong> — {{ name }}
+                            {% if is_used %}<span style="color: #e74c3c; font-size: 0.8em;"> [Used]</span>{% endif %}
+                        </button>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p style="color: var(--muted-color); font-size: 0.9em;">No NFL games found for Week {{ current_week }}.</p>
+    {% endif %}
+</div>
+
+<!-- SUBMIT -->
+<div class="card panel" style="text-align: center;">
+    <button type="submit" class="btn">Save All Picks — Week {{ current_week }}</button>
+</div>
+
+</form>
+{% endif %}
+
+</div>
+{% endblock %}
+
+{% block pool_sidebar_left %}
+<div class="card panel-sm" style="margin-bottom: 7px;">
+    <h3 style="font-size: 1.05em; margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Picks This Season</h3>
+    {% if user_picks %}
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82em;">
+            {% for pick in user_picks | sort(attribute='week_number') %}
+            <div style="border: 1px solid var(--border-color); border-radius: 4px; padding: 7px 9px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="color: var(--muted-color);">Week {{ pick.week_number }}</span>
+                    {% if pick.result == 'Scored' %}
+                        <span style="color: #2ecc71; font-weight: bold;">{{ pick.total_points }} pts</span>
+                    {% else %}
+                        <span style="color: #f39c12;">Pending</span>
+                    {% endif %}
+                </div>
+                <div class="pick7-slots-grid">
+                    <span>QB: <strong style="color: var(--text-color);">{{ pick.qb_name or '—' }}</strong>{% if pick.qb_points is not none %} <em>({{ pick.qb_points }})</em>{% endif %}</span>
+                    <span>RB: <strong style="color: var(--text-color);">{{ pick.rb_name or '—' }}</strong>{% if pick.rb_points is not none %} <em>({{ pick.rb_points }})</em>{% endif %}</span>
+                    <span>WR: <strong style="color: var(--text-color);">{{ pick.wr_name or '—' }}</strong>{% if pick.wr_points is not none %} <em>({{ pick.wr_points }})</em>{% endif %}</span>
+                    <span>TE: <strong style="color: var(--text-color);">{{ pick.te_name or '—' }}</strong>{% if pick.te_points is not none %} <em>({{ pick.te_points }})</em>{% endif %}</span>
+                    <span>K: <strong style="color: var(--text-color);">{{ pick.k_name or '—' }}</strong>{% if pick.k_points is not none %} <em>({{ pick.k_points }})</em>{% endif %}</span>
+                    <span>OFF: <strong style="color: #2ecc71;">{{ pick.off_alias or '—' }}</strong>{% if pick.off_points is not none %} <em>({{ pick.off_points }})</em>{% endif %}</span>
+                    <span>DEF: <strong style="color: #e74c3c;">{{ pick.def_alias or '—' }}</strong>{% if pick.def_points is not none %} <em>({{ pick.def_points }})</em>{% endif %}</span>
+                </div>
+            </div>
+            {% endfor %}
+            <div style="display: flex; justify-content: space-between; padding: 6px 0; font-weight: bold; border-top: 2px solid var(--border-color); margin-top: 2px;">
+                <span>Total</span>
+                <span style="color: var(--primary-color);">
+                    {{ user_picks | selectattr('result', 'equalto', 'Scored') | sum(attribute='total_points') }} pts
+                </span>
+            </div>
+        </div>
+    {% else %}
+        <p style="color: var(--muted-color); font-size: 0.85em; margin: 0;">No picks yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block pool_sidebar_right %}
+<div class="card panel-sm">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 10px;">
+        <h3 style="font-size: 1.05em; margin: 0;">Leaderboard</h3>
+        <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" style="font-size: 0.8em; color: var(--primary-color);">Full →</a>
+    </div>
+    <p style="font-size: 0.82em; color: var(--muted-color); margin: 0 0 10px;">Other members' picks are hidden until the week is processed.</p>
+    <a href="{{ url_for('pool_standings', pool_id=pool.id) }}" class="btn btn-sm" style="width: 100%; text-align: center; display: block;">View Standings</a>
+</div>
+
+<script>
+function filterSelect(selId, query) {
+    const sel = document.getElementById(selId);
+    const q = query.toLowerCase();
+    for (const opt of sel.options) {
+        if (!opt.value) { opt.style.display = ''; continue; }
+        opt.style.display = opt.text.toLowerCase().includes(q) ? '' : 'none';
+    }
+}
+
+function syncName(sel, hiddenName) {
+    const hidEl = document.getElementById('hid_' + hiddenName);
+    if (!hidEl) return;
+    const selected = sel.options[sel.selectedIndex];
+    hidEl.value = selected ? (selected.getAttribute('data-label') || selected.text) : '';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // OFF buttons
+    document.querySelectorAll('.off-btn:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.off-btn').forEach(b => {
+                if (!b.disabled) { b.style.background = 'var(--card-bg)'; b.style.color = 'var(--text-color)'; }
+            });
+            this.style.background = '#2ecc71';
+            this.style.color = 'white';
+            document.getElementById('selectedOffAlias').value = this.dataset.alias;
+            document.getElementById('selectedOffName').value = this.dataset.name;
+            document.getElementById('offSelectedBadge').innerHTML =
+                '<span style="background:#2ecc71;color:white;padding:3px 10px;border-radius:4px;font-weight:bold;font-size:0.85em;">' + this.dataset.alias + '</span>';
+        });
+    });
+
+    // DEF buttons
+    document.querySelectorAll('.def-btn:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.def-btn').forEach(b => {
+                if (!b.disabled) { b.style.background = 'var(--card-bg)'; b.style.color = 'var(--text-color)'; }
+            });
+            this.style.background = '#e74c3c';
+            this.style.color = 'white';
+            document.getElementById('selectedDefAlias').value = this.dataset.alias;
+            document.getElementById('selectedDefName').value = this.dataset.name;
+            document.getElementById('defSelectedBadge').innerHTML =
+                '<span style="background:#e74c3c;color:white;padding:3px 10px;border-radius:4px;font-weight:bold;font-size:0.85em;">' + this.dataset.alias + '</span>';
+        });
+    });
+});
+</script>
+{% endblock %}

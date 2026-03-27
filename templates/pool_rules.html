@@ -9,8 +9,35 @@
         Pool Type: {{ pool.pool_type }} &nbsp;·&nbsp; Season {{ pool.get('current_season', 2026) }}
     </p>
 
-    {% if pool.pool_type == "Pick 'Em" %}
-    <h3 style="color: var(--secondary-color); margin-top: 0;">Pick 'Em — How to Play</h3>
+    {% if pool.pool_type == "Pick Seven" %}
+    <h3 style="color: var(--secondary-color); margin-top: 0;">Pick Seven — How to Play</h3>
+    <ol style="line-height: 1.9; padding-left: 20px;">
+        <li>Each week, pick <strong>seven slots</strong>: QB, RB, WR, TE, K (individual players) + an Offensive Team (OFF) and a Defensive Team (DEF).</li>
+        <li>Your score = <strong>player fantasy points</strong> (standard scoring) <strong>+ (OFF pts scored &minus; points DEF allowed)</strong>.</li>
+        <li>Each player and each team can only be used <strong>once per season</strong> in their respective slot — choose wisely.</li>
+        <li>The player with the <strong>most total points</strong> at the end of the regular season wins.</li>
+        <li>Picks lock once the admin processes results for that week.</li>
+        <li>You may update your picks at any time before they lock.</li>
+        <li>Other members' picks are hidden until the week is processed.</li>
+    </ol>
+
+    <h3 style="color: var(--secondary-color);">Scoring Formula</h3>
+    <ul style="line-height: 1.9; padding-left: 20px;">
+        <li><strong>QB / RB / WR / TE</strong>: Pass TD +6, Pass Yd +0.1, Pass Att +0.2, Completion +0.5, INT −2 &nbsp;|&nbsp; Rush TD +6, Rush Yd +0.1, Rush Att +0.2 &nbsp;|&nbsp; Rec TD +6, Rec Yd +0.1, Reception +1 &nbsp;|&nbsp; Fumble lost −3.</li>
+        <li><strong>K</strong>: Kicking stats are not tracked — the K slot contributes 0 points.</li>
+        <li><strong>OFF team</strong>: Points scored by that team in their game that week.</li>
+        <li><strong>DEF team</strong>: Points that team <em>allowed</em> (opponent's score) — subtracted from your total.</li>
+        <li>Team component = OFF pts scored &minus; DEF pts allowed. Pick a high-scoring offense and a stingy defense.</li>
+    </ul>
+
+    <h3 style="color: var(--secondary-color);">Weekly Winner &amp; Tiebreakers</h3>
+    <ul style="line-height: 1.9; padding-left: 20px;">
+        <li>The player with the highest weekly total is highlighted in the standings.</li>
+        <li>Season tiebreaker: most weekly wins, then shared pool.</li>
+    </ul>
+
+    {% elif pool.pool_type == "PickEm" %}
+    <h3 style="color: var(--secondary-color); margin-top: 0;">PickEm — How to Play</h3>
     <ol style="line-height: 1.9; padding-left: 20px;">
         <li>Each week, pick <strong>one NFL team</strong>.</li>
         <li>You earn the <strong>points that team scores</strong> in their game that week.</li>
