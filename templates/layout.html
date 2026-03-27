@@ -193,22 +193,6 @@
             disableMobile: false
         });
 
-        // Size vertical nav to the remaining viewport height below the top nav
-        const topNavEl = document.querySelector('body > nav');
-        const vertNavEl = document.querySelector('.vertical-nav');
-        if (topNavEl && vertNavEl) {
-            const setVertNavHeight = () => {
-                if (window.innerWidth <= 768) {
-                    // Mobile: CSS handles the fixed bottom bar — don't touch height
-                    vertNavEl.style.height = '';
-                } else {
-                    vertNavEl.style.height = `calc(100vh - ${topNavEl.offsetHeight}px)`;
-                }
-            };
-            setVertNavHeight();
-            window.addEventListener('resize', setVertNavHeight);
-        }
-
         // Wrap every table in main content in a scroll container
         document.querySelectorAll('.page-main table').forEach(function(tbl) {
             if (tbl.closest('.table-scroll')) return;

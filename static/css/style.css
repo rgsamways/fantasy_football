@@ -107,8 +107,8 @@ body {
     padding: 0;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -403,12 +403,7 @@ th {
 
 
 footer {
-    text-align: center;
-    padding: 2rem 0;
-    background-color: var(--footer-bg);
-    color: #7f8c8d;
-    margin-top: auto;
-    border-top: 1px solid var(--border-color);
+    display: none;
 }
 
 /* Size all buttons in Action sections equally */
@@ -573,9 +568,6 @@ div[class*='actions'] > div {
     align-items: stretch;
     padding: 8px 6px;
     gap: 4px;
-    position: sticky;
-    top: 0;
-    height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
     z-index: 100;
@@ -656,7 +648,6 @@ div[class*='actions'] > div {
 .vertical-nav .vnav-divider {
     width: 28px;
     height: 1px;
-    background: var(--border-color);
     margin: 4px 0;
 }
 
@@ -666,6 +657,7 @@ div[class*='actions'] > div {
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 /* Hamburger button (hidden on desktop) */
